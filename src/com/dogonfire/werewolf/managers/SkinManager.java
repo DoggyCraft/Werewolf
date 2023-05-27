@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 import com.dogonfire.werewolf.Werewolf;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.disguises.IWerewolfDisguiseFactory.WerewolfDisguise;
@@ -42,29 +43,14 @@ public class SkinManager
 			return true;
 		}
 
-		UUID werewolfAccountId;
-		String werewolfAccountName;
-
-		ClanManager.ClanType clantype = Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId());
-
-		// Get the correct account, if alpha, alphaskin, else the clanskin
-		if (plugin.useClans && Werewolf.getClanManager().isAlpha(player.getUniqueId()))
-		{
-			werewolfAccountId = Werewolf.getClanManager().getWerewolfAccountIdForAlpha(clantype);
-			werewolfAccountName = Werewolf.getClanManager().getWerewolfAccountForAlpha(clantype);
-		}
-		else
-		{
-			werewolfAccountId = Werewolf.getClanManager().getWerewolfAccountIdForClan(clantype);
-			werewolfAccountName = Werewolf.getClanManager().getWerewolfAccountForClan(clantype);
-		}
+		ClanManager.ClanType clanType = Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId());
 
 		if (werewolfName.isEmpty())
 		{
 			werewolfName = "Werewolf";
 		}
 
-		WerewolfDisguise skin = WerewolfDisguiseAPI.getDisguise(werewolfAccountId, werewolfAccountName);
+		WerewolfDisguise skin = WerewolfDisguiseAPI.getDisguise(clanType, plugin.useClans && Werewolf.getClanManager().isAlpha(player.getUniqueId()));
 		
 		if (skin == null)
 		{
@@ -72,16 +58,20 @@ public class SkinManager
 		}
 		
 		plugin.logDebug("Skin: " + skin.toString() + ". SkinName: " + skin.getSkinAccountName() + " - SkinUUID: " + skin.getSkinAccountUUID());
-		
-		if(WerewolfDisguiseAPI.disguise(player, skin, werewolfName))
-		{
-			plugin.logDebug("Disguised player " + player.getName() + "!");
-			Werewolf.getWerewolfManager().howl(player);
-		}
-		else
-		{
-			plugin.logDebug("Could not disguise " + player.getName());
-		}
+
+		// Disguise the player in an async thread
+		String finalWerewolfName = werewolfName;
+		Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+			if(WerewolfDisguiseAPI.disguise(player, skin, finalWerewolfName))
+			{
+				plugin.logDebug("Disguised player " + player.getName() + "!");
+				Werewolf.getWerewolfManager().howl(player);
+			}
+			else
+			{
+				plugin.logDebug("Could not disguise " + player.getName());
+			}
+		});
 
 		this.skins.put(player.getUniqueId(), skin);
 
@@ -95,14 +85,17 @@ public class SkinManager
 			return;
 		}
 
-		if(WerewolfDisguiseAPI.undisguise(player))
-		{
-			plugin.logDebug("Undisguised player " + player.getName() + "!");
-		}
-		else
-		{
-			plugin.logDebug("Could not undisguise " + player.getName());
-		}
+		// Undisguise the player in an async thread
+		Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+			if(WerewolfDisguiseAPI.undisguise(player))
+			{
+				plugin.logDebug("Undisguised player " + player.getName() + "!");
+			}
+			else
+			{
+				plugin.logDebug("Could not undisguise " + player.getName());
+			}
+		});
 
 		this.skins.remove(player.getUniqueId());
 	}

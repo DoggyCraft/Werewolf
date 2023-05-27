@@ -134,23 +134,47 @@ public class ClanManager
 
 	public String getWerewolfAccountForClan(ClanType type)
 	{
-		return this.werewolfAccount.get(type);
+		try {
+			return this.werewolfAccount.get(type);
+		}
+		catch (Exception e) {
+			// Account called Werewolf. No clan has this skin...
+			return "Werewolf";
+		}
 	}
 
 	public UUID getWerewolfAccountIdForClan(ClanType type)
 	{
-		return this.werewolfAccountId.get(type);
+		try {
+			return this.werewolfAccountId.get(type);
+		}
+		catch (Exception e) {
+			// Account called Werewolf. No clan has this skin...
+			return UUID.fromString("c21f069b-137c-4992-8edc-e1a12995ff0f");
+		}
 	}
 
 	
 	public String getWerewolfTextureForClan(ClanType type)
 	{
-		return this.werewolfTextures.get(type);
+		try {
+			return this.werewolfTextures.get(type);
+		}
+		catch (Exception e) {
+			// Account called Werewolf. No clan has this skin...
+			return "ewogICJ0aW1lc3RhbXAiIDogMTY4NTE5OTYxNjI1MCwKICAicHJvZmlsZUlkIiA6ICJjMjFmMDY5YjEzN2M0OTkyOGVkY2UxYTEyOTk1ZmYwZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJXZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9mZjdjNDI4YzcwNDlmYTU1Zjk0MjY5Y2YwNGJkOWRkOTk1NGFmNGMzNzY2NjFlNzZlMzMyZGU3YWM1NmE4NzBlIgogICAgfQogIH0KfQ==";
+		}
 	}
 	
 	public String getWerewolfTextureSignatureForClan(ClanType type)
 	{
-		return this.werewolfTextureSignatures.get(type);
+		try {
+			return this.werewolfTextureSignatures.get(type);
+		}
+		catch (Exception e) {
+			// Account called Werewolf. No clan has this skin...
+			return "WpWm8WKJJvIdndYh9ooydppBYn68IkjEcXWL73l4exYBUX58YNYTRTkqZbH57uTY6DyNTuSOznSeMX45oI/aQ5OaRGspcfmVFsY0hmroFqvLdSGTDvfbBqfGAz05plLsj10DcRK0bNpkTdOPrDFlU+JaLQOIsw5tIEPaZ4mvFe6mPeYTTwwZJN0lAEPJENt1AqZRWNuziBJdPWv9IfsEMX/5HXOBfR0qqltGPsSPyV/OLWAiIplpd64BwM5E5iDXuBZRKnqAQtqqoNBn1PrPvFgzjbez7LbKqMUPwGTxRhhvC4pyXRMVvtHvM8GY017beJGYPB94sEH6y9PRPerhFbFE68eqluG8pT7asxiMdHz192FoKfpGTToKAVKXHYLkeFI4FPjwq33+H86qSS/WRaARqpxet0HQvACmylg33kVHBDSSlh03OGxvDjmLT/pmK+A5zR1ywAey3gOHxxnNw91JYSkEkjQ4zck4/LYYihzcEz60rigBDpR5TL361Wmr3kaWaCNMQO05VTHLLpsU1+dexNlNmDPAIV0BCcY+gxNCSyR+EHWFFxv82rg9QAA4LjB8spqbuyaRKf/1o5s1xD9iEss8cxb4yzfmsEUp9upoU3RfdHCtmlVswtL8rinO5WtTPQpQ6kR7PdnGpxjOzviTNmaKlDt0YSCxk+RI+mA=";
+		}
 	}
 
 	public String getWerewolfAccountForAlpha(ClanType type)
@@ -171,6 +195,38 @@ public class ClanManager
 	public String getWerewolfTextureSignatureForAlpha(ClanType type)
 	{
 		return plugin.alphaSkinSignature;
+	}
+
+	public UUID getWerewolfAccountId(ClanType type, boolean isAlpha)
+	{
+		if (isAlpha) {
+			return getWerewolfAccountIdForAlpha(type);
+		}
+		return getWerewolfAccountIdForClan(type);
+	}
+
+	public String getWerewolfAccount(ClanType type, boolean isAlpha)
+	{
+		if (isAlpha) {
+			return getWerewolfAccountForAlpha(type);
+		}
+		return getWerewolfAccountForClan(type);
+	}
+
+	public String getWerewolfTexture(ClanType type, boolean isAlpha)
+	{
+		if (isAlpha) {
+			return getWerewolfTextureForAlpha(type);
+		}
+		return getWerewolfTextureForClan(type);
+	}
+
+	public String getWerewolfTextureSignature(ClanType type, boolean isAlpha)
+	{
+		if (isAlpha) {
+			return getWerewolfTextureSignatureForAlpha(type);
+		}
+		return getWerewolfTextureSignatureForClan(type);
 	}
 	
 	public void handleMobKill(Player player, ClanType clanType, EntityType mobType)

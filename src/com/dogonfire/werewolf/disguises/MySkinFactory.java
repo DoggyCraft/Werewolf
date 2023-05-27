@@ -1,6 +1,8 @@
 package com.dogonfire.werewolf.disguises;
 
 import java.util.UUID;
+
+import com.dogonfire.werewolf.managers.ClanManager;
 import org.bukkit.entity.Player;
 import com.dogonfire.werewolf.Werewolf;
 
@@ -17,9 +19,9 @@ public class MySkinFactory implements IWerewolfDisguiseFactory
 	{
 //		private SkinProperty disguiseSkinProperty;
 		
-		public MySkinWerewolfDisguise(UUID disguiseAccountId, String disguiseAccountName)
+		public MySkinWerewolfDisguise(ClanManager.ClanType clanType, boolean isAlpha)
 		{
-			super(disguiseAccountId, disguiseAccountName);
+			super(clanType, isAlpha);
 
 			// Load the Disguise skin
 //			disguiseSkinProperty = mySkin.getCache().loadSkinProperty(getSkinAccountUUID());
@@ -161,8 +163,13 @@ public class MySkinFactory implements IWerewolfDisguiseFactory
 	}
 	
 	@Override
-	public WerewolfDisguise newDisguise(UUID disguiseAccountId, String disguiseAccountName)
+	public WerewolfDisguise newDisguise(ClanManager.ClanType clanType, boolean isAlpha)
 	{		
-		return new MySkinWerewolfDisguise(disguiseAccountId, disguiseAccountName);
-	}	
+		return new MySkinWerewolfDisguise(clanType, isAlpha);
+	}
+
+	@Override
+	public boolean isEnabled() {
+		return true;
+	}
 }

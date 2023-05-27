@@ -2,6 +2,8 @@ package com.dogonfire.werewolf.disguises;
 
 import java.util.HashMap;
 import java.util.UUID;
+
+import com.dogonfire.werewolf.managers.ClanManager;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 
@@ -25,37 +27,37 @@ public abstract class WerewolfDisguiseAPI
 		{
 			Werewolf.instance().log("Lib's Disguises found, using it for werewolf disguise!");
 			werewolfDisguiser = new LibsDisguisesFactory();
-			return true;
+			return werewolfDisguiser.isEnabled();
 		}
 		else if (pm.getPlugin("SkinsRestorer") != null && pm.getPlugin("SkinsRestorer").isEnabled())
 		{
 			Werewolf.instance().log("SkinsRestorer found, using it for werewolf disguises!");
 			werewolfDisguiser = new SkinsRestorerFactory();
-			return true;
+			return werewolfDisguiser.isEnabled();
 		}
 		else if (pm.getPlugin("MySkin") != null && pm.getPlugin("MySkin").isEnabled())
 		{
 			Werewolf.instance().log("MySkin found - Werewolf doesn't support MySkin anymore, please use SkinsRestorer or Lib's Disguises instead!");
 //			Werewolf.instance().log("MySkin found, using it for werewolf disguises!");
 //			werewolfDisguiser = new MySkinFactory();
-//			return true;
+//			return werewolfDisguiser.isEnabled();
 		}
 
 		Werewolf.instance().log(ChatColor.RED + "No supported disguise plugin found... Werewolf disguises are disabled!");
 		return false;
 	}
 
-	public static WerewolfDisguise getDisguise(UUID disguiseAccountId, String disguiseAccountName)
+	public static WerewolfDisguise getDisguise(ClanManager.ClanType clanType, boolean isAlpha)
 	{
-		if (disguises.containsKey(disguiseAccountId))
+		if (disguises.containsKey(Werewolf.getClanManager().getWerewolfAccountId(clanType, isAlpha)))
 		{
-			return disguises.get(disguiseAccountId);
+			return disguises.get(Werewolf.getClanManager().getWerewolfAccountId(clanType, isAlpha));
 		}
+
+		Werewolf.instance().logDebug("Creating new werewolf disguise - ClanType: " + clanType.name() + " IsAlpha: " + isAlpha);
 		
-		Werewolf.instance().logDebug("Creating new werewolf disguise - AccountId: " + disguiseAccountId + " AccountName: " + disguiseAccountName);
-		
-		WerewolfDisguise werewolfDisguise = werewolfDisguiser.newDisguise(disguiseAccountId, disguiseAccountName);
-		disguises.put(disguiseAccountId, werewolfDisguise);
+		WerewolfDisguise werewolfDisguise = werewolfDisguiser.newDisguise(clanType, isAlpha);
+		disguises.put(werewolfDisguise.accountId, werewolfDisguise);
 		return werewolfDisguise;
 	}
 
@@ -66,7 +68,7 @@ public abstract class WerewolfDisguiseAPI
 			Werewolf.instance().log("[ERROR] Tried disguising a player without a disguise plugin!");
 			return false;
 		}
-		
+
 		if(!skin.disguise(player, werewolfName))
 		{
 			Werewolf.instance().log("[ERROR] Could not disguise player " + player.getName() + "!");

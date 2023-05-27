@@ -2,6 +2,7 @@ package com.dogonfire.werewolf.disguises;
 
 import java.util.UUID;
 
+import com.dogonfire.werewolf.managers.ClanManager;
 import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.Werewolf;
@@ -13,9 +14,9 @@ public class LibsDisguisesFactory implements IWerewolfDisguiseFactory
 {
 	public class LibsDisguisesWerewolfDisguise extends WerewolfDisguise
 	{
-		public LibsDisguisesWerewolfDisguise(UUID werewolfDisguiseAccountId, String werewolfDisguiseAccountName)
+		public LibsDisguisesWerewolfDisguise(ClanManager.ClanType clanType, boolean isAlpha)
 		{
-			super(werewolfDisguiseAccountId, werewolfDisguiseAccountName);
+			super(clanType, isAlpha);
 		}		
 				
 		public boolean disguise(Player player, String werewolfName)
@@ -131,8 +132,13 @@ public class LibsDisguisesFactory implements IWerewolfDisguiseFactory
 	}*/
 
 	@Override
-	public LibsDisguisesWerewolfDisguise newDisguise(UUID disguiseAccountId, String disguiseAccountName)
+	public LibsDisguisesWerewolfDisguise newDisguise(ClanManager.ClanType clanType, boolean isAlpha)
 	{
-		return new LibsDisguisesWerewolfDisguise(disguiseAccountId, disguiseAccountName);
+		return new LibsDisguisesWerewolfDisguise(clanType, isAlpha);
+	}
+
+	@Override
+	public boolean isEnabled() {
+		return true;
 	}
 }

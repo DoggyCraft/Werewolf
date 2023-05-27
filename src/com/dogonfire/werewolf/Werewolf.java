@@ -314,7 +314,7 @@ public class Werewolf extends JavaPlugin
 			}
 		}
 
-		saveSettings();
+		saveAllSettings();
 		reloadSettings();
 
 		pluginEnabled = false;
@@ -375,18 +375,7 @@ public class Werewolf extends JavaPlugin
 		chatListener = new ChatListener(this);
 		this.disguisesEnabled = true;
 		skinManager = new SkinManager(this);
-		
-		if(!WerewolfDisguiseAPI.init())
-		{
-			this.disguisesEnabled = false;
-		}
-		
-		// Pre-cache some known disguises
-		WerewolfDisguiseAPI.getDisguise(UUID.fromString(potionAccountUUID), potionAccountName);
-		WerewolfDisguiseAPI.getDisguise(UUID.fromString(wildBiteAccountUUID), wildBiteAccountName);
-		WerewolfDisguiseAPI.getDisguise(UUID.fromString(werewolfBiteAccountUUID), werewolfBiteAccountName);
-		WerewolfDisguiseAPI.getDisguise(UUID.fromString(alphaAccountUUID), alphaAccountName);
-				
+
 		// If ! prevent armor
 		if (this.dropArmorOnTransform)
 		{
@@ -464,6 +453,18 @@ public class Werewolf extends JavaPlugin
 		languageManager.load();
 
 		itemManager.setupRecipes();
+
+		// Needs to init after ClanManager has been loaded
+		if(!WerewolfDisguiseAPI.init())
+		{
+			this.disguisesEnabled = false;
+		}
+
+		// Pre-cache some known disguises
+		for (ClanManager.ClanType clanType : ClanManager.ClanType.values()) {
+			WerewolfDisguiseAPI.getDisguise(clanType, false);  // Not alpha
+			WerewolfDisguiseAPI.getDisguise(clanType, true);  // Alpha
+		}
 
 		if (this.vaultEnabled)
 		{
@@ -644,6 +645,14 @@ public class Werewolf extends JavaPlugin
 		{
 			plugin.getLogger().info("[Debug] " + message);
 		}
+	}
+
+	public void saveAllSettings()
+	{
+		saveSettings();
+		getWerewolfManager().save();
+		getClanManager().save();
+		getLanguageManager().save();
 	}
 
 	public void reloadSettings()

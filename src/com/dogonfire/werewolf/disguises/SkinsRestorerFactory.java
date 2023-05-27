@@ -7,16 +7,24 @@ import net.skinsrestorer.api.SkinsRestorerAPI;
 import net.skinsrestorer.api.exception.SkinRequestException;
 import org.bukkit.entity.Player;
 
-import java.util.UUID;
-
 public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
 {
     private SkinsRestorerAPI skinsRestorerAPI;
+    private boolean enabled = true;
 
     public class SkinsRestorerWerewolfDisguise extends WerewolfDisguise
     {
-        public SkinsRestorerWerewolfDisguise(UUID accountId, String accountName) {
-            super(accountId, accountName);
+        String disguiseName;
+
+        public SkinsRestorerWerewolfDisguise(ClanManager.ClanType clanType, boolean isAlpha) {
+            super(clanType, isAlpha);
+
+            if (isAlpha) {
+                this.disguiseName = clanType.name() + "_Alpha";
+            }
+            else {
+                this.disguiseName = clanType.name();
+            }
         }
 
         @Override
@@ -37,15 +45,8 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
                 skinsRestorerAPI.setSkinData(player.getName() + "_cache", skinsRestorerAPI.getSkinData(player.getName()));
 
                 // #setSkin() for player skin
-                if (Werewolf.getClanManager().isAlpha(player.getUniqueId())) {
-                    Werewolf.instance().logDebug("[SkinsRestorer] Disguising " + player.getName() + " using the Alpha skin.");
-                    skinsRestorerAPI.setSkin(player.getName(), "Alpha");
-                }
-                else {
-                    String clanName = Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId()).name();
-                    Werewolf.instance().logDebug("[SkinsRestorer] Disguising " + player.getName() + " using the " + clanName + " skin.");
-                    skinsRestorerAPI.setSkin(player.getName(), clanName);
-                }
+                Werewolf.instance().logDebug("[SkinsRestorer] Disguising " + player.getName() + " using the " + this.disguiseName + " disguise.");
+                skinsRestorerAPI.setSkin(player.getName(), this.disguiseName);
 
                 // Force skin refresh for player
                 skinsRestorerAPI.applySkin(new PlayerWrapper(player));
@@ -90,25 +91,39 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
 
     public SkinsRestorerFactory()
     {
+        if(!Werewolf.instance().getServer().getPluginManager().getPlugin("SkinsRestorer").isEnabled())
+        {
+            Werewolf.instance().log("SkinsRestorer is not enabled!");
+            this.enabled = false;
+            return;
+        }
+
         this.skinsRestorerAPI = SkinsRestorerAPI.getApi();
 
         try
         {
-            skinsRestorerAPI.setSkinData("Alpha", skinsRestorerAPI.createPlatformProperty("textures", Werewolf.instance().alphaSkinValue, Werewolf.instance().alphaSkinSignature));
-            skinsRestorerAPI.setSkinData(ClanManager.ClanType.Potion.name(), skinsRestorerAPI.createPlatformProperty("textures", Werewolf.instance().potionSkinValue, Werewolf.instance().potionSkinSignature));
-            skinsRestorerAPI.setSkinData(ClanManager.ClanType.WerewolfBite.name(), skinsRestorerAPI.createPlatformProperty("textures", Werewolf.instance().werewolfBiteSkinValue, Werewolf.instance().werewolfBiteSkinSignature));
-            skinsRestorerAPI.setSkinData(ClanManager.ClanType.WildBite.name(), skinsRestorerAPI.createPlatformProperty("textures", Werewolf.instance().wildBiteSkinValue, Werewolf.instance().wildBiteSkinSignature));
+            ClanManager clanManager = Werewolf.getClanManager();
+            for (ClanManager.ClanType clanType : ClanManager.ClanType.values()) {
+                skinsRestorerAPI.setSkinData(clanType.name() + "_Alpha", skinsRestorerAPI.createPlatformProperty("textures", clanManager.getWerewolfTextureForAlpha(clanType), clanManager.getWerewolfTextureSignatureForAlpha(clanType)));
+                skinsRestorerAPI.setSkinData(clanType.name(), skinsRestorerAPI.createPlatformProperty("textures", clanManager.getWerewolfTextureForClan(clanType), clanManager.getWerewolfTextureSignatureForClan(clanType)));
+            }
         }
         catch (NullPointerException e)
         {
-            Werewolf.instance().log("[ERROR] Couldn't save Werewolf skin data to SkinsRestorer's cache... Werewolves are disabled!");
-            Werewolf.instance().onDisable();
+            Werewolf.instance().log("[ERROR] Couldn't save Werewolf skin data to SkinsRestorer's cache... Werewolf disguises are disabled!");
+            this.enabled = false;
+            e.printStackTrace();
         }
     }
 
     @Override
-    public WerewolfDisguise newDisguise(UUID disguiseAccountId, String disguiseAccountName)
+    public WerewolfDisguise newDisguise(ClanManager.ClanType clanType, boolean isAlpha)
     {
-        return new SkinsRestorerWerewolfDisguise(disguiseAccountId, disguiseAccountName);
+        return new SkinsRestorerWerewolfDisguise(clanType, isAlpha);
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.enabled;
     }
 }

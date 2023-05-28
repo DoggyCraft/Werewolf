@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
 {
     private SkinsRestorerAPI skinsRestorerAPI;
+    private long lastSkinUpdateTime	= 0L;
     private boolean enabled = true;
 
     public class SkinsRestorerWerewolfDisguise extends WerewolfDisguise
@@ -43,6 +44,12 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
             {
                 // Cache the old, current skin
                 skinsRestorerAPI.setSkinData(player.getName() + "_cache", skinsRestorerAPI.getSkinData(player.getName()));
+
+                if (System.currentTimeMillis() - lastSkinUpdateTime >= 180000L)
+                {
+                    Werewolf.instance().logDebug("[SkinsRestorer] Updating skin data...");
+                    updateSkinData();
+                }
 
                 // #setSkin() for player skin
                 Werewolf.instance().logDebug("[SkinsRestorer] Disguising " + player.getName() + " using the " + this.disguiseName + " disguise.");
@@ -89,17 +96,8 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
         }
     }
 
-    public SkinsRestorerFactory()
-    {
-        if(!Werewolf.instance().getServer().getPluginManager().getPlugin("SkinsRestorer").isEnabled())
-        {
-            Werewolf.instance().log("SkinsRestorer is not enabled!");
-            this.enabled = false;
-            return;
-        }
-
-        this.skinsRestorerAPI = SkinsRestorerAPI.getApi();
-
+    private boolean updateSkinData() {
+        this.lastSkinUpdateTime = System.currentTimeMillis();
         try
         {
             ClanManager clanManager = Werewolf.getClanManager();
@@ -110,10 +108,24 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
         }
         catch (NullPointerException e)
         {
-            Werewolf.instance().log("[ERROR] Couldn't save Werewolf skin data to SkinsRestorer's cache... Werewolf disguises are disabled!");
-            this.enabled = false;
+            Werewolf.instance().log("[ERROR] Couldn't save Werewolf skin data to SkinsRestorer's cache...");
             e.printStackTrace();
+            return false;
         }
+        return true;
+    }
+
+    public SkinsRestorerFactory()
+    {
+        if(!Werewolf.instance().getServer().getPluginManager().getPlugin("SkinsRestorer").isEnabled())
+        {
+            Werewolf.instance().log("SkinsRestorer is not enabled!");
+            this.enabled = false;
+            return;
+        }
+
+        this.skinsRestorerAPI = SkinsRestorerAPI.getApi();
+        this.enabled = updateSkinData();
     }
 
     @Override

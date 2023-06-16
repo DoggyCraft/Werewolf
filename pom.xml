@@ -19,7 +19,7 @@
         <maven.compiler.source>${jdk.version}</maven.compiler.source>
         <maven.compiler.target>${jdk.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <bukkitAPIVersion>1.19.4-R0.1-SNAPSHOT</bukkitAPIVersion>
+        <bukkitAPIVersion>1.20.1-R0.1-SNAPSHOT</bukkitAPIVersion>
         <sonar.host.url>http://localhost:9000/</sonar.host.url>
         <!--suppress UnresolvedMavenProperty -->
         <sonar.dependencyCheck.reportPath>${dependency.check.report.dir}/dependency-check-report.xml
@@ -103,7 +103,7 @@
         <dependency>
             <groupId>LibsDisguises</groupId>
             <artifactId>LibsDisguises</artifactId>
-            <version>10.0.34</version>
+            <version>10.0.35</version>
             <scope>provided</scope>
         </dependency>
         <!-- SkinsRestorer API -->

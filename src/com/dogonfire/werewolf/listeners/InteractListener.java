@@ -189,7 +189,7 @@ public class InteractListener implements Listener
 		{
 			player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkInfectionFailure, ChatColor.LIGHT_PURPLE));
 		}
-		else if (this.plugin.isFullMoonInWorld(player.getWorld()))
+		else if (Werewolf.getMoonManager().isTransformationNight(player.getWorld()))
 		{
 			player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkInfectionSuccess, ChatColor.LIGHT_PURPLE));
 			plugin.log(player.getName() + " contracted the werewolf infection by drinking a potion!");

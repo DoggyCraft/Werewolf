@@ -59,7 +59,7 @@ YouAreBeingCalled:
 NewClanAlpha:
 - $PlayerName is now the alpha of your clan!  
 CannotTransformSoSoon:
-- You cannot transform again so soon. Gather your strength and try again later!  
+- You cannot transform again so soon. Gather your strength and try again in $Amount seconds!
 WerewolfCommandControlledTransformation:
 -   You can control your transformation
 WerewolfCommandGoldImmunity:
@@ -310,3 +310,31 @@ InfoCommandHowl:
 - Use $Type to howl!
 InfoCommandGrowl:
 - Use $Type to growl! 
+WerewolfCommandMoonPhase:
+- The current moon phase is $Type
+WerewolfCommandIntentOn:
+-   You intend to infect your victims ($Type to stop)
+WerewolfCommandIntentOff:
+-   You can choose to infect your victims with $Type
+CannotControlTransformationTonight:
+- The moon controls your transformation tonight!
+TransformationTimeLimit:
+- You can hold your wolf form for $Amount seconds
+TransformationTimeExpired:
+- You can no longer hold on to your wolf form...
+FullMoonLevelGained:
+- The full moon strengthens you. You are now a level $Amount Werewolf!
+AbilityOnCooldown:
+- You must wait $Amount seconds before you can do that again
+IntentEnabled:
+- You now intend to pass on your curse. Your bites are far more likely to infect!
+IntentDisabled:
+- You no longer intend to pass on your curse
+InvalidMoonPhase:
+- Unknown moon phase. Use one of $Type
+MoonPhaseSet:
+- The moon phase in $PlayerName is now $Type
+HelpIntent:
+- $Type - Toggle your intent to infect the players you bite
+HelpSetPhase:
+- $Type - Set the moon phase of a world

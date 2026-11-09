@@ -267,11 +267,6 @@ public class DisguiseTask implements Runnable
 			Werewolf.getSkinManager().setWerewolfSkin(this.player, this.player.getPlayerListName());
 		}
 
-		if (this.plugin.isFullMoonInWorld(this.player.getWorld()) && !Werewolf.getWerewolfManager().hasRecentTransform(this.player.getUniqueId()))
-		{
-			Werewolf.getWerewolfManager().incrementNumberOfFullMoonTransformations(this.player.getUniqueId());
-		}
-
 		Werewolf.getWerewolfManager().setLastTransformation(this.player.getUniqueId());
 
 		// if (this.plugin.healthBarEnabled)

@@ -4,20 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Werewolf is a Spigot/Bukkit Minecraft server plugin (`com.dogonfire.werewolf`), built with Maven against `paper-api` 26.3 (runtime minimum 26.1, enforced by `api-version` in `plugin.yml` and the Java 25 bytecode). It must still run on Spigot: the only Paper-only API calls live in `disguises/PaperSkinFactory`, which is only loaded after a runtime check. Source targets Java 25 (`maven.compiler.release` in `pom.xml`), which 26.x servers require anyway; CI builds on JDK 25.
+Werewolf is a Spigot/Bukkit Minecraft server plugin (`com.dogonfire.werewolf`), built with Maven against `paper-api` 26.3 (runtime minimum 26.1, enforced by `api-version` in `plugin.yml` and the Java 25 bytecode). It must still run on Spigot: the only Paper-only API calls live in `disguises/PaperSkinFactory`, which is only loaded after a runtime check. Source targets Java 25 (`maven.compiler.release` in `pom.xml`), which 26.x servers require anyway; CI (`.github/workflows/build.yml`) builds on JDK 25 for every push and PR; pushing a tag equal to the pom version (e.g. `0.12.0`) publishes a GitHub release with the jar.
 
 ## Commands
 
 ```bash
 nix develop                # devshell with JDK 25 + Maven (flake.nix); prefix commands with `nix develop -c` otherwise
 mvn clean package          # default goal; produces target/Werewolf-<version>.jar
-mvn -B test                # what GitHub Actions runs on every push (compiles only — there are no unit tests)
+mvn -B clean package       # what CI runs (there are no unit tests; this only checks it compiles)
 ```
 
 - There is no test suite. You can only check that it compiles; to check behavior, drop the jar into a Spigot server's `plugins/` folder.
 - Non-standard layout: `sourceDirectory` is `src/` (packages live directly under `src/com/...`), and resources come from `src/resources/` with Maven filtering on (`plugin.yml` gets `${project.version}`).
 - All plugin dependencies (Vault, LibsDisguises, SkinsRestorer, WorldGuard, ProtocolLib, PlaceholderAPI, Vampire) are `provided` and resolved from the third-party repos listed in `pom.xml`. If one of those repos is unreachable, the build fails.
-- Releases bump `<version>` in `pom.xml` (e.g. "Bump to v0.11.0"). Work goes to the `dev` branch and is merged into `master` through a PR.
+- Releases bump `<version>` in `pom.xml` (e.g. "Bump to v0.11.0"), then push a tag with the same version (e.g. `0.11.0`); CI attaches the jar to a GitHub release. Work goes to the `dev` branch and is merged into `master` through a PR.
 
 ## Architecture
 

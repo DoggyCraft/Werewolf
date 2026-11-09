@@ -1,0 +1,64 @@
+name: Build
+
+on:
+  push:
+    branches: ['**']
+    tags: ['*.*.*']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Build
+        run: mvn -B clean package
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Werewolf-${{ github.sha }}
+          path: target/Werewolf-*.jar
+          if-no-files-found: error
+
+  # Pushing a tag like 0.12.0 publishes a GitHub release with the jar attached.
+  # The tag has to match <version> in pom.xml.
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Check tag matches pom version
+        run: |
+          version=$(mvn -B -q help:evaluate -Dexpression=project.version -DforceStdout)
+          if [ "$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match pom.xml version $version"
+            exit 1
+          fi
+
+      - name: Build
+        run: mvn -B clean package
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" target/Werewolf-*.jar --title "v$GITHUB_REF_NAME" --generate-notes

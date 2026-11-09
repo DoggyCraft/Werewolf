@@ -22,6 +22,7 @@ import com.dogonfire.werewolf.managers.ClanManager;
 import com.dogonfire.werewolf.managers.DamageManager;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
 import com.dogonfire.werewolf.disguises.IWerewolfDisguiseFactory.WerewolfDisguise;
 
 public class DamageListener implements Listener
@@ -172,10 +173,7 @@ public class DamageListener implements Listener
 							if (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.infectother") && Werewolf.getPermissionsManager().hasPermission(victim, "werewolf.becomeinfected") && !Werewolf.getWerewolfManager().isWerewolf(victim)) {
 								this.plugin.logDebug(player.getName() + " is doing risk damage to " + victim.getName());
 
-								if (Math.random() < this.plugin.werewolfInfectionRisk) {
-									ClanManager.ClanType clanType = Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId());
-
-									Werewolf.getWerewolfManager().makeWerewolf(victim, false, clanType);
+								if (Math.random() < this.plugin.werewolfInfectionRisk && Werewolf.getWerewolfManager().makeWerewolf(victim, false, Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId()), WerewolfInfectionEvent.Source.WEREWOLF_BITE)) {
 
 									Werewolf.getLanguageManager().setPlayerName(player.getName());
 									victim.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteVictim, ChatColor.LIGHT_PURPLE));
@@ -206,11 +204,12 @@ public class DamageListener implements Listener
 					if (!tameable.isTamed())
 					{
 						Random random = new Random();
-						Werewolf.getWerewolfManager().makeWerewolf(player, false, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)]);
+						if (Werewolf.getWerewolfManager().makeWerewolf(player, false, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)], WerewolfInfectionEvent.Source.WILD_WOLF_BITE))
+						{
+							player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteVictim, ChatColor.LIGHT_PURPLE));
 
-						player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteVictim, ChatColor.LIGHT_PURPLE));
-
-						plugin.log(player.getName() + " contracted the werewolf infection from a wild wolf!");
+							plugin.log(player.getName() + " contracted the werewolf infection from a wild wolf!");
+						}
 					}
 				}
 			}

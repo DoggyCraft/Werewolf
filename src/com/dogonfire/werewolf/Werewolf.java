@@ -4,6 +4,7 @@ import com.clanjhoo.vampire.VampireAPI;
 import com.dogonfire.werewolf.commands.Commands;
 import com.dogonfire.werewolf.tasks.CompassTrackerTask;
 import com.dogonfire.werewolf.disguises.WerewolfDisguiseAPI;
+import com.dogonfire.werewolf.events.WerewolfTransformEvent;
 import com.dogonfire.werewolf.listeners.ChatListener;
 import com.dogonfire.werewolf.listeners.DamageListener;
 import com.dogonfire.werewolf.listeners.InteractListener;
@@ -289,7 +290,7 @@ public class Werewolf extends JavaPlugin
 		{
 			if (getWerewolfManager().isWerewolf(player) && getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 			{
-				untransform(player);
+				untransform(player, WerewolfTransformEvent.Reason.FORCED);
 			}
 		}
 
@@ -543,7 +544,7 @@ public class Werewolf extends JavaPlugin
 		return nightEnd;
 	}
 
-	public void transform(Player player)
+	public void transform(Player player, WerewolfTransformEvent.Reason reason)
 	{
 		if (!isWerewolvesAllowedInWorld(player))
 		{
@@ -555,7 +556,7 @@ public class Werewolf extends JavaPlugin
 			player.getLocation().getWorld().playEffect(player.getLocation(), Effect.SMOKE, 100);
 			player.getLocation().getWorld().playEffect(player.getLocation().add(new Vector(0, 1, 0)), Effect.SMOKE, 100);
 			player.getLocation().getWorld().playEffect(player.getLocation().add(new Vector(0, 2, 0)), Effect.SMOKE, 100);
-			werewolfManager.setWerewolfSkin(player);
+			werewolfManager.setWerewolfSkin(player, reason);
 		}
 		else
 		{
@@ -563,13 +564,13 @@ public class Werewolf extends JavaPlugin
 		}
 	}
 
-	public void untransform(Player player)
+	public void untransform(Player player, WerewolfTransformEvent.Reason reason)
 	{
 		player.getLocation().getWorld().playEffect(player.getLocation(), Effect.SMOKE, 100);
 		player.getLocation().getWorld().playEffect(player.getLocation().add(new Vector(0, 1, 0)), Effect.SMOKE, 100);
 		player.getLocation().getWorld().playEffect(player.getLocation().add(new Vector(0, 2, 0)), Effect.SMOKE, 100);
 
-		werewolfManager.unsetWerewolfSkin(player.getUniqueId(), true);
+		werewolfManager.unsetWerewolfSkin(player.getUniqueId(), true, reason);
 	}
 
 	/*public void setPositionUpdater(Player player, WerewolfDisguise skin)

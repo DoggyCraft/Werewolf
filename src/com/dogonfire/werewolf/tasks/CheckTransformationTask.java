@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.events.WerewolfTransformEvent;
 
 
 public class CheckTransformationTask implements Runnable
@@ -29,11 +30,11 @@ public class CheckTransformationTask implements Runnable
 		
 		if (Werewolf.getWerewolfManager().canTransform(player))
 		{
-			this.plugin.transform(player);
+			this.plugin.transform(player, WerewolfTransformEvent.Reason.MOON);
 		}
 		else if (Werewolf.getWerewolfManager().canUntransform(player))
 		{
-			this.plugin.untransform(player);
+			this.plugin.untransform(player, WerewolfTransformEvent.Reason.MOON);
 		}
 	}
 }

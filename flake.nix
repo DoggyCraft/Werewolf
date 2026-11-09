@@ -18,7 +18,7 @@
       devShells = forAllSystems (
         pkgs:
         let
-          # Matches the JDK used by CI (.github/workflows/maven-test.yml)
+          # Matches the JDK used by CI (.github/workflows/build.yml)
           jdk = pkgs.jdk25;
         in
         {

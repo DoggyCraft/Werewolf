@@ -19,7 +19,7 @@
         pkgs:
         let
           # Matches the JDK used by CI (.github/workflows/maven-test.yml)
-          jdk = pkgs.jdk17;
+          jdk = pkgs.jdk25;
         in
         {
           default = pkgs.mkShell {

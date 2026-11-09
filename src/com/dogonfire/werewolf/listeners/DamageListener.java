@@ -258,7 +258,7 @@ public class DamageListener implements Listener
 				case DONKEY:
 				case MULE:
 				case COW:
-				case MUSHROOM_COW:
+				case MOOSHROOM:
 				case ZOGLIN:
 				case PIGLIN_BRUTE:
 				case POLAR_BEAR:
@@ -317,7 +317,7 @@ public class DamageListener implements Listener
 				case ENDERMITE:
 				case SKELETON:
 				case WITHER_SKELETON:
-				case SNOWMAN:
+				case SNOW_GOLEM:
 				case MAGMA_CUBE:
 				case SILVERFISH:
 				case VEX:
@@ -325,14 +325,14 @@ public class DamageListener implements Listener
 					break;
 			}
 
-			if (health > 0 && killer.getHealth() < killer.getAttribute(Attribute.GENERIC_MAX_HEALTH).getDefaultValue())
+			if (health > 0 && killer.getHealth() < killer.getAttribute(Attribute.MAX_HEALTH).getDefaultValue())
 			{
 				Werewolf.getLanguageManager().setAmount("" + health);
 				killer.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.KilledMob, ChatColor.LIGHT_PURPLE));
 
-				if (killer.getHealth() + health > killer.getAttribute(Attribute.GENERIC_MAX_HEALTH).getDefaultValue())
+				if (killer.getHealth() + health > killer.getAttribute(Attribute.MAX_HEALTH).getDefaultValue())
 				{
-					killer.setHealth(killer.getAttribute(Attribute.GENERIC_MAX_HEALTH).getDefaultValue());
+					killer.setHealth(killer.getAttribute(Attribute.MAX_HEALTH).getDefaultValue());
 				}
 				else
 				{

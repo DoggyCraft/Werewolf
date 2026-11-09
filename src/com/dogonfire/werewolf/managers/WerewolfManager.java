@@ -327,7 +327,7 @@ public class WerewolfManager
 
 		if (player != null)
 		{
-			Werewolf.pu.addPotionEffectNoGraphic(player, new PotionEffect(PotionEffectType.CONFUSION, 100, 1));
+			Werewolf.pu.addPotionEffectNoGraphic(player, new PotionEffect(PotionEffectType.NAUSEA, 100, 1));
 		}
 
 		this.plugin.undisguiseWerewolf(playerId, true, true);
@@ -884,7 +884,7 @@ public class WerewolfManager
 
 	public void howl(Player player)
 	{
-		player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WOLF_HOWL, 10.0F, 1.0F);
+		player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WOLF_BIG_AMBIENT, 10.0F, 1.0F);
 	}
 
 	public void growl(Player player)

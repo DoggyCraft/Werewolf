@@ -11,8 +11,7 @@ import java.util.UUID;
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.managers.ClanManager;
 import com.dogonfire.werewolf.managers.LanguageManager;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.Validate;
+import java.util.Objects;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -340,11 +339,11 @@ public class Commands implements TabExecutor
 
 						String.format("%2d", new Object[] { Integer.valueOf(n) }) + " - " +
 
-						memberName + ChatColor.GOLD + StringUtils.rightPad(new StringBuilder().append("      level ").append(numberOfTransformations).toString(), 2));
+						memberName + ChatColor.GOLD + new StringBuilder().append("      level ").append(numberOfTransformations).toString());
 			}
 			else
 			{
-				sender.sendMessage(ChatColor.YELLOW + String.format("%2d", new Object[] { Integer.valueOf(n) }) + ChatColor.AQUA + " - " + memberName + ChatColor.GOLD + StringUtils.rightPad(new StringBuilder().append("      level ").append(numberOfTransformations).toString(), 2));
+				sender.sendMessage(ChatColor.YELLOW + String.format("%2d", new Object[] { Integer.valueOf(n) }) + ChatColor.AQUA + " - " + memberName + ChatColor.GOLD + new StringBuilder().append("      level ").append(numberOfTransformations).toString());
 			}
 			n++;
 		}
@@ -362,7 +361,7 @@ public class Commands implements TabExecutor
 				if (memberName.equals(sender.getName()))
 				{
 					playerShown = true;
-					sender.sendMessage("" + ChatColor.GOLD + n + " - " + memberName + StringUtils.rightPad(new StringBuilder().append("      level ").append(numberOfTransformations).toString(), 2));
+					sender.sendMessage("" + ChatColor.GOLD + n + " - " + memberName + new StringBuilder().append("      level ").append(numberOfTransformations).toString());
 				}
 				n++;
 			}
@@ -426,7 +425,7 @@ public class Commands implements TabExecutor
 			int n = 1;
 			for (Hunter hunter : hunters)
 			{
-				String message = "" + n + ChatColor.AQUA + " - " + StringUtils.rightPad(hunter.name, 15) + StringUtils.rightPad(new StringBuilder().append(hunter.kills).append(" Kills").toString(), 3);
+				String message = "" + n + ChatColor.AQUA + " - " + String.format("%-15s", hunter.name) + new StringBuilder().append(hunter.kills).append(" Kills").toString();
 
 				this.plugin.sendInfo(player, ChatColor.YELLOW + message);
 				// plugin.sendInfo(player.getUniqueId(),
@@ -1130,7 +1129,7 @@ public class Commands implements TabExecutor
 				{
 					LivingEntity livingEntity = (LivingEntity) entity;
 
-					livingEntity.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 200, 3));
+					livingEntity.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 200, 3));
 				}
 			}
 		}
@@ -1561,9 +1560,9 @@ public class Commands implements TabExecutor
 
 	public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args)
 	{
-		Validate.notNull(sender, "Sender cannot be null");
-		Validate.notNull(args, "Arguments cannot be null");
-		Validate.notNull(alias, "Alias cannot be null");
+		Objects.requireNonNull(sender, "Sender cannot be null");
+		Objects.requireNonNull(args, "Arguments cannot be null");
+		Objects.requireNonNull(alias, "Alias cannot be null");
 
 		List<String> result = new ArrayList<String>();
 

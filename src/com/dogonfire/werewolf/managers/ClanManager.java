@@ -207,7 +207,7 @@ public class ClanManager
 			case DONKEY:
 			case MULE:
 			case COW:
-			case MUSHROOM_COW:
+			case MOOSHROOM:
 			case ZOMBIE:
 			case ZOMBIE_VILLAGER:
 			case LLAMA:
@@ -260,7 +260,7 @@ public class ClanManager
 				break;
 			case ALLAY:
 			case ENDERMITE:
-			case SNOWMAN:
+			case SNOW_GOLEM:
 			case MAGMA_CUBE:
 			case SILVERFISH:
 			default:

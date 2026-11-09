@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.config.Settings;
 import com.dogonfire.werewolf.managers.ClanManager.ClanType;
 
 
@@ -56,27 +57,23 @@ public interface IWerewolfDisguiseFactory
 			}
 			else
 			{
-				Werewolf plugin = Werewolf.instance();
-				if (accountName.equals(plugin.alphaAccountName))
+				// Account called Werewolf unless it is one of the configured skin accounts. No clan has this skin...
+				this.accountId = UUID.fromString("c21f069b-137c-4992-8edc-e1a12995ff0f");
+				Settings.Clans clans = Werewolf.instance().getSettings().clans();
+				if (accountName.equals(clans.alphaSkin().accountName()))
 				{
-					this.accountId = UUID.fromString(plugin.alphaAccountUUID);
-				}
-				else if (accountName.equals(plugin.potionAccountName))
-				{
-					this.accountId = UUID.fromString(plugin.potionAccountUUID);
-				}
-				else if (accountName.equals(plugin.werewolfBiteAccountName))
-				{
-					this.accountId = UUID.fromString(plugin.werewolfBiteAccountUUID);
-				}
-				else if (accountName.equals(plugin.wildBiteAccountName))
-				{
-					this.accountId = UUID.fromString(plugin.wildBiteAccountUUID);
+					this.accountId = clans.alphaSkin().accountId();
 				}
 				else
 				{
-					// Account called Werewolf. No clan has this skin...
-					this.accountId = UUID.fromString("c21f069b-137c-4992-8edc-e1a12995ff0f");
+					for (ClanType clan : ClanType.values())
+					{
+						if (accountName.equals(clans.skins().get(clan).accountName()))
+						{
+							this.accountId = clans.skins().get(clan).accountId();
+							break;
+						}
+					}
 				}
 			}
 
@@ -123,7 +120,7 @@ public interface IWerewolfDisguiseFactory
 				return Werewolf.getClanManager().getWerewolfTextureForAlpha(Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId()));
 			}
 
-			if (Werewolf.getWerewolfManager().isWerewolf(player.getUniqueId()) && Werewolf.instance().useClans)
+			if (Werewolf.getWerewolfManager().isWerewolf(player.getUniqueId()) && Werewolf.instance().getSettings().clans().enabled())
 			{
 				return Werewolf.getClanManager().getWerewolfTextureForClan(Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId()));
 			}
@@ -137,7 +134,7 @@ public interface IWerewolfDisguiseFactory
 				return Werewolf.getClanManager().getWerewolfTextureSignatureForAlpha(Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId()));
 			}
 
-			if (Werewolf.getWerewolfManager().isWerewolf(player.getUniqueId()) && Werewolf.instance().useClans)
+			if (Werewolf.getWerewolfManager().isWerewolf(player.getUniqueId()) && Werewolf.instance().getSettings().clans().enabled())
 			{
 				return Werewolf.getClanManager().getWerewolfTextureSignatureForClan(Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId()));
 			}

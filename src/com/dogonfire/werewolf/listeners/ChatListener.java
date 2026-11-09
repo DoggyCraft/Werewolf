@@ -1,5 +1,6 @@
 package com.dogonfire.werewolf.listeners;
 
+import java.util.List;
 import java.util.Random;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -10,6 +11,9 @@ import com.dogonfire.werewolf.Werewolf;
 
 public class ChatListener implements Listener
 {
+	private static final List<String>	WOLF_MESSAGES	= List.of("*Grunt*", "*Grunt* *Grrrr*", "*Grunt* *Grunt*", "*Growl*", "*Grrroowl Grunt*", "*Grrrrr*", "*Rrrrrr*", "*Groooowl*",
+			"*Grrrrr* *Grrr*", "*Hoooowl*", "*Rrraagh*", "*Grrawl*", "*Grrrrawl* *Growls*", "*HOOOOOWLLLL!*", "*Wimper*", "*Awooooo*");
+
 	private Werewolf	plugin	= null;
 	private Random		random	= new Random();
 
@@ -39,7 +43,7 @@ public class ChatListener implements Listener
 	@EventHandler
 	public void onPlayerChat(AsyncPlayerChatEvent e)
 	{
-		if (!Werewolf.pluginEnabled || !this.plugin.wolfChat)
+		if (!Werewolf.pluginEnabled || !this.plugin.getSettings().general().wolfChat())
 		{
 			return;
 		}
@@ -51,7 +55,7 @@ public class ChatListener implements Listener
 
 			Random r = new Random();
 
-			String alternativeMessage = (String) this.plugin.wolfMessage.toArray()[r.nextInt(this.plugin.wolfMessage.size())];
+			String alternativeMessage = WOLF_MESSAGES.get(r.nextInt(WOLF_MESSAGES.size()));
 
 			String message = getWerewolfLanguage(e.getMessage());
 			
@@ -75,7 +79,7 @@ public class ChatListener implements Listener
 				}
 				else
 				{
-					messageToSend = String.format(e.getFormat(), plugin.getChatPrefix(), alternativeMessage);
+					messageToSend = String.format(e.getFormat(), plugin.getSettings().general().chatPrefix(), alternativeMessage);
 					this.plugin.logDebug("Recipent for message is Human (non-werewolf): " + receiver.getName() + " - Message: " + messageToSend);
 				}
 				receiver.sendMessage(messageToSend);

@@ -54,15 +54,15 @@ public class WerewolfRestrictionListener implements Listener
 		String command = event.getMessage();
 		LanguageManager.LANGUAGESTRING message = null;
 
-		if (isBlocked(command, this.plugin.blockedCommandsAll))
+		if (isBlocked(command, this.plugin.getSettings().blockedCommands().all()))
 		{
 			message = LanguageManager.LANGUAGESTRING.BlockedCommand;
 		}
-		else if (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()) && isBlocked(command, this.plugin.blockedCommandsWolfForm))
+		else if (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()) && isBlocked(command, this.plugin.getSettings().blockedCommands().wolfForm()))
 		{
 			message = LanguageManager.LANGUAGESTRING.BlockedCommandWolfForm;
 		}
-		else if (Werewolf.getClanManager().isAlpha(player.getUniqueId()) && isBlocked(command, this.plugin.blockedCommandsAlpha))
+		else if (Werewolf.getClanManager().isAlpha(player.getUniqueId()) && isBlocked(command, this.plugin.getSettings().blockedCommands().alpha()))
 		{
 			message = LanguageManager.LANGUAGESTRING.BlockedCommandAlpha;
 		}
@@ -148,12 +148,12 @@ public class WerewolfRestrictionListener implements Listener
 
 	private boolean isOnDiet(Player player)
 	{
-		if (!this.plugin.dietEnabled || !Werewolf.getWerewolfManager().isWerewolf(player))
+		if (!this.plugin.getSettings().diet().enabled() || !Werewolf.getWerewolfManager().isWerewolf(player))
 		{
 			return false;
 		}
 
-		return this.plugin.dietHumanForm || Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId());
+		return this.plugin.getSettings().diet().humanForm() || Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId());
 	}
 
 	@EventHandler(ignoreCancelled = true)
@@ -172,7 +172,7 @@ public class WerewolfRestrictionListener implements Listener
 
 		player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfTryEat, ChatColor.RED));
 
-		if (this.plugin.dietPreventConsumption)
+		if (this.plugin.getSettings().diet().preventConsumption())
 		{
 			event.setCancelled(true);
 		}
@@ -203,7 +203,7 @@ public class WerewolfRestrictionListener implements Listener
 			return;
 		}
 
-		if (this.plugin.dietPreventConsumption)
+		if (this.plugin.getSettings().diet().preventConsumption())
 		{
 			if (player.getFoodLevel() < 20 || player.getGameMode() == GameMode.CREATIVE)
 			{

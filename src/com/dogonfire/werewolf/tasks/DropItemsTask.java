@@ -20,7 +20,7 @@ public class DropItemsTask implements Runnable
 		{
 			return;
 		}
-		if (this.plugin.dropArmorOnTransform)
+		if (this.plugin.getSettings().general().dropArmorOnTransform())
 		{
 			player.getWorld().dropItemNaturally(player.getLocation(), stack);
 			inventory.remove(stack);

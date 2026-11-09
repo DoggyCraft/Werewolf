@@ -82,8 +82,7 @@ public class MoonManager
 
 	public String getPhaseName(MoonPhase phase)
 	{
-		String name = plugin.moonPhaseNames.get(phase);
-		return name != null ? name : phase.getDefaultName();
+		return plugin.getSettings().moon().phaseNames().get(phase);
 	}
 
 	/** 0 when tonight is a full moon */
@@ -96,7 +95,7 @@ public class MoonManager
 	{
 		long time = world.getFullTime() % DAY_LENGTH;
 
-		return (time > Werewolf.nightStart) && (time < Werewolf.nightEnd);
+		return (time > plugin.getSettings().moon().nightStart()) && (time < plugin.getSettings().moon().nightEnd());
 	}
 
 	/** Whether this world's current day has a full moon, regardless of the time of day */
@@ -116,7 +115,7 @@ public class MoonManager
 	 */
 	public boolean isTransformationNight(World world)
 	{
-		if (plugin.onlyTransformDuringFullMoon)
+		if (plugin.getSettings().general().onlyTransformDuringFullMoon())
 		{
 			return isFullMoonNight(world);
 		}
@@ -151,7 +150,7 @@ public class MoonManager
 			return;
 		}
 
-		world.setFullTime(targetDay * DAY_LENGTH + Werewolf.nightStart + 1L);
+		world.setFullTime(targetDay * DAY_LENGTH + plugin.getSettings().moon().nightStart() + 1L);
 	}
 
 	public String getNextFullMoonText(World world)

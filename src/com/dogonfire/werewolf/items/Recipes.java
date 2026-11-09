@@ -12,7 +12,7 @@ import org.bukkit.plugin.Plugin;
 public class Recipes
 {
 	/*
-	if(plugin.craftableSilverSwordEnabled)
+	if(plugin.getSettings().items().craftableSilverSword())
 	{
 		ItemStack silverSword = newSilverSword(1);
 
@@ -24,7 +24,7 @@ public class Recipes
 		Bukkit.addRecipe(silverSwordRecipe);
 	}
 
-	if(plugin.craftableLoreBookEnabled)
+	if(plugin.getSettings().items().craftableLoreBook())
 	{
 		ItemStack loreBook = newLoreBook();
 
@@ -36,7 +36,7 @@ public class Recipes
 		Bukkit.addRecipe(loreBookRecipe);
 	}
 
-	if(plugin.craftableInfectionPotionEnabled)
+	if(plugin.getSettings().items().craftableInfectionPotion())
 	{
 		ItemStack infectionPotion = newInfectionPotion();
 
@@ -48,7 +48,7 @@ public class Recipes
 		Bukkit.addRecipe(infectionRecipe);
 	}
 	
-	if(plugin.craftableCurePotionEnabled)
+	if(plugin.getSettings().items().craftableCurePotion())
 	{
 		ItemStack curePotion = newCurePotion();
 
@@ -58,7 +58,7 @@ public class Recipes
 		Bukkit.addRecipe(cureRecipe);
 	}
 
-	if(plugin.craftableWolfbanePotionEnabled)
+	if(plugin.getSettings().items().craftableWolfbanePotion())
 	{
 		ItemStack wolfbanePotion = newWolfbanePotion();
 

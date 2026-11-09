@@ -129,7 +129,7 @@ public class PlayerListener implements Listener
 		
 		if (Math.random() < 0.05D)
 		{
-			for (Entity entity : player.getNearbyEntities(this.plugin.wolfdistance, this.plugin.wolfdistance, this.plugin.wolfdistance))
+			for (Entity entity : player.getNearbyEntities(this.plugin.getSettings().wolfForm().wolfDistance(), this.plugin.getSettings().wolfForm().wolfDistance(), this.plugin.getSettings().wolfForm().wolfDistance()))
 			{
 				if (entity instanceof Wolf)
 				{
@@ -157,10 +157,10 @@ public class PlayerListener implements Listener
 	{
 		if (event.getEntity().getKiller() == null || event.getEntity().getKiller().getUniqueId() == null)
 		{
-			if (this.plugin.renameWerewolves && Werewolf.getWerewolfManager().hasWerewolfSkin(event.getEntity().getUniqueId()))
+			if (this.plugin.getSettings().general().renameWerewolves() && Werewolf.getWerewolfManager().hasWerewolfSkin(event.getEntity().getUniqueId()))
 			{
 				String werewolfName = "Werewolf";
-				if (plugin.werewolfNamesEnabled) {
+				if (plugin.getSettings().names().enabled()) {
 					werewolfName = Werewolf.getWerewolfManager().getWerewolfName(event.getEntity().getUniqueId());
 				}
 				switch (this.random.nextInt(3))
@@ -184,12 +184,12 @@ public class PlayerListener implements Listener
 		String killerName = event.getEntity().getKiller().getName();
 		String victimName = event.getEntity().getName();
 
-		if (this.plugin.renameWerewolves)
+		if (this.plugin.getSettings().general().renameWerewolves())
 		{
 			if (Werewolf.getWerewolfManager().hasWerewolfSkin(event.getEntity().getKiller().getUniqueId()))
 			{
 				String werewolfName = "Werewolf";
-				if (plugin.werewolfNamesEnabled) {
+				if (plugin.getSettings().names().enabled()) {
 					werewolfName = Werewolf.getWerewolfManager().getWerewolfName(event.getEntity().getKiller().getUniqueId());
 				}
 				switch (this.random.nextInt(4))
@@ -213,7 +213,7 @@ public class PlayerListener implements Listener
 			else if (Werewolf.getWerewolfManager().hasWerewolfSkin(event.getEntity().getUniqueId()))
 			{
 				String werewolfName = "Werewolf";
-				if (plugin.werewolfNamesEnabled) {
+				if (plugin.getSettings().names().enabled()) {
 					werewolfName = Werewolf.getWerewolfManager().getWerewolfName(event.getEntity().getUniqueId());
 				}
 				if (killerName != null)
@@ -227,7 +227,7 @@ public class PlayerListener implements Listener
 			}
 		}
 
-		if (this.plugin.useTrophies && Werewolf.getWerewolfManager().hasWerewolfSkin(event.getEntity().getUniqueId()))
+		if (this.plugin.getSettings().general().trophiesEnabled() && Werewolf.getWerewolfManager().hasWerewolfSkin(event.getEntity().getUniqueId()))
 		{
 			Player killer = this.plugin.getServer().getPlayer(killerName);
 
@@ -256,7 +256,7 @@ public class PlayerListener implements Listener
 
 		if (Werewolf.getWerewolfManager().hasWerewolfSkin(event.getEntity().getUniqueId()))
 		{
-			if (this.plugin.cureWerewolfWhenSlain)
+			if (this.plugin.getSettings().general().cureWerewolfWhenSlain())
 			{
 				Werewolf.getWerewolfManager().unmakeWerewolf(event.getEntity().getUniqueId(), WerewolfCureEvent.Cause.SLAIN);
 			}
@@ -293,15 +293,15 @@ public class PlayerListener implements Listener
 				if (Werewolf.getWerewolfManager().isFullWerewolf(player.getUniqueId()) && !Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 				{
 					Werewolf.getWerewolfManager().restartTransformCooldown(player.getUniqueId());
-					if (plugin.transformCooldownSeconds > 0)
+					if (plugin.getSettings().cooldowns().transform() > 0)
 					{
-						Werewolf.getLanguageManager().setAmount("" + plugin.transformCooldownSeconds);
+						Werewolf.getLanguageManager().setAmount("" + plugin.getSettings().cooldowns().transform());
 						player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WolfbaneHumanForm, ChatColor.LIGHT_PURPLE));
 					}
 					continue;
 				}
 
-				if (Werewolf.getWerewolfManager().isWolfForm(player.getUniqueId()) && random.nextInt(100) < plugin.wolfbaneUntransformChance)
+				if (Werewolf.getWerewolfManager().isWolfForm(player.getUniqueId()) && random.nextInt(100) < plugin.getSettings().items().wolfbaneUntransformChance())
 				{
 					Werewolf.server.getScheduler().scheduleSyncDelayedTask(this.plugin, new PotionEffectTask(this.plugin, player, new PotionEffect(PotionEffectType.POISON, 4 * 20, 2)), 16L);
 					

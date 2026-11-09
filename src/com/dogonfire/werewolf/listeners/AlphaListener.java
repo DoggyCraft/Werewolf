@@ -36,7 +36,7 @@ public class AlphaListener implements Listener
 	@EventHandler(priority = EventPriority.LOW)
 	public void onAlphaDeath(PlayerDeathEvent event)
 	{
-		if (!Werewolf.pluginEnabled || !this.plugin.useClans)
+		if (!Werewolf.pluginEnabled || !this.plugin.getSettings().clans().enabled())
 		{
 			return;
 		}
@@ -65,7 +65,7 @@ public class AlphaListener implements Listener
 				werewolfManager.sendMessageToClan(clan, languageManager.getLanguageString(LanguageManager.LANGUAGESTRING.NewClanAlpha, ChatColor.WHITE));
 			}
 		}
-		else if (this.plugin.huntingEnabled && WerewolfAPI.isHuman(killer))
+		else if (this.plugin.getSettings().hunting().enabled() && WerewolfAPI.isHuman(killer))
 		{
 			UUID runnerUp = Werewolf.getClanManager().getRunnerUp(clan);
 			if (runnerUp != null && Werewolf.getClanManager().assignAlphaInClan(clan, runnerUp))

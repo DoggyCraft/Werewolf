@@ -164,7 +164,7 @@ public class HuntingGearListener implements Listener
 			event.setCancelled(true);
 		}
 
-		if (!this.plugin.huntingEnabled)
+		if (!this.plugin.getSettings().hunting().enabled())
 		{
 			sendMessage(hunter, LanguageManager.LANGUAGESTRING.HuntingDisabled, ChatColor.RED);
 			return;

@@ -25,27 +25,23 @@ import org.bukkit.potion.PotionType;
 
 public class ItemManager
 {
-	/** The silver armor pieces. Each piece has its own infection protection (purity) and defense against supernatural attackers. */
+	/** The silver armor pieces. Each piece has its own infection protection (purity) and defense against supernatural attackers, set in config.yml (Items.SilverArmor). */
 	public enum ArmorPiece
 	{
-		HELMET(Material.IRON_HELMET, "Helmet", "SilverHelmetRecipe", 10, 8),
-		CHESTPLATE(Material.IRON_CHESTPLATE, "Chestplate", "SilverArmorRecipe", 45, 20),
-		LEGGINGS(Material.IRON_LEGGINGS, "Leggings", "SilverLeggingsRecipe", 35, 14),
-		BOOTS(Material.IRON_BOOTS, "Boots", "SilverBootsRecipe", 10, 8);
+		HELMET(Material.IRON_HELMET, "Helmet", "SilverHelmetRecipe"),
+		CHESTPLATE(Material.IRON_CHESTPLATE, "Chestplate", "SilverArmorRecipe"),
+		LEGGINGS(Material.IRON_LEGGINGS, "Leggings", "SilverLeggingsRecipe"),
+		BOOTS(Material.IRON_BOOTS, "Boots", "SilverBootsRecipe");
 
 		private final Material	material;
 		private final String	configName;
 		private final String	recipeKey;
-		private final int		defaultPurity;
-		private final int		defaultDefense;
 
-		ArmorPiece(Material material, String configName, String recipeKey, int defaultPurity, int defaultDefense)
+		ArmorPiece(Material material, String configName, String recipeKey)
 		{
 			this.material = material;
 			this.configName = configName;
 			this.recipeKey = recipeKey;
-			this.defaultPurity = defaultPurity;
-			this.defaultDefense = defaultDefense;
 		}
 
 		public Material getMaterial()
@@ -61,16 +57,6 @@ public class ItemManager
 		public String getRecipeKey()
 		{
 			return recipeKey;
-		}
-
-		public int getDefaultPurity()
-		{
-			return defaultPurity;
-		}
-
-		public int getDefaultDefense()
-		{
-			return defaultDefense;
 		}
 
 		public ItemStack getWorn(PlayerInventory inventory)
@@ -134,31 +120,31 @@ public class ItemManager
 	
 	public void setupRecipes()
 	{
-		if(plugin.craftableInfectionPotionEnabled)
+		if(plugin.getSettings().items().craftableInfectionPotion())
 		{			
 			Bukkit.addRecipe(Recipes.infectionPotion(plugin));
 			plugin.logDebug("Craftable infection potions are enabled");
 		}
 		
-		if(plugin.craftableCurePotionEnabled)
+		if(plugin.getSettings().items().craftableCurePotion())
 		{
 			Bukkit.addRecipe(Recipes.curePotion(plugin));
 			plugin.logDebug("Craftable cure potions are enabled");
 		}
 
-		if(plugin.craftableWolfbanePotionEnabled)
+		if(plugin.getSettings().items().craftableWolfbanePotion())
 		{
 			Bukkit.addRecipe(Recipes.wolfbanePotion(plugin));
 			plugin.logDebug("Craftable wolfbane potions are enabled");
 		}
 
-		if(plugin.craftableSilverSwordEnabled)
+		if(plugin.getSettings().items().craftableSilverSword())
 		{
 			Bukkit.addRecipe(Recipes.silverSwordRecipe(plugin));
 			plugin.logDebug("Craftable silver swords are enabled");
 		}
 
-		if(plugin.craftableSilverArmorEnabled)
+		if(plugin.getSettings().items().craftableSilverArmor())
 		{
 			for (ArmorPiece piece : ArmorPiece.values())
 			{
@@ -167,19 +153,19 @@ public class ItemManager
 			plugin.logDebug("Craftable silver armors are enabled");
 		}
 
-		if(plugin.craftableWerewolfTrackerEnabled)
+		if(plugin.getSettings().items().craftableWerewolfTracker())
 		{
 			Bukkit.addRecipe(Recipes.werewolfTracker(plugin));
 			plugin.logDebug("Craftable werewolf trackers are enabled");
 		}
 
-		if(plugin.craftableVampireTrackerEnabled && plugin.vampireEnabled)
+		if(plugin.getSettings().items().craftableVampireTracker() && plugin.vampireEnabled)
 		{
 			Bukkit.addRecipe(Recipes.vampireTracker(plugin));
 			plugin.logDebug("Craftable vampire trackers are enabled");
 		}
 
-		if(plugin.craftableLoreBookEnabled)
+		if(plugin.getSettings().items().craftableLoreBook())
 		{
 			Bukkit.addRecipe(Recipes.loreBook(plugin));
 			plugin.logDebug("Craftable lore books are enabled");
@@ -251,7 +237,7 @@ public class ItemManager
 
 	    List<String> pages = new ArrayList<String>();
 
-	    Werewolf.getLanguageManager().setAmount(String.valueOf(plugin.wolfbaneUntransformChance));
+	    Werewolf.getLanguageManager().setAmount(String.valueOf(plugin.getSettings().items().wolfbaneUntransformChance()));
 	    pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WolfbanePotionDescription1, ChatColor.LIGHT_PURPLE));
 	    pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WolfbanePotionDescription2, ChatColor.GRAY));
 	    
@@ -282,7 +268,7 @@ public class ItemManager
 
 		List<String> pages = new ArrayList<String>();
 
-	    Werewolf.getLanguageManager().setAmount(String.valueOf(DamageManager.SilverSwordMultiplier));
+	    Werewolf.getLanguageManager().setAmount(String.valueOf(plugin.getSettings().items().silverSwordMultiplier()));
 	    pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverSwordDescription1, ChatColor.LIGHT_PURPLE));
 	    pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverSwordDescription2, ChatColor.GRAY));
 
@@ -313,9 +299,9 @@ public class ItemManager
 
 		List<String> pages = new ArrayList<String>();
 
-		Werewolf.getLanguageManager().setAmount(String.valueOf(plugin.silverArmorPurity.getOrDefault(piece, piece.getDefaultPurity())));
+		Werewolf.getLanguageManager().setAmount(String.valueOf(plugin.getSettings().items().silverArmorPurity().get(piece)));
 		pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorPurity, ChatColor.LIGHT_PURPLE));
-		Werewolf.getLanguageManager().setAmount(String.valueOf(plugin.silverArmorDefense.getOrDefault(piece, piece.getDefaultDefense())));
+		Werewolf.getLanguageManager().setAmount(String.valueOf(plugin.getSettings().items().silverArmorDefense().get(piece)));
 		pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorDefense, ChatColor.LIGHT_PURPLE));
 		pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorHumansOnly, ChatColor.GRAY));
 
@@ -370,13 +356,13 @@ public class ItemManager
 
 		bookPages.add("§lThe Werewolf infection\n§r\nThe werewolf curse is a ancient curse carried by some wolves who only come out at night.\n§r\nAn human infected with the werewolf curse will turn into his werewolf form every fullmoon.");
 		
-		if(plugin.useClans)
+		if(plugin.getSettings().clans().enabled())
 		{
-			bookPages.add("§lWerewolves in combat\n§r\nThe werewolf is a ferocious creature. A werewolf does " + DamageManager.werewolfHandDamage + " damage with his hands and " + DamageManager.werewolfItemDamage + " with an item in his hands. Because of his unique physique, a werewolf takes " + 100*DamageManager.SilverArmorMultiplier + " %  damage\n§r\n");		
+			bookPages.add("§lWerewolves in combat\n§r\nThe werewolf is a ferocious creature. A werewolf does " + plugin.getSettings().wolfForm().handDamage() + " damage with his hands and " + plugin.getSettings().wolfForm().itemDamage() + " with an item in his hands. Because of his unique physique, a werewolf takes " + 100*plugin.getSettings().wolfForm().armorMultiplier() + " %  damage\n§r\n");		
 		}
 		else
 		{
-			bookPages.add("§lWerewolves in combat\n§r\nThe werewolf is a ferocious creature. A werewolf does " + DamageManager.werewolfHandDamage + " damage with his hands and " + DamageManager.werewolfItemDamage + " with an item in his hands. Because of his unique physique, a werewolf takes " + 100*DamageManager.SilverArmorMultiplier + " %  damage\n§r\nThe leader of a clan, an alpha werewolf, takes " + 100*DamageManager.SilverArmorMultiplier/2 + " %  damage and does " + 2*DamageManager.werewolfHandDamage + "  damage!");					
+			bookPages.add("§lWerewolves in combat\n§r\nThe werewolf is a ferocious creature. A werewolf does " + plugin.getSettings().wolfForm().handDamage() + " damage with his hands and " + plugin.getSettings().wolfForm().itemDamage() + " with an item in his hands. Because of his unique physique, a werewolf takes " + 100*plugin.getSettings().wolfForm().armorMultiplier() + " %  damage\n§r\nThe leader of a clan, an alpha werewolf, takes " + 100*plugin.getSettings().wolfForm().armorMultiplier()/2 + " %  damage and does " + 2*plugin.getSettings().wolfForm().handDamage() + "  damage!");					
 		}		
 		
 		bookPages.add("§lTransformation\n§r\nDuring transformation, a werewolf will drop his clothes to the ground. But for each fullmoon, a werewolf will gain more control over his condition.\nAfter having experienced enough fullmoons, the werewolf may be able");
@@ -385,7 +371,7 @@ public class ItemManager
 		bookPages.add("§lGetting infected\n§r\nYou can be infected in 3 ways:\n§r\n 1) Getting bitten by a wolf at night\n§r\n 2) Drinking a werewolf potion\n§r\n 3) Being bitten by a werewolf.");
 		bookPages.add("§lWerewolf language\n§r\nWhen in werewolf form, werewolves speak in a language only understood by themselves.\n§r\nA non-infected player will only hear wolf noises when they chat.");
 		
-		if(plugin.useClans)
+		if(plugin.getSettings().clans().enabled())
 		{
 			bookPages.add("§lClans\n§r\nWerewolves are flock animals and they live in groups. There are three werewolf clans fighting for power.\n§r\nWerewolf players can check their clan info with the /ww clan command.");
 			bookPages.add("§lThe Witherfangs\n§r\nWhen a human drinks a werewolf potion, he will turn into a Witherfang werewolf.\n§r\nWitherfang werewolves has yellow eyes, grey fur are fast and can jump higher than other werewolves.");
@@ -393,13 +379,13 @@ public class ItemManager
 			bookPages.add("§lThe Bloodmoons\n§r\nWhen a human is bitten by a werewolf, he will turn into a Bloodmoon werewolf.\n§r\nThe Bloodmoon werewolves has red eyes, black fur and do more damage than other werewolves.");
 		}
 		
-		if(plugin.useTrophies)
+		if(plugin.getSettings().general().trophiesEnabled())
 		{
 			bookPages.add("§lTrophies\n§r\nIf you able to slay a werewolf using a sword, you may be able to cut the of the werewolf and keep it as a trophy!");
 		}
 
 		bookPages.add("§lCuring the infection\n§r\nA werewolf can drink the werewolf cure potion to cure himself.");		
-		if(plugin.craftableCurePotionEnabled)
+		if(plugin.getSettings().items().craftableCurePotion())
 		{
 			bookPages.add("§lCrafting the Cure\n§r\nIn a workbench, place the following ingredients:");			
 			
@@ -411,7 +397,7 @@ public class ItemManager
 			}			
 		}		
 
-		if(plugin.craftableInfectionPotionEnabled)
+		if(plugin.getSettings().items().craftableInfectionPotion())
 		{
 			bookPages.add("§lThe infection potion\n§r\nA potion can be made that infects the drinker with the werewolf infection. This special potion must be used during a fullmoon.");		
 			bookPages.add("§lCrafting the Infection\n§r\nIn a workbench, place the following ingredients:");			
@@ -424,7 +410,7 @@ public class ItemManager
 			}			
 		}		
 
-		if(plugin.craftableWolfbanePotionEnabled)
+		if(plugin.getSettings().items().craftableWolfbanePotion())
 		{
 			bookPages.add("§lThe wolfbane potion\n§r\nA potion can be made that severely hurts the werewolf and has a chance to untransform him into human form. This special potion must be used during a fullmoon.");		
 			bookPages.add("§lCrafting the Wolfbane\n§r\nIn a workbench, place the following ingredients:");			
@@ -437,8 +423,8 @@ public class ItemManager
 			}			
 		}		
 		
-		bookPages.add("§lHunting werewolves\n§r\nWerewolves are vulnerable to silver. Hitting a werewolf with a silver sword will do x" + DamageManager.SilverSwordMultiplier + " damage compared to a normal sword.\n§r\nOnly a werewolf hunter using the /ww hunt command can use this item.");
-		if(plugin.craftableSilverSwordEnabled)
+		bookPages.add("§lHunting werewolves\n§r\nWerewolves are vulnerable to silver. Hitting a werewolf with a silver sword will do x" + plugin.getSettings().items().silverSwordMultiplier() + " damage compared to a normal sword.\n§r\nOnly a werewolf hunter using the /ww hunt command can use this item.");
+		if(plugin.getSettings().items().craftableSilverSword())
 		{
 			bookPages.add("§lThe Silver Sword\n§r\nBecause a werewolf is especially vulnerable to silver, a sword can be made that severely hurts the werewolf.");		
 			bookPages.add("§lCrafting the Silver Sword\n§r\nIn a workbench, place the following ingredients:");			
@@ -458,11 +444,11 @@ public class ItemManager
 		int defense = 0;
 		for (ArmorPiece piece : ArmorPiece.values())
 		{
-			purity += plugin.silverArmorPurity.getOrDefault(piece, piece.getDefaultPurity());
-			defense += plugin.silverArmorDefense.getOrDefault(piece, piece.getDefaultDefense());
+			purity += plugin.getSettings().items().silverArmorPurity().get(piece);
+			defense += plugin.getSettings().items().silverArmorDefense().get(piece);
 		}
 		bookPages.add("§lHunting werewolves\n§r\nSilver armor keeps the werewolf curse at bay. A full set gives a " + Math.min(100, purity) + "% chance to resist a werewolf bite and takes " + Math.min(100, defense) + "% off the damage of werewolf attacks.\n§r\nWerewolves cannot wear silver.");
-		if(plugin.craftableSilverArmorEnabled)
+		if(plugin.getSettings().items().craftableSilverArmor())
 		{
 			bookPages.add("§lThe Silver Armor\n§r\nAny iron armor piece can be turned into silver armor in a workbench, surrounded by the following ingredients:");
 
@@ -477,7 +463,7 @@ public class ItemManager
 			}
 		}
 
-		if(plugin.craftableWerewolfTrackerEnabled)
+		if(plugin.getSettings().items().craftableWerewolfTracker())
 		{
 			bookPages.add("§lThe Werewolf Tracker\n§r\nA compass surrounded by eight rabbit feet points a hunter to the nearest werewolf.\n§r\nRight-click it to lock onto a werewolf, left-click it to let go. Only humans can use it.");
 		}
@@ -564,13 +550,13 @@ public class ItemManager
 	/** Summed purity of the silver armor worn: the % chance to resist a werewolf or vampire infection */
 	public int getSilverArmorPurity(Player player)
 	{
-		return sumWornSilverArmor(player, plugin.silverArmorPurity);
+		return sumWornSilverArmor(player, plugin.getSettings().items().silverArmorPurity());
 	}
 
 	/** Summed defense of the silver armor worn: the % of damage taken off attacks from werewolves and vampires */
 	public int getSilverArmorDefense(Player player)
 	{
-		return sumWornSilverArmor(player, plugin.silverArmorDefense);
+		return sumWornSilverArmor(player, plugin.getSettings().items().silverArmorDefense());
 	}
 
 	private int sumWornSilverArmor(Player player, Map<ArmorPiece, Integer> values)
@@ -639,12 +625,12 @@ public class ItemManager
 				removeForbiddenSilverArmor(player);
 			}
 
-			if (!werewolf || plugin.silverSwordPenalty <= 0 || player.isDead() || !isHoldingSilverSword(player))
+			if (!werewolf || plugin.getSettings().items().silverSwordPenalty() <= 0 || player.isDead() || !isHoldingSilverSword(player))
 			{
 				continue;
 			}
 
-			player.damage(plugin.silverSwordPenalty);
+			player.damage(plugin.getSettings().items().silverSwordPenalty());
 			player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverBurnsWerewolf, ChatColor.RED)));
 		}
 	}

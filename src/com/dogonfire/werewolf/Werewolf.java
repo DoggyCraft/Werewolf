@@ -2,6 +2,9 @@ package com.dogonfire.werewolf;
 
 import com.clanjhoo.vampire.VampireAPI;
 import com.dogonfire.werewolf.commands.Commands;
+import com.dogonfire.werewolf.config.ConfigMigrator;
+import com.dogonfire.werewolf.config.Settings;
+import com.dogonfire.werewolf.config.SettingsLoader;
 import com.dogonfire.werewolf.tasks.CompassTrackerTask;
 import com.dogonfire.werewolf.disguises.WerewolfDisguiseAPI;
 import com.dogonfire.werewolf.events.WerewolfTransformEvent;
@@ -25,14 +28,10 @@ import com.dogonfire.werewolf.tasks.UndisguiseTask;
 import com.dogonfire.werewolf.utils.PacketUtils;
 import com.dogonfire.werewolf.utils.WerewolfPlaceholderExpansion;
 
+import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import net.milkbowl.vault.economy.Economy;
 
@@ -44,7 +43,6 @@ import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
@@ -60,78 +58,12 @@ public class Werewolf extends JavaPlugin
 	public boolean 								vampireEnabled 							= false;
 	public boolean								vaultEnabled							= false;
 	public boolean								disguisesEnabled						= false;
-	public String									disguiseBackend							= "auto";
 	public boolean								healthBarEnabled						= false;
-	public static int							nightStart								= 13300;
-	public static int							nightEnd								= 23500;
-	public int									wolfdistance							= 10;
-	public double								cureChance								= 1.0D;
-	public double								wildWolfInfectionRisk					= 1.0D;
-	public double								werewolfInfectionRisk					= 1.0D;
-	public double								potionInfectChance						= 1.0D;
-	public int									compassUpdateRate						= 100;
-	public ArrayList<String>					wolfMessage								= new ArrayList<String>();
-	public boolean								movementUpdateThreading					= true;
-	public int									movementUpdateFrequency					= 4;
-	public ConcurrentHashMap<Player, Integer>	positionUpdaters						= new ConcurrentHashMap<Player, Integer>();
 	public static Server						server									= null;
-	public boolean								debug									= false;
-	public String								language								= "english";
-	public boolean								renameWerewolves						= true;
-	public boolean								autoBounty								= true;
-	public int									autoBountyMaximum						= 1000;
-	public boolean								werewolfUrges							= true;
-	public boolean								announceFullmoons						= true;
-	public boolean								wolfChat								= true;
-	public boolean								useWerewolfGroupName					= false;
-	public boolean								useTrophies								= true;
-	public boolean								dropArmorOnTransform					= true;
-	public boolean								onlyTransformDuringFullMoon				= true;
-	public boolean								keepWerewolfHandsFree					= true;
-	public boolean								cureWerewolfWhenSlain					= true;
-	public String								werewolfGroupName						= "Werewolf";
-	public int									autoCureDays							= 14;
-	public boolean								useSigns								= false;
-	public double								infectionPrice							= 1000.0D;
-	public double								curePrice								= 500.0D;
-	public double								silverSwordPrice						= 1000.0D;
-	public double								wolfbanePrice							= 200.0D;
-	public double								bookPrice								= 100.0D;
-	public boolean								useClans								= true;
-	public boolean								useScoreboards							= true;
-	public int									transformsForNoDropItems				= 2;
-	public int									transformsForControlledTransformation	= 6;
-	public int									transformsForGoldImmunity				= 8;
-	public int									levelForIntent							= 2;
-	public double								werewolfIntentInfectionRisk				= 0.25D;
-	public boolean								transformationLimitEnabled				= true;
-	public String								transformationLimitEquation				= "LINEAR";
-	public double								transformationLimitBase					= 300.0D;
-	public double								transformationLimitModifier				= 30.0D;
-	public int									transformCooldownSeconds				= 600;
-	public int									howlCooldownSeconds						= 60;
-	public int									growlCooldownSeconds					= 30;
-	public EnumMap<MoonManager.MoonPhase, String>	moonPhaseNames						= new EnumMap<MoonManager.MoonPhase, String>(MoonManager.MoonPhase.class);
-	public boolean								usePounce								= false;
-	public float								pouncePlaneSpeed						= 1.0F;
-	public float								pounceHeightSpeed						= 1.0F;
-	public List<String>							allowedWorlds							= new ArrayList<String>();
-	public EnumMap<ClanManager.ClanType, WolfFormManager.Stats>	werewolfStats			= new EnumMap<ClanManager.ClanType, WolfFormManager.Stats>(ClanManager.ClanType.class);
-	public EnumMap<ClanManager.ClanType, WolfFormManager.Stats>	alphaStats				= new EnumMap<ClanManager.ClanType, WolfFormManager.Stats>(ClanManager.ClanType.class);
-	public EnumMap<ClanManager.ClanType, List<String>>	wolfFormEffects					= new EnumMap<ClanManager.ClanType, List<String>>(ClanManager.ClanType.class);
-	public List<String>							blockedPotions							= new ArrayList<String>();
-	public List<String>							blockedCommandsAll						= new ArrayList<String>();
-	public List<String>							blockedCommandsWolfForm					= new ArrayList<String>();
-	public List<String>							blockedCommandsAlpha					= new ArrayList<String>();
-	public boolean								dietEnabled								= true;
-	public boolean								dietPreventConsumption					= true;
-	public boolean								dietHumanForm							= false;
-	public List<String>							dietBlockedFoods						= new ArrayList<String>();
+	private volatile Settings				settings								= null;
 	private static Werewolf						plugin;
-	private static FileConfiguration			config									= null;
 	public static PacketUtils pu										= null;
 	private static LanguageManager languageManager							= null;
-	// private static PotionManager potionManager = null;
 	private static ClanManager clanManager								= null;
 	private static SignManager					signManager								= null;
 	private static WerewolfManager				werewolfManager							= null;
@@ -147,74 +79,9 @@ public class Werewolf extends JavaPlugin
 	private static TrackerManager				trackerManager							= null;
 	private static ScentManager					scentManager							= null;
 
-	public String								potionName								= "Witherfang";
-	public String								werewolfBiteName						= "Bloodmoon";
-	public String								wildBiteName							= "Silvermane";
-	public String								alphaAccountName						= "WerewolfAlpha";
-	public String								potionAccountName						= "WF_Werewolf";
-	public String								werewolfBiteAccountName					= "BM_Werewolf";
-	public String								wildBiteAccountName						= "SM_Werewolf";
-	public String								alphaAccountUUID						= "e0d074bd-6722-47fc-95d3-f28e2899e155";
-	public String								potionAccountUUID						= "c61647e5-fc2f-4536-abe9-c851911ad22f";
-	public String								werewolfBiteAccountUUID					= "da508ecc-dbd9-46c5-8095-47b91aa4ff5f";
-	public String								wildBiteAccountUUID						= "b68a8f00-7d24-4c52-b6ad-1423bfbe26ee";
-	public String								alphaSkinValue							= "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzE3NjgzNiwKICAicHJvZmlsZUlkIiA6ICJlMGQwNzRiZDY3MjI0N2ZjOTVkM2YyOGUyODk5ZTE1NSIsCiAgInByb2ZpbGVOYW1lIiA6ICJXZXJld29sZkFscGhhIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2NhZTg4YjY5MjA0YWUyYzNlM2NiZTcwOWUzZTYyNTIxZTUzZmEwNWU0ZGFkODkxYzZhZmJkZmI5MDg2OGE3ZTAiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ==";
-	public String								alphaSkinSignature						= "GIDMFU5fTmB4T4RFFs/pQDAg7ZsCsu5KAxMXiQw4G32G0Db5SRmJ6OtiSc3SRznJO9EAW7lmjo38+BdY4b3cgTM7IbXmZGx5ML22ZW5KYspUoot2wo9kIj5ksh+H0Tfy9JCPLpg17nd7O1aY5+RhI5Aq+mhtyhJFXn1a906Qg9/XtHhiw0bUrthpa1RrtHnbH6+hFKgzNKAEeT93MvrPajOT7dmzQ72UK3KXgpe6KzbrWFf+NL0ZbpfkjwabSIALUdcL6+92EI//dB5yMgHEln9wfzKjH+82cDGEoGQjAnJIf+/KVWOtkfNRJauwpUkIUkD4tmkXxCCTyXXwUuIb7e7CwxyFWK4K7e7ir/P5zf1NuQZV+X1MwbF1c++dlGa4yBIvrb97F9tTu+7tw6KFwxqCvj4yRjhkGXsN0soI39v95q7ucxWaX0D4oKwa9QYi9zLW6DIh9bPxGa78TAPC/WyAdM/8J+/uinX2mvEsECsKQVmrCGRrqrZgfctsnXHuqstKMNOecwDFDzi8rWlcM3/wrdHn14Lvn2bsZGR4Xhr532CY2t+JgkQvYBM5Z+tkW5C7MCVH4BbLwf2zDcDkGIOzq5VoKlu/2WML88etjyzSIhCN0WJXWFkeRr7ddTar7Nx8/AzHRUBcTGXC+UGiHMYWWq8bAILFggLKY8eJzq0=";
-	public String								potionSkinValue							= "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzM4MjA1NCwKICAicHJvZmlsZUlkIiA6ICJjNjE2NDdlNWZjMmY0NTM2YWJlOWM4NTE5MTFhZDIyZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJXRl9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS84NjA2YmNlMjkzZGRiY2RlNDE1NzE5NGJkMTZkZDhmZDQzNTAyMjU3MTUyYThiYTJiMWFmMTRlOTM3ZWY5NzAzIgogICAgfQogIH0KfQ==";
-	public String								potionSkinSignature						= "M4bpafjzWq9GBbbHGL2xL8dwHxghLdily2bUnBsPPfsjrYidl8uws2pagluNPzxcCSqiZusJvbyoELgFBHrhKxDMGsUvG2nG/XV6GrZj8+bOYKlsU5IszwDaXJB9p6Uxh68pGoKximacJa1ELayKxbxLhJndGVTtO55pOvIB425f6VMRdJa6EvimsiibPMgGBKDVR4BP9ctP5Ij1cFyVpUZuiocp069LKPBMRR4mjRIeD4fmhz6o7yP5g4j6v3/n75T/NPR/NnMcRO7zYDnH0V0/a+dr0UTsGbH+4teuxdExgBrh2sjCCt7Zb4Yno6ElDYIABRqPUHSzNQ7IY3BHzGBaLZ29K/nUgN4mABlqj30ZL6RXmnlyzJUF/MxTcU0R/ROe8nmrt7eX700c29yrtufEkHhhUNX/hB/LjLIAoRIQgpHOGaocCgFsVRR1GGTot1KHuj8k0rvUKmxITpxbjOhdXwkwIMJ/WCAFygeBP6CTfnIKvZbJO2IAkv0/SQ8T38zLl2Xo0wbcUhQS4T44PWGzAVIX9I21lce9VHh55qTgQn0k+Wf9wog/KJw4HjLpWm+eTKuJiZH5zVGxQOzS0AU0OT+g/wHTcBqqtEDD1MeqhYfnQX7uU0wVN+HbahYV6Q2pE6qgyHCqjFTaS+N1dhmtTnhPsJdA4EhHCE9AAWE=";
-	public String								werewolfBiteSkinValue					= "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzQzNDY4NywKICAicHJvZmlsZUlkIiA6ICJkYTUwOGVjY2RiZDk0NmM1ODA5NTQ3YjkxYWE0ZmY1ZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJCTV9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9jMzc5MWEwOGM1Zjk1ZTQ1MGZkMmZiOGEwZTc1ZmViYTMwN2ZhZDJkNjYzMTkzNTAzYzU3NmMxOWRjM2MwYzdlIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=";
-	public String								werewolfBiteSkinSignature				= "Z8NgxOC7mVyeW9hGKMxGKGG16ZDkADR5RXmyktriE6wUodq+TRokU0LIGaCHYrc6ReH3rzQJtNj5Whs83tLPAWGMj79silx6jzPhZ5Db2iTZQjVAG98rNGFBxgsjqSG72LyeyxwRIN6L/OSnf2qna2dP1T12d2uyfdipzuNdXnreG/5WqRj0Rrn3ok+GieuoR1DzYugkPu/3vhJOAFfvtSdoAv0C1JtuKaIeDj5BOm+RHvzwcFiYU9dhnGA0n3mxjGUpCCY/RFGF5l80Cw2RqN6j4rougUhklPe4swpS9KX2fF2TsK/JS8WJ1jHuKyykqnml2VHqsoNDX8yTCD/tTdXWJ+lTDsdkdCkPLbX2hkfIJ/0vv55GnQltERie757K+HHncmYw4tBxjgtTCcdIcLNNoAf9jlQC4f8sUCdPiIr7PKoxrik6GkZKx52DsaUGvv/+32E/Aswo1TnD0gMFOiWTtYfJ4OmMW5Ez+AtpoWnypAFKDtTIqMadhD/3HatlpCXsAuA49vE15dfN6WF+wJ66hCtxUKZJSqFhQ81Fan3R9+62E1f+7Vm8yyzoo/ttRmg7zFRAMTaf200z4Ei3xZvq0NiN8USdd3au4DAwK45Tn3FYc+Qo+9TVYn1iDEG9uo5BGYhxiYAz/TnVJccKOqaCzlu1KV/JxabEpAFd534=";
-	public String								wildBiteSkinValue						= "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzQwOTQzMiwKICAicHJvZmlsZUlkIiA6ICJiNjhhOGYwMDdkMjQ0YzUyYjZhZDE0MjNiZmJlMjZlZSIsCiAgInByb2ZpbGVOYW1lIiA6ICJTTV9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS82MzZhNWVkN2I0ZmZmM2I3MzU0YzRjOGM5NjBmM2QxOTVkZWZkMjgyMjA4NjYyNjY1ZGViYjQ2NGJiNWJmZTY1IiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=";
-	public String								wildBiteSkinSignature					= "RlCvrZ4SYkPDg2xl6f97ya5Z+578Uov0R6eHqJdFAPEB/rXqlwgPXS3bEhubQ3pLV9QS8BPE2OqycGrg7QrrQ7w267aurZ6Ax7RmGunGnuiJ9jcjlxjwp6Ltk4o/N8OUBYfF3TUfFXnj6lzZUeITZDSb21o/2UFglVxssk5U0PFN7/VpV4g6hv8iDBT9TH6v8wG8I4AZqgU2eoYGvddkLlCX/63FVEEbUb/eTc8R/iOyQVvnhaP8vhs1DXu7kp/b50hhDM31pDkMT3TJq2tEEHGmLZVok9aabtIuhRlIfpjyvJOV5VO9RDWiZeZqKQcYO1F7p+bv5gl8Cqodl7OrG8tzwjq2hH+tRMLidHCjgvsbHOLElUjWoBnMu10r+94Adl9+B/CPUF+NFqUwQ2jCY+WS75M/GX9C7gftO8f1c5n9eO8HVaUeB4fmPqAA0yoCUvIjVgr46a1imcppl2O1fKS+kIVI+Lb08Ujymilqe5lEnwOz/ykndAoleMM7+6kViHGF5/HkUS8l50AnJYVgIUPwLTlwY2GlvtSOcSEHTXCx9YsHBY60r4Ow3bi5pCkNvBTvaHqCWIHLuIA86r2GQPJGuZGn7iy1KJTlvDjZ2LhdfDktZpzmhfcAR8Iw2bnM9jeWKgg3gzEQgkROzQBvzONDVMqcL2ILXPKEdniypy8=";
-
-	public boolean								werewolfNamesEnabled					= true;
-	public List<String>							givenNames								= Arrays.asList("Dark", "Black", "White", "Red", "Blood", "Blue", "Gray", "Neon", "Wild", "Lurking", "Feral", "Bestial", "Fierce", "Vicious", "Bloodthirsty", "Fearsome", "Ghoulish", "Wrathful", "Teenage", "Savage");
-	public List<String>							surnames								= Arrays.asList("Devourer", "Fang", "Wolf", "Howl", "Turned", "Ghoul", "Paws", "Claw");
-
 	private static Economy						economy									= null;
 	private Commands commands								= null;
-	private String								chatPrefix								= "Werewolf";
-	public String								serverName								= "Your Server";
-
-	public int									wolfbaneUntransformChance				= 25;
-	public boolean								craftableInfectionPotionEnabled			= true;
-	public boolean								craftableCurePotionEnabled				= true;
-	public boolean								craftableWolfbanePotionEnabled			= true;
-	public boolean								craftableSilverSwordEnabled				= true;
-	public boolean								craftableSilverArmorEnabled				= true;
-	public boolean								craftableLoreBookEnabled				= true;
-	public boolean								craftableWerewolfTrackerEnabled			= true;
-	public boolean								craftableVampireTrackerEnabled			= true;
-	public EnumMap<ItemManager.ArmorPiece, Integer>	silverArmorPurity					= new EnumMap<ItemManager.ArmorPiece, Integer>(ItemManager.ArmorPiece.class);
-	public EnumMap<ItemManager.ArmorPiece, Integer>	silverArmorDefense					= new EnumMap<ItemManager.ArmorPiece, Integer>(ItemManager.ArmorPiece.class);
-	public double								silverSwordPenalty						= 2.0D;
-	public boolean								silverSwordBypassesDefense				= true;
-	public boolean								huntingEnabled							= true;
-	public boolean								trackerUseEitherHand					= true;
-	public boolean								trackWerewolfWolfForm					= true;
-	public boolean								trackWerewolfHumanForm					= false;
-	public boolean								trackWerewolfDaytime					= false;
-	public boolean								trackWerewolfNighttime					= true;
-	public boolean								trackVampireDaytime						= false;
-	public boolean								trackVampireNighttime					= true;
-	public int									transformsForScentTrack					= 5;
-	public int									scentChance								= 10;
-	public int									scentRange								= 8;
-	public double								scentYOffset							= 0.0D;
-	public int									scentParticleAmount						= 10;
-	public int									scentDistanceFar						= 500;
-	public int									scentDistanceClose						= 200;
-	public int									scentDistanceVeryClose					= 50;
-	public int									scentSlownessAmplifier					= 2;
-	public int									sniffCooldownSeconds					= 5;
-	public boolean								worldGuardIntegration					= true;
-	public boolean								pvpManagerIntegration					= true;
-	public boolean								griefPreventionIntegration				= true;
-	public boolean								forcePvPEnabled							= false;
-	public boolean								forcePvPClaims							= true;
-	public boolean								forcePvPAdminClaims						= false;
 	private final List<IntegrationListener>		integrations							= new ArrayList<IntegrationListener>();
-
 
 	// The integration is written against PvPManager 4.x (me.chancesd); 3.x (me.NoChance) has a different API
 	private boolean isPvPManager4(PluginManager pm)
@@ -326,11 +193,6 @@ public class Werewolf extends JavaPlugin
 		return economy;
 	}
 
-	public String getChatPrefix()
-	{
-		return chatPrefix;
-	}
-
 	public void announcementMessage(World world, String messageText, Sound sound, long delay)
 	{
 		server.getScheduler().runTaskLater(plugin, new CentralMessageTask(world, messageText, sound), delay);
@@ -414,8 +276,6 @@ public class Werewolf extends JavaPlugin
 			}
 		}
 
-		saveSettings();
-
 		// Both only save every few minutes on their own (saveTimed)
 		if (werewolfManager != null)
 		{
@@ -443,7 +303,7 @@ public class Werewolf extends JavaPlugin
 		plugin = this;
 		instance = this;
 		server = getServer();
-		config = getConfig();
+		loadSettings();
 
 		this.commands = new Commands(this);
 
@@ -467,11 +327,7 @@ public class Werewolf extends JavaPlugin
 		huntingGearListener = new HuntingGearListener(this);
 		skinManager = new SkinManager(this);
 
-		// If ! prevent armor
-		if (this.dropArmorOnTransform)
-		{
-			inventoryListener = new InventoryListener(this);
-		}
+		inventoryListener = new InventoryListener(this);
 
 		pu = new PacketUtils();
 
@@ -486,7 +342,6 @@ public class Werewolf extends JavaPlugin
 			log("Vault detected. Bounties and sign economy are enabled!");
 
 			CompassTrackerTask.setPlugin(this);
-			CompassTrackerTask.setUpdateRate(this.compassUpdateRate);
 
 			RegisteredServiceProvider<Economy> economyProvider = plugin.getServer().getServicesManager().getRegistration(Economy.class);
 			if (economyProvider != null)
@@ -554,17 +409,11 @@ public class Werewolf extends JavaPlugin
 		getServer().getPluginManager().registerEvents(restrictionListener, this);
 		getServer().getPluginManager().registerEvents(huntingGearListener, this);
 		getServer().getPluginManager().registerEvents(new AlphaListener(this), this);
-		if (this.dropArmorOnTransform)
-		{
-			getServer().getPluginManager().registerEvents(inventoryListener, this);
-		}
+		getServer().getPluginManager().registerEvents(inventoryListener, this);
 		for (IntegrationListener integration : this.integrations)
 		{
 			getServer().getPluginManager().registerEvents(integration, this);
 		}
-
-		loadSettings();
-		saveSettings();
 
 		permissionsManager.load();
 		werewolfManager.load();
@@ -572,14 +421,15 @@ public class Werewolf extends JavaPlugin
 		languageManager.load();
 
 		// Needs the skin settings from config.yml
-		this.disguisesEnabled = WerewolfDisguiseAPI.init(this.disguiseBackend);
+		this.disguisesEnabled = WerewolfDisguiseAPI.init(this.settings.general().disguiseBackend());
 		if (this.disguisesEnabled)
 		{
 			// Pre-cache some known disguises
-			WerewolfDisguiseAPI.getDisguise(UUID.fromString(potionAccountUUID), potionAccountName);
-			WerewolfDisguiseAPI.getDisguise(UUID.fromString(wildBiteAccountUUID), wildBiteAccountName);
-			WerewolfDisguiseAPI.getDisguise(UUID.fromString(werewolfBiteAccountUUID), werewolfBiteAccountName);
-			WerewolfDisguiseAPI.getDisguise(UUID.fromString(alphaAccountUUID), alphaAccountName);
+			for (Settings.Skin skin : this.settings.clans().skins().values())
+			{
+				WerewolfDisguiseAPI.getDisguise(skin.accountId(), skin.accountName());
+			}
+			WerewolfDisguiseAPI.getDisguise(this.settings.clans().alphaSkin().accountId(), this.settings.clans().alphaSkin().accountName());
 		}
 
 		itemManager.setupRecipes();
@@ -589,7 +439,7 @@ public class Werewolf extends JavaPlugin
 			huntManager.load();
 		}
 
-		if (this.useScoreboards)
+		if (this.settings.general().scoreboardsEnabled())
 		{
 			Werewolf.werewolfScoreboardManager = new WerewolfScoreboardManager();
 		}
@@ -617,7 +467,7 @@ public class Werewolf extends JavaPlugin
 			}
 		}, 20L, 20L);
 
-		if (this.useClans)
+		if (this.settings.clans().enabled())
 		{
 			getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable()
 			{
@@ -631,7 +481,7 @@ public class Werewolf extends JavaPlugin
 
 	public boolean isWerewolvesAllowedInWorld(Player player)
 	{
-		return this.allowedWorlds.contains(player.getWorld().getName());
+		return this.settings.allowedWorlds().contains(player.getWorld().getName());
 	}
 
 	public boolean isUnderOpenSky(Player player)
@@ -668,15 +518,6 @@ public class Werewolf extends JavaPlugin
 		werewolfManager.unsetWerewolfSkin(player.getUniqueId(), true, reason);
 	}
 
-	/*public void setPositionUpdater(Player player, WerewolfDisguise skin)
-	{
-		if (this.movementUpdateThreading)
-		{
-			this.positionUpdaters.put(player, Integer.valueOf(getServer().getScheduler().scheduleSyncRepeatingTask(this, new PlayerPositionUpdater(this, player, skin), 1L, this.movementUpdateFrequency)));
-		}
-	}
-	*/
-
 	public void log(String message)
 	{
 		plugin.getLogger().info(message);
@@ -684,10 +525,15 @@ public class Werewolf extends JavaPlugin
 
 	public void logDebug(String message)
 	{
-		if (this.debug)
+		if (this.settings != null && this.settings.general().debug())
 		{
 			plugin.getLogger().info("[Debug] " + message);
 		}
+	}
+
+	public Settings getSettings()
+	{
+		return this.settings;
 	}
 
 	public void reloadSettings()
@@ -700,509 +546,26 @@ public class Werewolf extends JavaPlugin
 		getLanguageManager().load();
 	}
 
+	/**
+	 * Writes the bundled config.yml on first start, upgrades an old config.yml and reads the settings from it. Bukkit
+	 * uses the bundled config.yml as defaults, so missing keys get their default values.
+	 */
 	public void loadSettings()
 	{
-		config = getConfig();
+		saveDefaultConfig();
+		new ConfigMigrator(new File(getDataFolder(), "config.yml"), getConfig(), getLogger()).migrate();
+		this.settings = new SettingsLoader(getConfig(), getLogger(), getServer().getWorlds().get(0).getName()).load();
 
-		this.debug = config.getBoolean("Settings.Debug", false);
-
-		DamageManager.werewolfItemDamage = config.getDouble("Werewolf.ItemDamage", config.getDouble("WerewolfWolf.ItemDamage", 3));
-		DamageManager.werewolfHandDamage = config.getDouble("Werewolf.HandDamage", config.getDouble("WerewolfWolf.HandDamage", 8));
-		DamageManager.SilverArmorMultiplier = config.getDouble("Werewolf.ArmorMultiplier", config.getDouble("WerewolfWolf.ArmorMultiplier", 0.8D));
-		this.wolfdistance = config.getInt("Werewolf.WolfDistance", config.getInt("WerewolfWolf.WolfDistance", 10));
-		loadWolfFormSettings();
-
-		this.cureChance = config.getDouble("Infection.CureChance", config.getDouble("Infection.CurePotionChance", 1.0D));
-
-		this.werewolfInfectionRisk = config.getDouble("Infection.WerewolfBiteRisk", 0.05D);
-		this.wildWolfInfectionRisk = config.getDouble("Infection.WildWolfBiteRisk", 0.75D);
-
-		this.autoCureDays = config.getInt("Infection.AutoCureDays", 14);
-
-		this.allowedWorlds = config.getStringList("AllowedWorlds");
-		if (this.allowedWorlds.size() == 0)
-		{
-			log("Allowed worlds is empty. Adding world " + getServer().getWorlds().get(0).getName() + " as werewolf world.");
-			this.allowedWorlds.add(getServer().getWorlds().get(0).getName());
-		}
-		else
-		{
-			for (String worldName : this.allowedWorlds)
-			{
-				log("Werewolves are allowed in worlds '" + worldName + "'");
-			}
-		}
-		//
-		// DamageListener.WEREWOLF_GROWL = config.getString("Files.Growl", "");
-
-		nightStart = config.getInt("Night.Start", 13000);
-		nightEnd = config.getInt("Night.End", 23000);
-
-		this.wolfMessage.clear();
-		this.wolfMessage.add("*Grunt*");
-		this.wolfMessage.add("*Grunt* *Grrrr*");
-		this.wolfMessage.add("*Grunt* *Grunt*");
-		this.wolfMessage.add("*Growl*");
-		this.wolfMessage.add("*Grrroowl Grunt*");
-		this.wolfMessage.add("*Grrrrr*");
-		this.wolfMessage.add("*Rrrrrr*");
-		this.wolfMessage.add("*Groooowl*");
-		this.wolfMessage.add("*Grrrrr* *Grrr*");
-		this.wolfMessage.add("*Hoooowl*");
-		this.wolfMessage.add("*Rrraagh*");
-		this.wolfMessage.add("*Grrawl*");
-		this.wolfMessage.add("*Grrrrawl* *Growls*");
-		this.wolfMessage.add("*HOOOOOWLLLL!*");
-		this.wolfMessage.add("*Wimper*");
-		this.wolfMessage.add("*Awooooo*");
-
-		this.werewolfGroupName = config.getString("WerewolfGroup.Name", "Werewolf");
-		this.useWerewolfGroupName = config.getBoolean("WerewolfGroup.Enabled", false);
-		this.useTrophies = config.getBoolean("Trophies.Enabled", false);
-		if (this.useTrophies && trophyManager == null)
+		if (this.settings.general().trophiesEnabled() && trophyManager == null)
 		{
 			trophyManager = new TrophyManager(this);
 		}
 
-		this.autoBounty = config.getBoolean("Settings.AutoBounty", false);
-		this.autoBountyMaximum = config.getInt("Settings.AutoBountyMaximum", 1000);
-		this.renameWerewolves = config.getBoolean("Settings.RenameWerewolves", true);
-		this.werewolfUrges = config.getBoolean("Settings.WerewolfUrges", true);
-		this.wolfChat = config.getBoolean("Settings.WolfChat", true);
-		this.dropArmorOnTransform = config.getBoolean("Settings.DropArmorOnTransform", true);
-		this.onlyTransformDuringFullMoon = config.getBoolean("Settings.OnlyTransformDuringFullMoon", true);
-		this.serverName = config.getString("Settings.ServerName", "Your Server");
-		this.cureWerewolfWhenSlain = config.getBoolean("Settings.CureWerewolfWhenSlain", false);
-
-		this.useSigns = config.getBoolean("Signs.Enabled", false);
-		if (this.useSigns && signManager == null)
+		if (this.settings.signs().enabled() && signManager == null)
 		{
 			signManager = new SignManager(this);
 			getServer().getPluginManager().registerEvents(signManager, this);
 		}
-
-		this.curePrice = config.getDouble("Signs.CurePrice", 500.0D);
-		this.infectionPrice = config.getDouble("Signs.InfectionPrice", 1000.0D);
-		this.bookPrice = config.getDouble("Signs.BookPrice", 100.0D);
-		this.wolfbanePrice = config.getDouble("Signs.WolfbanePrice", 250.0D);
-		this.silverSwordPrice = config.getDouble("Signs.SilverSwordPrice", 1000.0D);
-
-		this.language = config.getString("Settings.Language", "english");
-		this.transformsForNoDropItems = config.getInt("Maturity.NoDropItems", 3);
-
-		this.transformsForControlledTransformation = config.getInt("Maturity.ControlledTransformation", 7);
-		this.transformsForScentTrack = config.getInt("Maturity.ScentTrack", 5);
-		this.transformsForGoldImmunity = config.getInt("Maturity.GoldImmunity", 10);
-		this.levelForIntent = config.getInt("Maturity.Intent", 2);
-		this.werewolfIntentInfectionRisk = config.getDouble("Infection.WerewolfBiteIntentRisk", 0.25D);
-
-		this.transformationLimitEnabled = config.getBoolean("Transformation.Limit", true);
-		this.transformationLimitEquation = config.getString("Transformation.Equation", "LINEAR");
-		this.transformationLimitBase = config.getDouble("Transformation.Base", 300.0D);
-		this.transformationLimitModifier = config.getDouble("Transformation.Modifier", 30.0D);
-
-		this.transformCooldownSeconds = config.getInt("Cooldowns.Transform", 600);
-		this.howlCooldownSeconds = config.getInt("Cooldowns.Howl", 60);
-		this.growlCooldownSeconds = config.getInt("Cooldowns.Growl", 30);
-		this.sniffCooldownSeconds = config.getInt("Cooldowns.Sniff", 5);
-
-		this.scentChance = config.getInt("Scent.Chance", 10);
-		this.scentRange = config.getInt("Scent.Range", 8);
-		this.scentYOffset = config.getDouble("Scent.YOffset", 0.0D);
-		this.scentParticleAmount = config.getInt("Scent.ParticleAmount", 10);
-		this.scentDistanceFar = config.getInt("Scent.Distances.Far", 500);
-		this.scentDistanceClose = config.getInt("Scent.Distances.Close", 200);
-		this.scentDistanceVeryClose = config.getInt("Scent.Distances.VeryClose", 50);
-		this.scentSlownessAmplifier = config.getInt("Scent.SlownessAmplifier", 2);
-
-		this.huntingEnabled = config.getBoolean("Hunting.Enabled", true);
-		this.trackerUseEitherHand = config.getBoolean("Hunting.Trackers.UseEitherHand", true);
-		this.trackWerewolfWolfForm = config.getBoolean("Hunting.Target.Werewolf.WolfForm", true);
-		this.trackWerewolfHumanForm = config.getBoolean("Hunting.Target.Werewolf.HumanForm", false);
-		this.trackWerewolfDaytime = config.getBoolean("Hunting.Target.Werewolf.Daytime", false);
-		this.trackWerewolfNighttime = config.getBoolean("Hunting.Target.Werewolf.Nighttime", true);
-		this.trackVampireDaytime = config.getBoolean("Hunting.Target.Vampire.Daytime", false);
-		this.trackVampireNighttime = config.getBoolean("Hunting.Target.Vampire.Nighttime", true);
-		this.forcePvPEnabled = config.getBoolean("Hunting.ForcePvP.Enabled", false);
-		this.forcePvPClaims = config.getBoolean("Hunting.ForcePvP.Claims", true);
-		this.forcePvPAdminClaims = config.getBoolean("Hunting.ForcePvP.AdminClaims", false);
-
-		this.worldGuardIntegration = config.getBoolean("Integrations.WorldGuard", true);
-		this.pvpManagerIntegration = config.getBoolean("Integrations.PvPManager", true);
-		this.griefPreventionIntegration = config.getBoolean("Integrations.GriefPrevention", true);
-
-		for (MoonManager.MoonPhase phase : MoonManager.MoonPhase.values())
-		{
-			this.moonPhaseNames.put(phase, config.getString("Moon.PhaseNames." + phase.name(), phase.getDefaultName()));
-		}
-
-		/*
-		 * this.usePounce = config.getBoolean("Pounce.Enabled", false);
-		 * this.pouncePlaneSpeed = ((float)
-		 * config.getDouble("Pounce.PlaneSpeed", 2.25D)); this.pounceHeightSpeed
-		 * = ((float) config.getDouble("Pounce.HeightSpeed", 1.1D)); if
-		 * (this.useTrophies && (trophyManager == null)) { trophyManager = new
-		 * TrophyManager(this); trophyManager.load(); }
-		 */
-
-		this.chatPrefix = config.getString("Chat.Prefix", "Werewolf");
-
-		this.useScoreboards = config.getBoolean("Scoreboards.Enabled", true);
-
-		this.useClans = config.getBoolean("Clans.Enabled", true);
-		this.potionName = config.getString("Clans.PotionName", "Witherfang");
-		this.werewolfBiteName = config.getString("Clans.WerewolfBiteName", "Bloodmoon");
-		this.wildBiteName = config.getString("Clans.WildBiteName", "Silvermane");
-		this.alphaAccountName = config.getString("Clans.AlphaAccountName", "WerewolfAlpha");
-		this.potionAccountName = config.getString("Clans.PotionAccountName", "WF_Werewolf");
-		this.werewolfBiteAccountName = config.getString("Clans.WerewolfBiteAccountName", "BM_Werewolf");
-		this.wildBiteAccountName = config.getString("Clans.WildBiteAccountName", "SM_Werewolf");
-		this.alphaAccountUUID = config.getString("Clans.AlphaAccountUUID", "e0d074bd-6722-47fc-95d3-f28e2899e155");
-		this.potionAccountUUID = config.getString("Clans.PotionAccountUUID", "c61647e5-fc2f-4536-abe9-c851911ad22f");
-		this.werewolfBiteAccountUUID = config.getString("Clans.WerewolfBiteAccountUUID", "da508ecc-dbd9-46c5-8095-47b91aa4ff5f");
-		this.wildBiteAccountUUID = config.getString("Clans.WildBiteAccountUUID", "b68a8f00-7d24-4c52-b6ad-1423bfbe26ee");
-		this.alphaSkinValue = config.getString("Clans.AlphaSkinValue", "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzE3NjgzNiwKICAicHJvZmlsZUlkIiA6ICJlMGQwNzRiZDY3MjI0N2ZjOTVkM2YyOGUyODk5ZTE1NSIsCiAgInByb2ZpbGVOYW1lIiA6ICJXZXJld29sZkFscGhhIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2NhZTg4YjY5MjA0YWUyYzNlM2NiZTcwOWUzZTYyNTIxZTUzZmEwNWU0ZGFkODkxYzZhZmJkZmI5MDg2OGE3ZTAiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ==");
-		this.alphaSkinSignature = config.getString("Clans.AlphaSkinSignature", "GIDMFU5fTmB4T4RFFs/pQDAg7ZsCsu5KAxMXiQw4G32G0Db5SRmJ6OtiSc3SRznJO9EAW7lmjo38+BdY4b3cgTM7IbXmZGx5ML22ZW5KYspUoot2wo9kIj5ksh+H0Tfy9JCPLpg17nd7O1aY5+RhI5Aq+mhtyhJFXn1a906Qg9/XtHhiw0bUrthpa1RrtHnbH6+hFKgzNKAEeT93MvrPajOT7dmzQ72UK3KXgpe6KzbrWFf+NL0ZbpfkjwabSIALUdcL6+92EI//dB5yMgHEln9wfzKjH+82cDGEoGQjAnJIf+/KVWOtkfNRJauwpUkIUkD4tmkXxCCTyXXwUuIb7e7CwxyFWK4K7e7ir/P5zf1NuQZV+X1MwbF1c++dlGa4yBIvrb97F9tTu+7tw6KFwxqCvj4yRjhkGXsN0soI39v95q7ucxWaX0D4oKwa9QYi9zLW6DIh9bPxGa78TAPC/WyAdM/8J+/uinX2mvEsECsKQVmrCGRrqrZgfctsnXHuqstKMNOecwDFDzi8rWlcM3/wrdHn14Lvn2bsZGR4Xhr532CY2t+JgkQvYBM5Z+tkW5C7MCVH4BbLwf2zDcDkGIOzq5VoKlu/2WML88etjyzSIhCN0WJXWFkeRr7ddTar7Nx8/AzHRUBcTGXC+UGiHMYWWq8bAILFggLKY8eJzq0=");
-		this.potionSkinValue = config.getString("Clans.PotionSkinValue", "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzM4MjA1NCwKICAicHJvZmlsZUlkIiA6ICJjNjE2NDdlNWZjMmY0NTM2YWJlOWM4NTE5MTFhZDIyZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJXRl9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS84NjA2YmNlMjkzZGRiY2RlNDE1NzE5NGJkMTZkZDhmZDQzNTAyMjU3MTUyYThiYTJiMWFmMTRlOTM3ZWY5NzAzIgogICAgfQogIH0KfQ==");
-		this.potionSkinSignature = config.getString("Clans.PotionSkinSignature", "M4bpafjzWq9GBbbHGL2xL8dwHxghLdily2bUnBsPPfsjrYidl8uws2pagluNPzxcCSqiZusJvbyoELgFBHrhKxDMGsUvG2nG/XV6GrZj8+bOYKlsU5IszwDaXJB9p6Uxh68pGoKximacJa1ELayKxbxLhJndGVTtO55pOvIB425f6VMRdJa6EvimsiibPMgGBKDVR4BP9ctP5Ij1cFyVpUZuiocp069LKPBMRR4mjRIeD4fmhz6o7yP5g4j6v3/n75T/NPR/NnMcRO7zYDnH0V0/a+dr0UTsGbH+4teuxdExgBrh2sjCCt7Zb4Yno6ElDYIABRqPUHSzNQ7IY3BHzGBaLZ29K/nUgN4mABlqj30ZL6RXmnlyzJUF/MxTcU0R/ROe8nmrt7eX700c29yrtufEkHhhUNX/hB/LjLIAoRIQgpHOGaocCgFsVRR1GGTot1KHuj8k0rvUKmxITpxbjOhdXwkwIMJ/WCAFygeBP6CTfnIKvZbJO2IAkv0/SQ8T38zLl2Xo0wbcUhQS4T44PWGzAVIX9I21lce9VHh55qTgQn0k+Wf9wog/KJw4HjLpWm+eTKuJiZH5zVGxQOzS0AU0OT+g/wHTcBqqtEDD1MeqhYfnQX7uU0wVN+HbahYV6Q2pE6qgyHCqjFTaS+N1dhmtTnhPsJdA4EhHCE9AAWE=");
-		this.werewolfBiteSkinValue = config.getString("Clans.WerewolfBiteSkinValue", "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzQzNDY4NywKICAicHJvZmlsZUlkIiA6ICJkYTUwOGVjY2RiZDk0NmM1ODA5NTQ3YjkxYWE0ZmY1ZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJCTV9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9jMzc5MWEwOGM1Zjk1ZTQ1MGZkMmZiOGEwZTc1ZmViYTMwN2ZhZDJkNjYzMTkzNTAzYzU3NmMxOWRjM2MwYzdlIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=");
-		this.werewolfBiteSkinSignature = config.getString("Clans.WerewolfBiteSkinSignature", "Z8NgxOC7mVyeW9hGKMxGKGG16ZDkADR5RXmyktriE6wUodq+TRokU0LIGaCHYrc6ReH3rzQJtNj5Whs83tLPAWGMj79silx6jzPhZ5Db2iTZQjVAG98rNGFBxgsjqSG72LyeyxwRIN6L/OSnf2qna2dP1T12d2uyfdipzuNdXnreG/5WqRj0Rrn3ok+GieuoR1DzYugkPu/3vhJOAFfvtSdoAv0C1JtuKaIeDj5BOm+RHvzwcFiYU9dhnGA0n3mxjGUpCCY/RFGF5l80Cw2RqN6j4rougUhklPe4swpS9KX2fF2TsK/JS8WJ1jHuKyykqnml2VHqsoNDX8yTCD/tTdXWJ+lTDsdkdCkPLbX2hkfIJ/0vv55GnQltERie757K+HHncmYw4tBxjgtTCcdIcLNNoAf9jlQC4f8sUCdPiIr7PKoxrik6GkZKx52DsaUGvv/+32E/Aswo1TnD0gMFOiWTtYfJ4OmMW5Ez+AtpoWnypAFKDtTIqMadhD/3HatlpCXsAuA49vE15dfN6WF+wJ66hCtxUKZJSqFhQ81Fan3R9+62E1f+7Vm8yyzoo/ttRmg7zFRAMTaf200z4Ei3xZvq0NiN8USdd3au4DAwK45Tn3FYc+Qo+9TVYn1iDEG9uo5BGYhxiYAz/TnVJccKOqaCzlu1KV/JxabEpAFd534=");
-		this.wildBiteSkinValue = config.getString("Clans.WildBiteSkinValue", "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzQwOTQzMiwKICAicHJvZmlsZUlkIiA6ICJiNjhhOGYwMDdkMjQ0YzUyYjZhZDE0MjNiZmJlMjZlZSIsCiAgInByb2ZpbGVOYW1lIiA6ICJTTV9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS82MzZhNWVkN2I0ZmZmM2I3MzU0YzRjOGM5NjBmM2QxOTVkZWZkMjgyMjA4NjYyNjY1ZGViYjQ2NGJiNWJmZTY1IiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=");
-		this.wildBiteSkinSignature = config.getString("Clans.WildBiteSkinSignature", "RlCvrZ4SYkPDg2xl6f97ya5Z+578Uov0R6eHqJdFAPEB/rXqlwgPXS3bEhubQ3pLV9QS8BPE2OqycGrg7QrrQ7w267aurZ6Ax7RmGunGnuiJ9jcjlxjwp6Ltk4o/N8OUBYfF3TUfFXnj6lzZUeITZDSb21o/2UFglVxssk5U0PFN7/VpV4g6hv8iDBT9TH6v8wG8I4AZqgU2eoYGvddkLlCX/63FVEEbUb/eTc8R/iOyQVvnhaP8vhs1DXu7kp/b50hhDM31pDkMT3TJq2tEEHGmLZVok9aabtIuhRlIfpjyvJOV5VO9RDWiZeZqKQcYO1F7p+bv5gl8Cqodl7OrG8tzwjq2hH+tRMLidHCjgvsbHOLElUjWoBnMu10r+94Adl9+B/CPUF+NFqUwQ2jCY+WS75M/GX9C7gftO8f1c5n9eO8HVaUeB4fmPqAA0yoCUvIjVgr46a1imcppl2O1fKS+kIVI+Lb08Ujymilqe5lEnwOz/ykndAoleMM7+6kViHGF5/HkUS8l50AnJYVgIUPwLTlwY2GlvtSOcSEHTXCx9YsHBY60r4Ow3bi5pCkNvBTvaHqCWIHLuIA86r2GQPJGuZGn7iy1KJTlvDjZ2LhdfDktZpzmhfcAR8Iw2bnM9jeWKgg3gzEQgkROzQBvzONDVMqcL2ILXPKEdniypy8=");
-
-		migrateSwappedClanSkins();
-
-		this.disguiseBackend = config.getString("Disguises.Backend", "auto");
-
-		this.werewolfNamesEnabled = config.getBoolean("WerewolfNames.Enabled", true);
-		if (config.contains("WerewolfNames.Given_names"))
-		{
-			this.givenNames = config.getStringList("WerewolfNames.Given_names");
-		}
-
-		if (config.contains("WerewolfNames.Surnames"))
-		{
-			this.surnames = config.getStringList("WerewolfNames.Surnames");
-		}
-
-		DamageManager.SilverSwordMultiplier = config.getInt("Items.SilverSwordMultiplier", 2);
-		this.wolfbaneUntransformChance = config.getInt("Items.WolfbaneUntransformChance", 25);
-		this.craftableSilverSwordEnabled = config.getBoolean("Items.CraftableSilverSword", true);
-		this.craftableSilverArmorEnabled = config.getBoolean("Items.CraftableSilverArmor", true);
-		this.craftableLoreBookEnabled = config.getBoolean("Items.CraftableLoreBookEnabled", true);
-		this.craftableInfectionPotionEnabled = config.getBoolean("Items.CraftableInfectionPotionEnabled", true);
-		this.craftableCurePotionEnabled = config.getBoolean("Items.CraftableCurePotionEnabled", true);
-		this.craftableWolfbanePotionEnabled = config.getBoolean("Items.CraftableWolfbanePotionEnabled", true);
-		this.craftableWerewolfTrackerEnabled = config.getBoolean("Items.CraftableWerewolfTracker", true);
-		this.craftableVampireTrackerEnabled = config.getBoolean("Items.CraftableVampireTracker", true);
-		this.silverSwordPenalty = config.getDouble("Items.SilverSwordPenalty", 2.0D);
-		this.silverSwordBypassesDefense = config.getBoolean("Items.SilverSwordBypassesDefense", true);
-		for (ItemManager.ArmorPiece piece : ItemManager.ArmorPiece.values())
-		{
-			String path = "Items.SilverArmor." + piece.getConfigName() + ".";
-			this.silverArmorPurity.put(piece, config.getInt(path + "Purity", piece.getDefaultPurity()));
-			this.silverArmorDefense.put(piece, config.getInt(path + "Defense", piece.getDefaultDefense()));
-		}
-
-		if (wolfFormManager != null)
-		{
-			wolfFormManager.load();
-		}
-	}
-
-	/**
-	 * Per-clan stats default to the global Werewolf.HandDamage/ItemDamage/ArmorMultiplier (alphas: double damage, half
-	 * the damage taken), so configs from before per-clan stats keep their tuning.
-	 */
-	private void loadWolfFormSettings()
-	{
-		for (ClanManager.ClanType clan : ClanManager.ClanType.values())
-		{
-			String path = "Werewolf.Stats." + clan.name() + ".";
-			double defaultSpeed = clan == ClanManager.ClanType.Potion ? 1.0D : 0.5D;
-
-			WolfFormManager.Stats stats = new WolfFormManager.Stats(
-					config.getDouble(path + "Speed", defaultSpeed),
-					config.getDouble(path + "Defense", DamageManager.SilverArmorMultiplier),
-					config.getDouble(path + "FistDamage", DamageManager.werewolfHandDamage),
-					config.getDouble(path + "ItemDamage", DamageManager.werewolfItemDamage));
-			this.werewolfStats.put(clan, stats);
-
-			this.alphaStats.put(clan, new WolfFormManager.Stats(
-					config.getDouble(path + "Alpha.Speed", stats.speed),
-					config.getDouble(path + "Alpha.Defense", DamageManager.SilverArmorMultiplier / 2.0D),
-					config.getDouble(path + "Alpha.FistDamage", DamageManager.werewolfHandDamage * 2.0D),
-					config.getDouble(path + "Alpha.ItemDamage", DamageManager.werewolfItemDamage * 2.0D)));
-
-			if (config.contains("Werewolf.Effects." + clan.name()))
-			{
-				this.wolfFormEffects.put(clan, config.getStringList("Werewolf.Effects." + clan.name()));
-			}
-			else
-			{
-				this.wolfFormEffects.put(clan, defaultWolfFormEffects(clan));
-			}
-		}
-
-		this.blockedPotions = config.contains("Werewolf.BlockedPotions") ? config.getStringList("Werewolf.BlockedPotions") : new ArrayList<String>();
-
-		this.blockedCommandsAll = config.contains("BlockedCommands.All") ? config.getStringList("BlockedCommands.All") : new ArrayList<String>();
-		this.blockedCommandsWolfForm = config.contains("BlockedCommands.WolfForm") ? config.getStringList("BlockedCommands.WolfForm") : new ArrayList<String>(Arrays.asList("/skin", "/skins"));
-		this.blockedCommandsAlpha = config.contains("BlockedCommands.Alpha") ? config.getStringList("BlockedCommands.Alpha") : new ArrayList<String>();
-
-		this.dietEnabled = config.getBoolean("Diet.Enabled", true);
-		this.dietPreventConsumption = config.getBoolean("Diet.PreventConsumption", true);
-		this.dietHumanForm = config.getBoolean("Diet.HumanForm", false);
-		if (config.contains("Diet.BlockedFoods"))
-		{
-			this.dietBlockedFoods = config.getStringList("Diet.BlockedFoods");
-		}
-		else
-		{
-			this.dietBlockedFoods = new ArrayList<String>(Arrays.asList("APPLE", "BREAD", "PUMPKIN", "MELON", "MUSHROOM_STEW", "BEETROOT_SOUP", "BEETROOT", "BAKED_POTATO", "PUMPKIN_PIE", "POTATO", "POISONOUS_POTATO", "GOLDEN_APPLE",
-					"ENCHANTED_GOLDEN_APPLE", "DRIED_KELP", "CAKE", "COOKIE", "CARROT", "MILK_BUCKET", "GOLDEN_CARROT", "SUSPICIOUS_STEW", "CHORUS_FRUIT", "MELON_SLICE", "SWEET_BERRIES", "GLOW_BERRIES", "HONEY_BOTTLE"));
-		}
-	}
-
-	private static List<String> defaultWolfFormEffects(ClanManager.ClanType clan)
-	{
-		List<String> effects = new ArrayList<String>(Arrays.asList("HUNGER:1:32000", "NIGHT_VISION:0:32000"));
-
-		switch (clan)
-		{
-			case Potion:
-				effects.add("JUMP_BOOST:2:32000");
-				break;
-			case WildBite:
-				effects.add("JUMP_BOOST:1:32000");
-				effects.add("REGENERATION:0:32000");
-				break;
-			case WerewolfBite:
-				effects.add("JUMP_BOOST:1:32000");
-				effects.add("STRENGTH:1:32000");
-				break;
-			default:
-				break;
-		}
-
-		return effects;
-	}
-
-	/**
-	 * Before 0.12 Bloodmoon (WerewolfBite) used the Silvermane skin account and vice versa.
-	 * Configs still holding that default pairing get the two clans' skin settings swapped.
-	 */
-	private void migrateSwappedClanSkins()
-	{
-		if (!"SM_Werewolf".equals(this.werewolfBiteAccountName) || !"BM_Werewolf".equals(this.wildBiteAccountName))
-		{
-			return;
-		}
-
-		log("Swapping the Bloodmoon and Silvermane skins so each clan uses its own skin account.");
-
-		String accountName = this.werewolfBiteAccountName;
-		this.werewolfBiteAccountName = this.wildBiteAccountName;
-		this.wildBiteAccountName = accountName;
-
-		String accountUUID = this.werewolfBiteAccountUUID;
-		this.werewolfBiteAccountUUID = this.wildBiteAccountUUID;
-		this.wildBiteAccountUUID = accountUUID;
-
-		String skinValue = this.werewolfBiteSkinValue;
-		this.werewolfBiteSkinValue = this.wildBiteSkinValue;
-		this.wildBiteSkinValue = skinValue;
-
-		String skinSignature = this.werewolfBiteSkinSignature;
-		this.werewolfBiteSkinSignature = this.wildBiteSkinSignature;
-		this.wildBiteSkinSignature = skinSignature;
-	}
-
-	public void saveSettings()
-	{
-		config.set("Settings.ServerName", this.serverName);
-		config.set("Settings.AutoBounty", Boolean.valueOf(this.autoBounty));
-		config.set("Settings.AutoBountyMaximum", Integer.valueOf(this.autoBountyMaximum));
-		config.set("Settings.RenameWerewolves", Boolean.valueOf(this.renameWerewolves));
-		config.set("Settings.WerewolfUrges", Boolean.valueOf(this.werewolfUrges));
-		config.set("Settings.Language", this.language);
-		config.set("Settings.WolfChat", Boolean.valueOf(this.wolfChat));
-		config.set("Settings.DropArmorOnTransform", Boolean.valueOf(this.dropArmorOnTransform));
-		config.set("Settings.OnlyTransformDuringFullMoon", Boolean.valueOf(this.onlyTransformDuringFullMoon));
-		config.set("Settings.CureWerewolfWhenSlain", Boolean.valueOf(this.cureWerewolfWhenSlain));
-
-		config.set("Maturity.NoDropItems", Integer.valueOf(this.transformsForNoDropItems));
-		config.set("Maturity.ControlledTransformation", Integer.valueOf(this.transformsForControlledTransformation));
-		config.set("Maturity.GoldImmunity", Integer.valueOf(this.transformsForGoldImmunity));
-		config.set("Maturity.Intent", Integer.valueOf(this.levelForIntent));
-		config.set("Maturity.ScentTrack", Integer.valueOf(this.transformsForScentTrack));
-
-		config.set("Transformation.Limit", Boolean.valueOf(this.transformationLimitEnabled));
-		config.set("Transformation.Equation", this.transformationLimitEquation);
-		config.set("Transformation.Base", Double.valueOf(this.transformationLimitBase));
-		config.set("Transformation.Modifier", Double.valueOf(this.transformationLimitModifier));
-
-		config.set("Cooldowns.Transform", Integer.valueOf(this.transformCooldownSeconds));
-		config.set("Cooldowns.Howl", Integer.valueOf(this.howlCooldownSeconds));
-		config.set("Cooldowns.Growl", Integer.valueOf(this.growlCooldownSeconds));
-		config.set("Cooldowns.Sniff", Integer.valueOf(this.sniffCooldownSeconds));
-
-		config.set("Scent.Chance", Integer.valueOf(this.scentChance));
-		config.set("Scent.Range", Integer.valueOf(this.scentRange));
-		config.set("Scent.YOffset", Double.valueOf(this.scentYOffset));
-		config.set("Scent.ParticleAmount", Integer.valueOf(this.scentParticleAmount));
-		config.set("Scent.Distances.Far", Integer.valueOf(this.scentDistanceFar));
-		config.set("Scent.Distances.Close", Integer.valueOf(this.scentDistanceClose));
-		config.set("Scent.Distances.VeryClose", Integer.valueOf(this.scentDistanceVeryClose));
-		config.set("Scent.SlownessAmplifier", Integer.valueOf(this.scentSlownessAmplifier));
-
-		config.set("Hunting.Enabled", Boolean.valueOf(this.huntingEnabled));
-		config.set("Hunting.Trackers.UseEitherHand", Boolean.valueOf(this.trackerUseEitherHand));
-		config.set("Hunting.Target.Werewolf.WolfForm", Boolean.valueOf(this.trackWerewolfWolfForm));
-		config.set("Hunting.Target.Werewolf.HumanForm", Boolean.valueOf(this.trackWerewolfHumanForm));
-		config.set("Hunting.Target.Werewolf.Daytime", Boolean.valueOf(this.trackWerewolfDaytime));
-		config.set("Hunting.Target.Werewolf.Nighttime", Boolean.valueOf(this.trackWerewolfNighttime));
-		config.set("Hunting.Target.Vampire.Daytime", Boolean.valueOf(this.trackVampireDaytime));
-		config.set("Hunting.Target.Vampire.Nighttime", Boolean.valueOf(this.trackVampireNighttime));
-		config.set("Hunting.ForcePvP.Enabled", Boolean.valueOf(this.forcePvPEnabled));
-		config.set("Hunting.ForcePvP.Claims", Boolean.valueOf(this.forcePvPClaims));
-		config.set("Hunting.ForcePvP.AdminClaims", Boolean.valueOf(this.forcePvPAdminClaims));
-
-		config.set("Integrations.WorldGuard", Boolean.valueOf(this.worldGuardIntegration));
-		config.set("Integrations.PvPManager", Boolean.valueOf(this.pvpManagerIntegration));
-		config.set("Integrations.GriefPrevention", Boolean.valueOf(this.griefPreventionIntegration));
-
-		for (MoonManager.MoonPhase phase : MoonManager.MoonPhase.values())
-		{
-			config.set("Moon.PhaseNames." + phase.name(), this.moonPhaseNames.getOrDefault(phase, phase.getDefaultName()));
-		}
-
-		config.set("Settings.Debug", Boolean.valueOf(this.debug));
-
-		config.set("Infection.CureChance", Double.valueOf(this.cureChance));
-		config.set("Infection.WerewolfBiteRisk", Double.valueOf(this.werewolfInfectionRisk));
-		config.set("Infection.WildWolfBiteRisk", Double.valueOf(this.wildWolfInfectionRisk));
-		config.set("Infection.WerewolfBiteIntentRisk", Double.valueOf(this.werewolfIntentInfectionRisk));
-		config.set("Infection.AutoCureDays", Integer.valueOf(this.autoCureDays));
-
-		config.set("Werewolf.HandDamage", Double.valueOf(DamageManager.werewolfHandDamage));
-		config.set("Werewolf.ItemDamage", Double.valueOf(DamageManager.werewolfItemDamage));
-		config.set("Werewolf.ArmorMultiplier", Double.valueOf(DamageManager.SilverArmorMultiplier));
-		config.set("Werewolf.WolfDistance", Integer.valueOf(this.wolfdistance));
-
-		for (ClanManager.ClanType clan : ClanManager.ClanType.values())
-		{
-			String path = "Werewolf.Stats." + clan.name() + ".";
-			WolfFormManager.Stats stats = this.werewolfStats.get(clan);
-			WolfFormManager.Stats alpha = this.alphaStats.get(clan);
-			config.set(path + "Speed", Double.valueOf(stats.speed));
-			config.set(path + "Defense", Double.valueOf(stats.defense));
-			config.set(path + "FistDamage", Double.valueOf(stats.fistDamage));
-			config.set(path + "ItemDamage", Double.valueOf(stats.itemDamage));
-			config.set(path + "Alpha.Speed", Double.valueOf(alpha.speed));
-			config.set(path + "Alpha.Defense", Double.valueOf(alpha.defense));
-			config.set(path + "Alpha.FistDamage", Double.valueOf(alpha.fistDamage));
-			config.set(path + "Alpha.ItemDamage", Double.valueOf(alpha.itemDamage));
-			config.set("Werewolf.Effects." + clan.name(), this.wolfFormEffects.get(clan));
-		}
-		config.set("Werewolf.BlockedPotions", this.blockedPotions);
-
-		config.set("BlockedCommands.All", this.blockedCommandsAll);
-		config.set("BlockedCommands.WolfForm", this.blockedCommandsWolfForm);
-		config.set("BlockedCommands.Alpha", this.blockedCommandsAlpha);
-
-		config.set("Diet.Enabled", Boolean.valueOf(this.dietEnabled));
-		config.set("Diet.PreventConsumption", Boolean.valueOf(this.dietPreventConsumption));
-		config.set("Diet.HumanForm", Boolean.valueOf(this.dietHumanForm));
-		config.set("Diet.BlockedFoods", this.dietBlockedFoods);
-
-		config.set("WerewolfGroup.Enabled", Boolean.valueOf(this.useWerewolfGroupName));
-		config.set("WerewolfGroup.Name", this.werewolfGroupName);
-
-		config.set("Pounce.Enabled", Boolean.valueOf(this.usePounce));
-		config.set("Pounce.PlaneSpeed", Float.valueOf(this.pouncePlaneSpeed));
-		config.set("Pounce.HeightSpeed", Float.valueOf(this.pounceHeightSpeed));
-
-		config.set("AllowedWorlds", this.allowedWorlds);
-
-		config.set("Night.Start", Integer.valueOf(nightStart));
-		config.set("Night.End", Integer.valueOf(nightEnd));
-
-		config.set("Clans.Enabled", Boolean.valueOf(this.useClans));
-		config.set("Clans.PotionName", this.potionName);
-		config.set("Clans.WerewolfBiteName", this.werewolfBiteName);
-		config.set("Clans.WildBiteName", this.wildBiteName);
-		config.set("Clans.AlphaAccountName", this.alphaAccountName);
-		config.set("Clans.PotionAccountName", this.potionAccountName);
-		config.set("Clans.WerewolfBiteAccountName", this.werewolfBiteAccountName);
-		config.set("Clans.WildBiteAccountName", this.wildBiteAccountName);
-		config.set("Clans.AlphaAccountUUID", this.alphaAccountUUID);
-		config.set("Clans.PotionAccountUUID", this.potionAccountUUID);
-		config.set("Clans.WerewolfBiteAccountUUID", this.werewolfBiteAccountUUID);
-		config.set("Clans.WildBiteAccountUUID", this.wildBiteAccountUUID);
-		config.set("Clans.AlphaSkinValue", this.alphaSkinValue);
-		config.set("Clans.AlphaSkinSignature", this.alphaSkinSignature);
-		config.set("Clans.PotionSkinValue", this.potionSkinValue);
-		config.set("Clans.PotionSkinSignature", this.potionSkinSignature);
-		config.set("Clans.WerewolfBiteSkinValue", this.werewolfBiteSkinValue);
-		config.set("Clans.WerewolfBiteSkinSignature", this.werewolfBiteSkinSignature);
-		config.set("Clans.WildBiteSkinValue", this.wildBiteSkinValue);
-		config.set("Clans.WildBiteSkinSignature", this.wildBiteSkinSignature);
-
-		config.set("Disguises.Backend", this.disguiseBackend);
-
-		config.set("WerewolfNames.Enabled", this.werewolfNamesEnabled);
-		config.set("WerewolfNames.Given_names", this.givenNames);
-		config.set("WerewolfNames.Surnames", this.surnames);
-
-		config.set("Signs.Enabled", Boolean.valueOf(this.useSigns));
-		config.set("Signs.CurePrice", Double.valueOf(this.curePrice));
-		config.set("Signs.InfectionPrice", Double.valueOf(this.infectionPrice));
-		config.set("Signs.WolfbanePrice", Double.valueOf(this.wolfbanePrice));
-		config.set("Signs.SilverSwordPrice", Double.valueOf(this.silverSwordPrice));
-		config.set("Signs.BookPrice", Double.valueOf(this.bookPrice));
-
-		config.set("Trophies.Enabled", Boolean.valueOf(this.useTrophies));
-
-		config.set("Scoreboards.Enabled", Boolean.valueOf(this.useScoreboards));
-
-		config.set("Chat.Prefix", this.chatPrefix);
-
-		config.set("Items.Enabled", true);
-		config.set("Items.SilverSwordMultiplier", Double.valueOf(DamageManager.SilverSwordMultiplier));
-		config.set("Items.WolfbaneUntransformChance", this.wolfbaneUntransformChance);
-		config.set("Items.CraftableSilverSword", Boolean.valueOf(this.craftableSilverSwordEnabled));
-		config.set("Items.CraftableSilverArmor", Boolean.valueOf(this.craftableSilverArmorEnabled));
-		config.set("Items.CraftableLoreBookEnabled", Boolean.valueOf(this.craftableLoreBookEnabled));
-		config.set("Items.CraftableInfectionPotionEnabled", Boolean.valueOf(this.craftableInfectionPotionEnabled));
-		config.set("Items.CraftableCurePotionEnabled", Boolean.valueOf(this.craftableCurePotionEnabled));
-		config.set("Items.CraftableWolfbanePotionEnabled", Boolean.valueOf(this.craftableWolfbanePotionEnabled));
-		config.set("Items.CraftableWerewolfTracker", Boolean.valueOf(this.craftableWerewolfTrackerEnabled));
-		config.set("Items.CraftableVampireTracker", Boolean.valueOf(this.craftableVampireTrackerEnabled));
-		config.set("Items.SilverSwordPenalty", Double.valueOf(this.silverSwordPenalty));
-		config.set("Items.SilverSwordBypassesDefense", Boolean.valueOf(this.silverSwordBypassesDefense));
-		for (ItemManager.ArmorPiece piece : ItemManager.ArmorPiece.values())
-		{
-			String path = "Items.SilverArmor." + piece.getConfigName() + ".";
-			config.set(path + "Purity", Integer.valueOf(this.silverArmorPurity.getOrDefault(piece, piece.getDefaultPurity())));
-			config.set(path + "Defense", Integer.valueOf(this.silverArmorDefense.getOrDefault(piece, piece.getDefaultDefense())));
-		}
-		/*
-		 * DamageManager.SilverSwordMultiplier =
-		 * config.getInt("Items.SilverSwordMultiplier", 2);
-		 * this.craftableSilverSwordEnabled =
-		 * config.getBoolean("Items.CraftableSilverSword", true);
-		 * this.craftableLoreBookEnabled =
-		 * config.getBoolean("Items.CraftableLoreBookEnabled", true);
-		 * this.craftableInfectionPotionEnabled =
-		 * config.getBoolean("Items.CraftableInfectionPotionEnabled", true);
-		 * this.craftableCurePotionEnabled =
-		 * config.getBoolean("Items.CraftableCurePotionEnabled", true);
-		 * this.craftableWolfbanePotionEnabled =
-		 * config.getBoolean("Items.CraftableWolfbanePotionEnabled", true);
-		 */
-
-		saveConfig();
 	}
 
 	@Override

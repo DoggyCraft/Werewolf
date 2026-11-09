@@ -44,7 +44,7 @@ public class ForcePvPIntegration implements IntegrationListener
 
 	private boolean isActive()
 	{
-		return this.plugin.forcePvPEnabled && this.plugin.huntingEnabled && this.plugin.pvpManagerIntegration && this.plugin.griefPreventionIntegration;
+		return this.plugin.getSettings().hunting().forcePvPEnabled() && this.plugin.getSettings().hunting().enabled() && this.plugin.getSettings().integrations().pvpManager() && this.plugin.getSettings().integrations().griefPrevention();
 	}
 
 	// Claims are columns, so only a change of block column (or world) can change the claim
@@ -146,7 +146,7 @@ public class ForcePvPIntegration implements IntegrationListener
 			return null;
 		}
 
-		if (claim.isAdminClaim() ? !this.plugin.forcePvPAdminClaims : !this.plugin.forcePvPClaims)
+		if (claim.isAdminClaim() ? !this.plugin.getSettings().hunting().forcePvPAdminClaims() : !this.plugin.getSettings().hunting().forcePvPClaims())
 		{
 			return null;
 		}

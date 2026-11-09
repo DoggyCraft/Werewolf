@@ -102,7 +102,7 @@ public class HuntManager
 			return;
 		}
 		
-		if (this.totalBounty >= this.plugin.autoBountyMaximum)
+		if (this.totalBounty >= this.plugin.getSettings().general().autoBountyMaximum())
 		{
 			return;
 		}
@@ -115,9 +115,9 @@ public class HuntManager
 		int bounty = 10 + this.random.nextInt(10) * 10;
 
 		this.totalBounty += bounty;
-		if (this.totalBounty >= this.plugin.autoBountyMaximum)
+		if (this.totalBounty >= this.plugin.getSettings().general().autoBountyMaximum())
 		{
-			this.totalBounty = this.plugin.autoBountyMaximum;
+			this.totalBounty = this.plugin.getSettings().general().autoBountyMaximum();
 		}
 		Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(bounty));
 		this.plugin.getServer().broadcastMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BountyServerAdded, ChatColor.AQUA));

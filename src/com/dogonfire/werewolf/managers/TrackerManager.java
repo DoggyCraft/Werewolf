@@ -88,8 +88,8 @@ public class TrackerManager
 				return false;
 			}
 			boolean wolfForm = Werewolf.getWerewolfManager().hasWerewolfSkin(target.getUniqueId());
-			boolean formAllowed = wolfForm ? this.plugin.trackWerewolfWolfForm : this.plugin.trackWerewolfHumanForm;
-			boolean timeAllowed = night ? this.plugin.trackWerewolfNighttime : this.plugin.trackWerewolfDaytime;
+			boolean formAllowed = wolfForm ? this.plugin.getSettings().hunting().trackWerewolfWolfForm() : this.plugin.getSettings().hunting().trackWerewolfHumanForm();
+			boolean timeAllowed = night ? this.plugin.getSettings().hunting().trackWerewolfNighttime() : this.plugin.getSettings().hunting().trackWerewolfDaytime();
 			return formAllowed && timeAllowed;
 		}
 
@@ -97,7 +97,7 @@ public class TrackerManager
 		{
 			return false;
 		}
-		return night ? this.plugin.trackVampireNighttime : this.plugin.trackVampireDaytime;
+		return night ? this.plugin.getSettings().hunting().trackVampireNighttime() : this.plugin.getSettings().hunting().trackVampireDaytime();
 	}
 
 	private boolean isHoldingTracker(Player hunter, TargetType type)
@@ -106,7 +106,7 @@ public class TrackerManager
 		{
 			return true;
 		}
-		return this.plugin.trackerUseEitherHand && type.equals(getTrackerType(hunter.getInventory().getItemInOffHand()));
+		return this.plugin.getSettings().hunting().trackerUseEitherHand() && type.equals(getTrackerType(hunter.getInventory().getItemInOffHand()));
 	}
 
 	/** Right-click: locks onto the nearest valid target that no listener vetoes */
@@ -207,7 +207,7 @@ public class TrackerManager
 			Lock lock = entry.getValue();
 			Player target = this.plugin.getServer().getPlayer(lock.targetId);
 
-			if (this.plugin.huntingEnabled && target != null && WerewolfAPI.isHuman(hunter) && isHoldingTracker(hunter, lock.type) && isValidTarget(hunter, target, lock.type))
+			if (this.plugin.getSettings().hunting().enabled() && target != null && WerewolfAPI.isHuman(hunter) && isHoldingTracker(hunter, lock.type) && isValidTarget(hunter, target, lock.type))
 			{
 				TrackerTargetEvent event = new TrackerTargetEvent(hunter, target, lock.type, true);
 				this.plugin.getServer().getPluginManager().callEvent(event);

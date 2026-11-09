@@ -60,7 +60,7 @@ public class SkinManager
 		ClanManager.ClanType clantype = Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId());
 
 		// Get the correct account, if alpha, alphaskin, else the clanskin
-		if (plugin.useClans && Werewolf.getClanManager().isAlpha(player.getUniqueId()))
+		if (plugin.getSettings().clans().enabled() && Werewolf.getClanManager().isAlpha(player.getUniqueId()))
 		{
 			werewolfAccountId = Werewolf.getClanManager().getWerewolfAccountIdForAlpha(clantype);
 			werewolfAccountName = Werewolf.getClanManager().getWerewolfAccountForAlpha(clantype);

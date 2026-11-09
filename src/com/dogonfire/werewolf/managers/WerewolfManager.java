@@ -569,28 +569,21 @@ public class WerewolfManager
 	/** Seconds a /ww transform wolf form may last at this werewolf's level, or -1 if there is no limit */
 	public long getTransformationTimeLimitSeconds(UUID playerId)
 	{
-		if (!this.plugin.transformationLimitEnabled)
+		if (!this.plugin.getSettings().transformation().limit())
 		{
 			return -1;
 		}
 
 		int level = getNumberOfTransformations(playerId);
-		double base = this.plugin.transformationLimitBase;
-		double modifier = this.plugin.transformationLimitModifier;
-		double seconds;
+		double base = this.plugin.getSettings().transformation().base();
+		double modifier = this.plugin.getSettings().transformation().modifier();
 
-		switch (this.plugin.transformationLimitEquation.toUpperCase())
+		double seconds = switch (this.plugin.getSettings().transformation().equation())
 		{
-			case "LINEAR":
-				seconds = base + modifier * level;
-				break;
-			case "EXPONENTIAL":
-				seconds = base + Math.pow(level, modifier);
-				break;
-			default:
-				seconds = base;
-				break;
-		}
+			case LINEAR -> base + modifier * level;
+			case EXPONENTIAL -> base + Math.pow(level, modifier);
+			case CONSTANT -> base;
+		};
 
 		return Math.max(0L, (long) seconds);
 	}
@@ -653,17 +646,17 @@ public class WerewolfManager
 	/** Seconds left before the werewolf can /ww transform into wolf form again, 0 if ready */
 	public long getTransformCooldownLeft(UUID playerId)
 	{
-		return getCooldownLeft(this.lastFormChanges, playerId, this.plugin.transformCooldownSeconds);
+		return getCooldownLeft(this.lastFormChanges, playerId, this.plugin.getSettings().cooldowns().transform());
 	}
 
 	public long getHowlCooldownLeft(UUID playerId)
 	{
-		return getCooldownLeft(this.lastHowls, playerId, this.plugin.howlCooldownSeconds);
+		return getCooldownLeft(this.lastHowls, playerId, this.plugin.getSettings().cooldowns().howl());
 	}
 
 	public long getGrowlCooldownLeft(UUID playerId)
 	{
-		return getCooldownLeft(this.lastGrowls, playerId, this.plugin.growlCooldownSeconds);
+		return getCooldownLeft(this.lastGrowls, playerId, this.plugin.getSettings().cooldowns().growl());
 	}
 
 	private long getCooldownLeft(HashMap<UUID, Long> lastUses, UUID playerId, int cooldownSeconds)
@@ -696,12 +689,12 @@ public class WerewolfManager
 
 	public boolean isGoldImmune(UUID playerId)
 	{
-		return getNumberOfTransformations(playerId) >= this.plugin.transformsForGoldImmunity;
+		return getNumberOfTransformations(playerId) >= this.plugin.getSettings().maturity().goldImmunity();
 	}
 
 	public boolean canUseIntent(UUID playerId)
 	{
-		return getNumberOfTransformations(playerId) >= this.plugin.levelForIntent;
+		return getNumberOfTransformations(playerId) >= this.plugin.getSettings().maturity().intent();
 	}
 
 	public boolean hasIntent(UUID playerId)
@@ -718,17 +711,17 @@ public class WerewolfManager
 	/** Chance that a bite from this werewolf infects; intent raises it once the werewolf is mature enough */
 	public double getBiteInfectionRisk(UUID werewolfId)
 	{
-		if (this.plugin.werewolfInfectionRisk <= 0)
+		if (this.plugin.getSettings().infection().werewolfBiteRisk() <= 0)
 		{
 			return 0;
 		}
 
 		if (hasIntent(werewolfId) && canUseIntent(werewolfId))
 		{
-			return this.plugin.werewolfIntentInfectionRisk;
+			return this.plugin.getSettings().infection().werewolfBiteIntentRisk();
 		}
 
-		return this.plugin.werewolfInfectionRisk;
+		return this.plugin.getSettings().infection().werewolfBiteRisk();
 	}
 
 	public boolean isWerewolf(Player player)
@@ -1073,12 +1066,12 @@ public class WerewolfManager
 
 	public boolean canControlledTransformation(UUID playerId)
 	{
-		return getNumberOfTransformations(playerId) >= this.plugin.transformsForControlledTransformation;
+		return getNumberOfTransformations(playerId) >= this.plugin.getSettings().maturity().controlledTransformation();
 	}
 
 	public boolean hasToDropItems(UUID playerId)
 	{
-		return getNumberOfTransformations(playerId) < this.plugin.transformsForNoDropItems;
+		return getNumberOfTransformations(playerId) < this.plugin.getSettings().maturity().noDropItems();
 	}
 
 	public boolean hasRecentTransformAutoCure(UUID playerId)
@@ -1102,7 +1095,7 @@ public class WerewolfManager
 		long diff = thisDate.getTime() - transformDate.getTime();
 		long diffDays = diff / 86400000L;
 
-		return diffDays < this.plugin.autoCureDays;
+		return diffDays < this.plugin.getSettings().infection().autoCureDays();
 	}
 
 	public boolean hasWerewolfSkin(UUID playerId)
@@ -1116,7 +1109,7 @@ public class WerewolfManager
 		String surname = "";
 
 		// Generate a random givenName
-		List<String> strings = plugin.givenNames;
+		List<String> strings = plugin.getSettings().names().givenNames();
 		if (strings.size() == 0)
 		{
 			this.plugin.log("No given name strings found in the config!");
@@ -1127,7 +1120,7 @@ public class WerewolfManager
 		}
 
 		// Generate a random surname
-		List<String> strings2 = plugin.surnames;
+		List<String> strings2 = plugin.getSettings().names().surnames();
 		if (strings2.size() == 0)
 		{
 			this.plugin.log("No surname strings found in the config!");
@@ -1305,7 +1298,7 @@ public class WerewolfManager
 
 		Werewolf.getClanManager().checkAlphas();
 
-		if (this.plugin.autoCureDays > 0 && this.random.nextInt(100) == 0 && Werewolf.getWerewolfManager().getAllWerewolves().size() > 0)
+		if (this.plugin.getSettings().infection().autoCureDays() > 0 && this.random.nextInt(100) == 0 && Werewolf.getWerewolfManager().getAllWerewolves().size() > 0)
 		{
 			int r = this.random.nextInt(Werewolf.getWerewolfManager().getAllWerewolves().size());
 			UUID werewolfPlayerId = (UUID) Werewolf.getWerewolfManager().getAllWerewolves().toArray()[r];
@@ -1315,7 +1308,7 @@ public class WerewolfManager
 				String werewolfPlayerName = plugin.getServer().getOfflinePlayer(werewolfPlayerId).getName();
 				if (unmakeWerewolf(werewolfPlayerId, WerewolfCureEvent.Cause.AUTO_CURE))
 				{
-					this.plugin.log(werewolfPlayerName + " has not transformed for " + this.plugin.autoCureDays + " days. Removing their werewolf infection.");
+					this.plugin.log(werewolfPlayerName + " has not transformed for " + this.plugin.getSettings().infection().autoCureDays() + " days. Removing their werewolf infection.");
 				}
 			}
 		}
@@ -1371,7 +1364,7 @@ public class WerewolfManager
 		// Urges are rare flavour messages, so only one random player gets a chance per update
 		Player player = (Player) this.plugin.getServer().getOnlinePlayers().toArray()[this.random.nextInt(this.plugin.getServer().getOnlinePlayers().size())];
 
-		if (this.plugin.werewolfUrges && !changedForm.contains(player) && isWerewolf(player))
+		if (this.plugin.getSettings().general().werewolfUrges() && !changedForm.contains(player) && isWerewolf(player))
 		{
 			sendWerewolfUrges(player);
 		}
@@ -1385,7 +1378,7 @@ public class WerewolfManager
 		 * } } }
 		 */
 
-		if (this.plugin.autoBounty && this.plugin.vaultEnabled)
+		if (this.plugin.getSettings().general().autoBounty() && this.plugin.vaultEnabled)
 		{
 			Werewolf.getHuntManager().autoAddBounty();
 		}

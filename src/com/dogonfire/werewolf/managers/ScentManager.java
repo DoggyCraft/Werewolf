@@ -43,7 +43,7 @@ public class ScentManager
 
 	public boolean canScentTrack(UUID playerId)
 	{
-		return Werewolf.getWerewolfManager().getNumberOfTransformations(playerId) >= this.plugin.transformsForScentTrack;
+		return Werewolf.getWerewolfManager().getNumberOfTransformations(playerId) >= this.plugin.getSettings().maturity().scentTrack();
 	}
 
 	public UUID getTarget(UUID werewolfId)
@@ -69,7 +69,7 @@ public class ScentManager
 		}
 
 		Long lastSniff = this.lastSniffs.get(werewolfId);
-		if (lastSniff != null && System.currentTimeMillis() - lastSniff < this.plugin.sniffCooldownSeconds * 1000L)
+		if (lastSniff != null && System.currentTimeMillis() - lastSniff < this.plugin.getSettings().cooldowns().sniff() * 1000L)
 		{
 			return false;
 		}
@@ -84,7 +84,7 @@ public class ScentManager
 		this.lastSniffs.put(werewolfId, System.currentTimeMillis());
 		werewolf.getWorld().playSound(werewolf.getLocation(), Sound.ENTITY_WOLF_PANT, 1.0F, 0.6F);
 
-		if (this.random.nextInt(100) < this.plugin.scentChance)
+		if (this.random.nextInt(100) < this.plugin.getSettings().scent().chance())
 		{
 			this.targets.put(werewolfId, target.getUniqueId());
 			Werewolf.getLanguageManager().setPlayerName(target.getName());
@@ -112,9 +112,9 @@ public class ScentManager
 		}
 
 		removeEffect(werewolf, PotionEffectType.BLINDNESS, 0);
-		if (this.plugin.scentSlownessAmplifier >= 0)
+		if (this.plugin.getSettings().scent().slownessAmplifier() >= 0)
 		{
-			removeEffect(werewolf, PotionEffectType.SLOWNESS, this.plugin.scentSlownessAmplifier);
+			removeEffect(werewolf, PotionEffectType.SLOWNESS, this.plugin.getSettings().scent().slownessAmplifier());
 		}
 	}
 
@@ -175,22 +175,22 @@ public class ScentManager
 	{
 		Vector start = werewolf.getLocation().toVector();
 		Vector direction = target.getLocation().toVector().subtract(start);
-		if (direction.lengthSquared() < 0.01D || this.plugin.scentRange <= 0)
+		if (direction.lengthSquared() < 0.01D || this.plugin.getSettings().scent().range() <= 0)
 		{
 			return;
 		}
 
 		double distance = werewolf.getLocation().distance(target.getLocation());
 		Color color;
-		if (distance >= this.plugin.scentDistanceFar)
+		if (distance >= this.plugin.getSettings().scent().distanceFar())
 		{
 			color = Color.fromRGB(128, 128, 128);
 		}
-		else if (distance >= this.plugin.scentDistanceClose)
+		else if (distance >= this.plugin.getSettings().scent().distanceClose())
 		{
 			color = Color.fromRGB(0, 128, 0);
 		}
-		else if (distance >= this.plugin.scentDistanceVeryClose)
+		else if (distance >= this.plugin.getSettings().scent().distanceVeryClose())
 		{
 			color = Color.fromRGB(128, 128, 0);
 		}
@@ -200,21 +200,21 @@ public class ScentManager
 		}
 
 		Particle.DustOptions dust = new Particle.DustOptions(color, 1.0F);
-		int range = (int) Math.min(this.plugin.scentRange, Math.ceil(distance));
-		BlockIterator iterator = new BlockIterator(werewolf.getWorld(), start, direction, this.plugin.scentYOffset, Math.max(1, range));
+		int range = (int) Math.min(this.plugin.getSettings().scent().range(), Math.ceil(distance));
+		BlockIterator iterator = new BlockIterator(werewolf.getWorld(), start, direction, this.plugin.getSettings().scent().yOffset(), Math.max(1, range));
 		while (iterator.hasNext())
 		{
 			Location location = iterator.next().getLocation().add(0.5D, 0.5D, 0.5D);
-			werewolf.spawnParticle(Particle.DUST, location, Math.max(1, this.plugin.scentParticleAmount), 0.2D, 0.2D, 0.2D, 0.0D, dust);
+			werewolf.spawnParticle(Particle.DUST, location, Math.max(1, this.plugin.getSettings().scent().particleAmount()), 0.2D, 0.2D, 0.2D, 0.0D, dust);
 		}
 	}
 
 	private void applyEffects(Player werewolf)
 	{
 		Werewolf.pu.addPotionEffectNoGraphic(werewolf, new PotionEffect(PotionEffectType.BLINDNESS, EFFECT_TICKS, 0, false, false));
-		if (this.plugin.scentSlownessAmplifier >= 0)
+		if (this.plugin.getSettings().scent().slownessAmplifier() >= 0)
 		{
-			Werewolf.pu.addPotionEffectNoGraphic(werewolf, new PotionEffect(PotionEffectType.SLOWNESS, EFFECT_TICKS, this.plugin.scentSlownessAmplifier, false, false));
+			Werewolf.pu.addPotionEffectNoGraphic(werewolf, new PotionEffect(PotionEffectType.SLOWNESS, EFFECT_TICKS, this.plugin.getSettings().scent().slownessAmplifier(), false, false));
 		}
 	}
 

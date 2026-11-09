@@ -79,7 +79,7 @@ public class InteractListener implements Listener
 		}
 		else if (!Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 		{
-			if (Math.random() < this.plugin.cureChance)
+			if (Math.random() < this.plugin.getSettings().infection().cureChance())
 			{
 				if (Werewolf.getWerewolfManager().unmakeWerewolf(player.getUniqueId(), WerewolfCureEvent.Cause.CURE_POTION))
 				{

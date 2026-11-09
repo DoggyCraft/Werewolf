@@ -17,6 +17,9 @@ import org.bukkit.inventory.PlayerInventory;
 
 public class InventoryListener implements Listener
 {
+	// Not configurable; werewolves in wolf form never hold weapons
+	private static final boolean	KEEP_WEREWOLF_HANDS_FREE	= true;
+
 	private Werewolf	plugin	= null;
 
 	public InventoryListener(Werewolf p)
@@ -27,7 +30,7 @@ public class InventoryListener implements Listener
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onInventoryClose(InventoryCloseEvent event)
 	{
-		if ((!Werewolf.pluginEnabled) || (!this.plugin.dropArmorOnTransform))
+		if ((!Werewolf.pluginEnabled) || (!this.plugin.getSettings().general().dropArmorOnTransform()))
 		{
 			return;
 		}
@@ -138,7 +141,7 @@ public class InventoryListener implements Listener
 				return;
 			}
 
-			if (this.plugin.keepWerewolfHandsFree)
+			if (KEEP_WEREWOLF_HANDS_FREE)
 			{
 				int heldItemSlot = event.getNewSlot();
 				if (player.getInventory().getItem(heldItemSlot) != null && player.getInventory().getItem(heldItemSlot).getType() != Material.AIR)
@@ -208,7 +211,7 @@ public class InventoryListener implements Listener
 				return;
 			}
 
-			if (this.plugin.keepWerewolfHandsFree)
+			if (KEEP_WEREWOLF_HANDS_FREE)
 			{
 				if (player.getInventory().getItemInMainHand().getType() == Material.AIR)
 				{

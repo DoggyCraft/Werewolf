@@ -2,6 +2,7 @@ package com.dogonfire.werewolf.disguises;
 
 import com.dogonfire.werewolf.managers.ClanManager;
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.config.Settings;
 import net.skinsrestorer.api.SkinsRestorer;
 import net.skinsrestorer.api.SkinsRestorerProvider;
 import net.skinsrestorer.api.exception.DataRequestException;
@@ -106,10 +107,13 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
     {
         this.skinsRestorer = SkinsRestorerProvider.get();
 
-        skinsRestorer.getSkinStorage().setCustomSkinData("Alpha", SkinProperty.of(Werewolf.instance().alphaSkinValue, Werewolf.instance().alphaSkinSignature));
-        skinsRestorer.getSkinStorage().setCustomSkinData(ClanManager.ClanType.Potion.name(), SkinProperty.of(Werewolf.instance().potionSkinValue, Werewolf.instance().potionSkinSignature));
-        skinsRestorer.getSkinStorage().setCustomSkinData(ClanManager.ClanType.WerewolfBite.name(), SkinProperty.of(Werewolf.instance().werewolfBiteSkinValue, Werewolf.instance().werewolfBiteSkinSignature));
-        skinsRestorer.getSkinStorage().setCustomSkinData(ClanManager.ClanType.WildBite.name(), SkinProperty.of(Werewolf.instance().wildBiteSkinValue, Werewolf.instance().wildBiteSkinSignature));
+        Settings.Clans clans = Werewolf.instance().getSettings().clans();
+        skinsRestorer.getSkinStorage().setCustomSkinData("Alpha", SkinProperty.of(clans.alphaSkin().value(), clans.alphaSkin().signature()));
+        for (ClanManager.ClanType clan : ClanManager.ClanType.values())
+        {
+            Settings.Skin skin = clans.skins().get(clan);
+            skinsRestorer.getSkinStorage().setCustomSkinData(clan.name(), SkinProperty.of(skin.value(), skin.signature()));
+        }
     }
 
     @Override

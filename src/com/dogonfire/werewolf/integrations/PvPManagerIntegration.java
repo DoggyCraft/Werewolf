@@ -43,7 +43,7 @@ public class PvPManagerIntegration implements IntegrationListener
 
 	private boolean isProtected(Player hunter, Player target)
 	{
-		if (!this.plugin.pvpManagerIntegration)
+		if (!this.plugin.getSettings().integrations().pvpManager())
 		{
 			return false;
 		}

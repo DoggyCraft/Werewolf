@@ -86,7 +86,7 @@ public class Commands implements TabExecutor
 				Werewolf.getLanguageManager().setType(Werewolf.getClanManager().getClanName(player.getUniqueId()));
 				Werewolf.getLanguageManager().setAmount("Level " + Werewolf.getWerewolfManager().getNumberOfTransformations(player.getUniqueId()));
 				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfCommandIsWerewolf, ChatColor.WHITE));
-				if (this.plugin.useClans && Werewolf.getClanManager().isAlpha(player.getUniqueId()))
+				if (this.plugin.getSettings().clans().enabled() && Werewolf.getClanManager().isAlpha(player.getUniqueId()))
 				{
 					String clanName = Werewolf.getClanManager().getClanName(Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId())) + "s";
 					Werewolf.getLanguageManager().setType(clanName);
@@ -100,24 +100,24 @@ public class Commands implements TabExecutor
 
 				player.sendMessage("");
 
-				if (numberOfTransformations >= this.plugin.levelForIntent)
+				if (numberOfTransformations >= this.plugin.getSettings().maturity().intent())
 				{
 					Werewolf.getLanguageManager().setType("/ww intent");
 					LanguageManager.LANGUAGESTRING intentString = Werewolf.getWerewolfManager().hasIntent(player.getUniqueId()) ? LanguageManager.LANGUAGESTRING.WerewolfCommandIntentOn : LanguageManager.LANGUAGESTRING.WerewolfCommandIntentOff;
 					player.sendMessage(Werewolf.getLanguageManager().getLanguageString(intentString, ChatColor.WHITE));
 				}
 
-				if (numberOfTransformations >= this.plugin.transformsForNoDropItems)
+				if (numberOfTransformations >= this.plugin.getSettings().maturity().noDropItems())
 				{
 					player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfCommandNoDropItems, ChatColor.WHITE));
 				}
 
-				if (numberOfTransformations >= this.plugin.transformsForControlledTransformation)
+				if (numberOfTransformations >= this.plugin.getSettings().maturity().controlledTransformation())
 				{
 					player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfCommandControlledTransformation, ChatColor.WHITE));
 				}
 
-				if (numberOfTransformations >= this.plugin.transformsForGoldImmunity)
+				if (numberOfTransformations >= this.plugin.getSettings().maturity().goldImmunity())
 				{
 					player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfCommandGoldImmunity, ChatColor.WHITE));
 				}
@@ -143,7 +143,7 @@ public class Commands implements TabExecutor
 				player.sendMessage("");
 			}
 
-			if (plugin.useClans && Werewolf.getWerewolfManager().isWerewolf(player))
+			if (plugin.getSettings().clans().enabled() && Werewolf.getWerewolfManager().isWerewolf(player))
 			{
 				Werewolf.getLanguageManager().setType("/ww clan");
 				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpClan, ChatColor.AQUA));
@@ -194,7 +194,7 @@ public class Commands implements TabExecutor
 			this.plugin.log("/werewolf - Show basic info");
 			this.plugin.log("/howl - Howl as a Werewolf!");
 			this.plugin.log("/growl - Growl as a Werewolf!");
-			this.plugin.log("/werewolf top - View the top Werewolf hunters in " + this.plugin.serverName);
+			this.plugin.log("/werewolf top - View the top Werewolf hunters in " + this.plugin.getSettings().general().serverName());
 			this.plugin.log("/werewolf hunt - Toggles Werewolf hunt mode");
 			this.plugin.log("/werewolf check <playername> - Check Werewolf status for a player");
 			this.plugin.log("/werewolf bounty - Check the current bounty for killing a Werewolf");
@@ -278,7 +278,7 @@ public class Commands implements TabExecutor
 				Werewolf.getLanguageManager().setType("/ww addlevel <playername> <amount>");
 				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpAddLevel, ChatColor.AQUA));
 			}
-			if (this.plugin.useClans && (player.isOp() || (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.setalpha"))))
+			if (this.plugin.getSettings().clans().enabled() && (player.isOp() || (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.setalpha"))))
 			{
 				Werewolf.getLanguageManager().setType("/ww setalpha <playername>");
 				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpSetAlpha, ChatColor.AQUA));
@@ -333,7 +333,7 @@ public class Commands implements TabExecutor
 				Werewolf.getLanguageManager().setType("/ww track");
 				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpTrack, ChatColor.AQUA));
 			}
-			if (this.plugin.useClans)
+			if (this.plugin.getSettings().clans().enabled())
 			{
 				if (player.isOp() || (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.clan")))
 				{
@@ -501,7 +501,7 @@ public class Commands implements TabExecutor
 				this.plugin.sendInfo(player, ChatColor.YELLOW + message);
 				// plugin.sendInfo(player.getUniqueId(),
 				// LanguageManager.LANGUAGESTRING., ChatColor.GREEN, "",
-				// (int)this.plugin.infectionPrice, 1);
+				// (int)this.plugin.getSettings().signs().infectionPrice(), 1);
 
 				n++;
 			}
@@ -535,9 +535,9 @@ public class Commands implements TabExecutor
 			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfCommandIsNotWerewolf, ChatColor.RED));
 			return false;
 		}
-		if (Werewolf.getWerewolfManager().getNumberOfTransformations(player.getUniqueId()) < this.plugin.transformsForControlledTransformation)
+		if (Werewolf.getWerewolfManager().getNumberOfTransformations(player.getUniqueId()) < this.plugin.getSettings().maturity().controlledTransformation())
 		{
-			int fullMoons = this.plugin.transformsForControlledTransformation - Werewolf.getWerewolfManager().getNumberOfTransformations(player.getUniqueId());
+			int fullMoons = this.plugin.getSettings().maturity().controlledTransformation() - Werewolf.getWerewolfManager().getNumberOfTransformations(player.getUniqueId());
 			Werewolf.getLanguageManager().setAmount("" + fullMoons);
 			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.MustExperienceMoreFullMoons, ChatColor.RED));
 			return false;
@@ -592,7 +592,7 @@ public class Commands implements TabExecutor
 		}
 		if (!Werewolf.getWerewolfManager().canUseIntent(player.getUniqueId()))
 		{
-			int fullMoons = this.plugin.levelForIntent - Werewolf.getWerewolfManager().getNumberOfTransformations(player.getUniqueId());
+			int fullMoons = this.plugin.getSettings().maturity().intent() - Werewolf.getWerewolfManager().getNumberOfTransformations(player.getUniqueId());
 			Werewolf.getLanguageManager().setAmount("" + fullMoons);
 			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.MustExperienceMoreFullMoons, ChatColor.RED));
 			return false;
@@ -663,7 +663,7 @@ public class Commands implements TabExecutor
 	// clan and the other clans
 	public boolean commandClan(Player player)
 	{
-		if (!this.plugin.useClans)
+		if (!this.plugin.getSettings().clans().enabled())
 		{
 			this.plugin.sendInfo(player, ChatColor.RED + "Clans are not enabled.");
 			return false;
@@ -757,7 +757,7 @@ public class Commands implements TabExecutor
 	// The command that is run by the clan alpha to set the home for the clan
 	private boolean commandSetHome(Player player)
 	{
-		if (!this.plugin.useClans)
+		if (!this.plugin.getSettings().clans().enabled())
 		{
 			this.plugin.sendInfo(player, ChatColor.RED + "Clans are not enabled.");
 			return false;
@@ -1168,7 +1168,7 @@ public class Commands implements TabExecutor
 			return true;
 		}
 
-		if (!this.plugin.useClans)
+		if (!this.plugin.getSettings().clans().enabled())
 		{
 			this.plugin.sendInfo(player, ChatColor.RED + "Clans are not enabled.");
 			return true;
@@ -1849,7 +1849,7 @@ public class Commands implements TabExecutor
 		}
 		if (!scent.canScentTrack(player.getUniqueId()))
 		{
-			int fullMoons = this.plugin.transformsForScentTrack - Werewolf.getWerewolfManager().getNumberOfTransformations(player.getUniqueId());
+			int fullMoons = this.plugin.getSettings().maturity().scentTrack() - Werewolf.getWerewolfManager().getNumberOfTransformations(player.getUniqueId());
 			Werewolf.getLanguageManager().setAmount("" + fullMoons);
 			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.MustExperienceMoreFullMoons, ChatColor.RED));
 			return false;
@@ -2098,7 +2098,6 @@ public class Commands implements TabExecutor
 					}
 					for (World world : this.plugin.getServer().getWorlds())
 					{
-						this.plugin.loadSettings();
 						if (Werewolf.getMoonManager().isNight(world))
 						{
 							for (Player werewolf : world.getPlayers())
@@ -2126,7 +2125,6 @@ public class Commands implements TabExecutor
 
 					for (World world : this.plugin.getServer().getWorlds())
 					{
-						this.plugin.saveSettings();
 
 						for (Player werewolfPlayer : world.getPlayers())
 						{
@@ -2180,7 +2178,7 @@ public class Commands implements TabExecutor
 			addIfPermitted(arg1, player, "cure", "werewolf.cureother");
 			addIfPermitted(arg1, player, "setlevel", "werewolf.setlevel");
 			addIfPermitted(arg1, player, "addlevel", "werewolf.addlevel");
-			if (this.plugin.useClans)
+			if (this.plugin.getSettings().clans().enabled())
 			{
 				addIfPermitted(arg1, player, "setalpha", "werewolf.setalpha");
 			}
@@ -2209,7 +2207,7 @@ public class Commands implements TabExecutor
 					addIfPermitted(arg1, player, "vampiretracker", "werewolf.tracker.create");
 				}
 				addIfPermitted(arg1, player, "silverarmor", "werewolf.silverarmor.create");
-				if (this.plugin.useClans)
+				if (this.plugin.getSettings().clans().enabled())
 				{
 					addIfPermitted(arg1, player, "clan", "werewolf.clan");
 					addIfPermitted(arg1, player, "home", "werewolf.home");

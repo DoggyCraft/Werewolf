@@ -46,7 +46,7 @@ public class WorldGuardIntegration implements IntegrationListener
 
 	private boolean isProtected(Player hunter, Player target)
 	{
-		if (!this.plugin.worldGuardIntegration)
+		if (!this.plugin.getSettings().integrations().worldGuard())
 		{
 			return false;
 		}

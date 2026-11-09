@@ -7,7 +7,7 @@ import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
 /** /ww home: teleports a werewolf to their clan home */
@@ -33,7 +33,7 @@ public class HomeCommand extends SubCommand
 			return;
 		}
 
-		ClanType playerClan = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
+		Clan playerClan = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
 
 		Location location = ctx.getClanManager().getHomeForClan(playerClan);
 		if (location == null)

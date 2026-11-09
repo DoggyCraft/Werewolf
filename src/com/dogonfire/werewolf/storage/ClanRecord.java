@@ -4,12 +4,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 
-/** One clan's section in clans.yml (the key is the ClanType name). Setters mark the repository dirty. */
+/** One clan's section in clans.yml (the key is the Clan name). Setters mark the repository dirty. */
 public final class ClanRecord
 {
-	private final ClanType			clan;
+	private final Clan			clan;
 	private final YamlRepository	owner;
 
 	UUID							alpha;			// Alpha
@@ -20,13 +20,13 @@ public final class ClanRecord
 	String							lastCallTime;	// LastCallTime, "HH:mm:ss dd-MM-yyyy"
 	Map<String, Object>				extras	= new LinkedHashMap<String, Object>();
 
-	ClanRecord(ClanType clan, YamlRepository owner)
+	ClanRecord(Clan clan, YamlRepository owner)
 	{
 		this.clan = clan;
 		this.owner = owner;
 	}
 
-	public ClanType getClan()
+	public Clan getClan()
 	{
 		return this.clan;
 	}

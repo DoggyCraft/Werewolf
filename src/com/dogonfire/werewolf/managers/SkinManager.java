@@ -1,5 +1,6 @@
 package com.dogonfire.werewolf.managers;
 
+import com.dogonfire.werewolf.api.Clan;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -50,7 +51,7 @@ public class SkinManager
 		UUID werewolfAccountId;
 		String werewolfAccountName;
 
-		ClanManager.ClanType clantype = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
+		Clan clantype = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
 
 		// Get the correct account, if alpha, alphaskin, else the clanskin
 		if (plugin.getSettings().clans().enabled() && ctx.getClanManager().isAlpha(player.getUniqueId()))

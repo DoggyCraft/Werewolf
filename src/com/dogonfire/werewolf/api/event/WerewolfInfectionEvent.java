@@ -1,11 +1,11 @@
-package com.dogonfire.werewolf.events;
+package com.dogonfire.werewolf.api.event;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
 
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 
 /**
  * Fired when a player is about to become a werewolf (infected, or turned immediately).
@@ -19,12 +19,12 @@ public class WerewolfInfectionEvent extends PlayerEvent implements Cancellable
 
 	private static final HandlerList	handlers	= new HandlerList();
 
-	private ClanType					clan;
+	private Clan					clan;
 	private final Source				source;
 	private final boolean				turnNow;
 	private boolean						cancelled;
 
-	public WerewolfInfectionEvent(Player player, ClanType clan, Source source, boolean turnNow)
+	public WerewolfInfectionEvent(Player player, Clan clan, Source source, boolean turnNow)
 	{
 		super(player);
 		this.clan = clan;
@@ -32,12 +32,12 @@ public class WerewolfInfectionEvent extends PlayerEvent implements Cancellable
 		this.turnNow = turnNow;
 	}
 
-	public ClanType getClan()
+	public Clan getClan()
 	{
 		return clan;
 	}
 
-	public void setClan(ClanType clan)
+	public void setClan(Clan clan)
 	{
 		this.clan = clan;
 	}

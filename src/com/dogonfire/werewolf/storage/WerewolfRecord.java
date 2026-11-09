@@ -4,7 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 
 /**
  * One player's section in werewolves.yml (the key is their UUID). Dates are kept as the strings the file holds, so
@@ -17,7 +17,7 @@ public final class WerewolfRecord
 
 	String							playerName;			// PlayerName
 	WolfState						wolfState;			// WolfState
-	ClanType						clan;				// Clan
+	Clan						clan;				// Clan
 	String							werewolfName;		// WerewolfName
 	int								transformations;	// Transformations (the werewolf's level)
 	String							lastTransform;		// LastTransform, "HH:mm:ss dd-MM-yyyy"
@@ -66,12 +66,12 @@ public final class WerewolfRecord
 		changed();
 	}
 
-	public ClanType getClan()
+	public Clan getClan()
 	{
 		return this.clan;
 	}
 
-	public void setClan(ClanType clan)
+	public void setClan(Clan clan)
 	{
 		this.clan = clan;
 		changed();

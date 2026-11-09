@@ -10,8 +10,8 @@ import org.bukkit.entity.Player;
 import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.CommandUtil;
 import com.dogonfire.werewolf.commands.SubCommand;
-import com.dogonfire.werewolf.events.WerewolfCureEvent;
-import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
+import com.dogonfire.werewolf.api.event.WerewolfCureEvent;
+import com.dogonfire.werewolf.api.event.WerewolfInfectionEvent;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
 /** /ww toggle [player]: makes yourself or an online player a full werewolf in a random clan, or cures them */

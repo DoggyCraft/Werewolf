@@ -14,7 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import com.dogonfire.werewolf.WerewolfContext;
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
 /** Helpers shared by the command classes */
@@ -54,17 +54,17 @@ public final class CommandUtil
 		return hand == null || hand.getType() == Material.AIR;
 	}
 
-	public static ClanType randomClan()
+	public static Clan randomClan()
 	{
-		ClanType[] clans = ClanType.values();
+		Clan[] clans = Clan.values();
 		return clans[ThreadLocalRandom.current().nextInt(clans.length)];
 	}
 
 	/** Matches a clan by enum name or display name, ignoring case, colours and spaces */
-	public static ClanType parseClan(WerewolfContext ctx, String name)
+	public static Clan parseClan(WerewolfContext ctx, String name)
 	{
 		String wanted = ChatColor.stripColor(name).replace(" ", "");
-		for (ClanType clan : ClanType.values())
+		for (Clan clan : Clan.values())
 		{
 			String clanName = ctx.getClanManager().getClanName(clan);
 			if (clan.name().equalsIgnoreCase(wanted) || (clanName != null && ChatColor.stripColor(clanName).replace(" ", "").equalsIgnoreCase(wanted)))
@@ -79,7 +79,7 @@ public final class CommandUtil
 	public static List<String> clanNames(WerewolfContext ctx)
 	{
 		List<String> names = new ArrayList<String>();
-		for (ClanType clan : ClanType.values())
+		for (Clan clan : Clan.values())
 		{
 			String clanName = ctx.getClanManager().getClanName(clan);
 			names.add(clanName != null ? ChatColor.stripColor(clanName).replace(" ", "") : clan.name());

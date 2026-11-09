@@ -1,5 +1,6 @@
 package com.dogonfire.werewolf.listeners;
 
+import com.dogonfire.werewolf.api.Clan;
 import java.util.UUID;
 
 import org.bukkit.ChatColor;
@@ -11,7 +12,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
-import com.dogonfire.werewolf.events.NewAlphaEvent;
+import com.dogonfire.werewolf.api.event.NewAlphaEvent;
 import com.dogonfire.werewolf.managers.ClanManager;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.managers.WerewolfManager;
@@ -51,7 +52,7 @@ public class AlphaListener implements Listener
 			return;
 		}
 
-		ClanManager.ClanType clan = werewolfManager.getWerewolfClan(victim.getUniqueId());
+		Clan clan = werewolfManager.getWerewolfClan(victim.getUniqueId());
 		if (!ctx.getClanManager().isAlpha(clan, victim.getUniqueId()))
 		{
 			return;

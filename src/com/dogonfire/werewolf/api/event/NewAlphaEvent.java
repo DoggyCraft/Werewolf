@@ -1,4 +1,4 @@
-package com.dogonfire.werewolf.events;
+package com.dogonfire.werewolf.api.event;
 
 import java.util.UUID;
 
@@ -6,7 +6,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 
 /**
  * Fired when a clan is about to get a new alpha. Either player may be offline.
@@ -15,19 +15,19 @@ public class NewAlphaEvent extends Event implements Cancellable
 {
 	private static final HandlerList	handlers	= new HandlerList();
 
-	private final ClanType				clan;
+	private final Clan				clan;
 	private final UUID					oldAlphaId;
 	private final UUID					newAlphaId;
 	private boolean						cancelled;
 
-	public NewAlphaEvent(ClanType clan, UUID oldAlphaId, UUID newAlphaId)
+	public NewAlphaEvent(Clan clan, UUID oldAlphaId, UUID newAlphaId)
 	{
 		this.clan = clan;
 		this.oldAlphaId = oldAlphaId;
 		this.newAlphaId = newAlphaId;
 	}
 
-	public ClanType getClan()
+	public Clan getClan()
 	{
 		return clan;
 	}

@@ -5,8 +5,8 @@ import org.bukkit.event.EventHandler;
 
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
-import com.dogonfire.werewolf.events.TrackerTargetEvent;
-import com.dogonfire.werewolf.events.WerewolfSniffEvent;
+import com.dogonfire.werewolf.api.event.TrackerTargetEvent;
+import com.dogonfire.werewolf.api.event.WerewolfSniffEvent;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;

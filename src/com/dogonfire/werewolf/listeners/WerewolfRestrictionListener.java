@@ -20,7 +20,7 @@ import org.bukkit.event.player.PlayerItemConsumeEvent;
 
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
-import com.dogonfire.werewolf.events.WerewolfTransformEvent;
+import com.dogonfire.werewolf.api.event.WerewolfTransformEvent;
 import com.dogonfire.werewolf.managers.LanguageManager;
 
 /**

@@ -1,5 +1,6 @@
 package com.dogonfire.werewolf.listeners;
 
+import com.dogonfire.werewolf.api.Clan;
 import java.util.Random;
 
 import com.dogonfire.werewolf.managers.HuntManager;
@@ -28,7 +29,7 @@ import com.dogonfire.werewolf.config.Settings;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
-import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
+import com.dogonfire.werewolf.api.event.WerewolfInfectionEvent;
 import com.dogonfire.werewolf.disguises.IWerewolfDisguiseFactory.WerewolfDisguise;
 
 public class DamageListener implements Listener
@@ -210,7 +211,7 @@ public class DamageListener implements Listener
 			if (!tameable.isTamed())
 			{
 				Random random = new Random();
-				if (ctx.getWerewolfManager().makeWerewolf(victim, false, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)], WerewolfInfectionEvent.Source.WILD_WOLF_BITE))
+				if (ctx.getWerewolfManager().makeWerewolf(victim, false, Clan.values()[random.nextInt(Clan.values().length)], WerewolfInfectionEvent.Source.WILD_WOLF_BITE))
 				{
 					victim.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteVictim, ChatColor.LIGHT_PURPLE));
 
@@ -417,7 +418,7 @@ public class DamageListener implements Listener
 
 			if (this.plugin.getSettings().clans().enabled())
 			{
-				ClanManager.ClanType clan = ctx.getWerewolfManager().getWerewolfClan(killer.getUniqueId());
+				Clan clan = ctx.getWerewolfManager().getWerewolfClan(killer.getUniqueId());
 				ctx.getClanManager().handleMobKill(killer, clan, event.getEntity().getType());
 			}
 

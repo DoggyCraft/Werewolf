@@ -21,7 +21,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 
 public class TrophyManager implements Listener
 {
@@ -48,7 +48,7 @@ public class TrophyManager implements Listener
 		String pattern = "dd MMMM yyyy";
 		DateFormat formatter = new SimpleDateFormat(pattern);
 
-		ClanType clan = ctx.getWerewolfManager().getWerewolfClan(werewolfId);
+		Clan clan = ctx.getWerewolfManager().getWerewolfClan(werewolfId);
 		OfflinePlayer skullPlayer = null;
 
 		if (ctx.getClanManager().isAlpha(werewolfId))

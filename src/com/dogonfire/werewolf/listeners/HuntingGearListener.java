@@ -24,9 +24,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
-import com.dogonfire.werewolf.events.TrackerTargetEvent.TargetType;
-import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
-import com.dogonfire.werewolf.events.WerewolfTransformEvent;
+import com.dogonfire.werewolf.api.event.TrackerTargetEvent.TargetType;
+import com.dogonfire.werewolf.api.event.WerewolfInfectionEvent;
+import com.dogonfire.werewolf.api.event.WerewolfTransformEvent;
 import com.dogonfire.werewolf.managers.LanguageManager;
 
 /**

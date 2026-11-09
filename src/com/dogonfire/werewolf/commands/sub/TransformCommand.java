@@ -6,7 +6,7 @@ import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
-import com.dogonfire.werewolf.events.WerewolfTransformEvent;
+import com.dogonfire.werewolf.api.event.WerewolfTransformEvent;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
 /** /ww transform: a mature werewolf changes form at will, outside transformation nights */

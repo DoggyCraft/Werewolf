@@ -6,7 +6,7 @@ import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
 /** /ww sethome: the clan alpha sets the clan home */
@@ -37,7 +37,7 @@ public class SetHomeCommand extends SubCommand
 			return;
 		}
 
-		ClanType clan = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
+		Clan clan = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
 
 		if (!ctx.getClanManager().isAlpha(clan, player.getUniqueId()))
 		{

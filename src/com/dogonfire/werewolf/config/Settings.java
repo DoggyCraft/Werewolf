@@ -9,9 +9,9 @@ import org.bukkit.Material;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 import com.dogonfire.werewolf.managers.ItemManager.ArmorPiece;
-import com.dogonfire.werewolf.managers.MoonManager.MoonPhase;
+import com.dogonfire.werewolf.api.MoonPhase;
 
 /**
  * Everything read from config.yml, validated. Built by {@link SettingsLoader} on enable and on /ww reload; never
@@ -73,9 +73,9 @@ public record Settings(
 			double itemDamage,
 			double armorMultiplier,
 			int wolfDistance,
-			Map<ClanType, Stats> stats,
-			Map<ClanType, Stats> alphaStats,
-			Map<ClanType, List<PotionEffect>> effects,
+			Map<Clan, Stats> stats,
+			Map<Clan, Stats> alphaStats,
+			Map<Clan, List<PotionEffect>> effects,
 			Set<PotionEffectType> blockedPotions)
 	{
 	}
@@ -166,7 +166,7 @@ public record Settings(
 	{
 	}
 
-	public record Clans(boolean enabled, Map<ClanType, String> names, Skin alphaSkin, Map<ClanType, Skin> skins)
+	public record Clans(boolean enabled, Map<Clan, String> names, Skin alphaSkin, Map<Clan, Skin> skins)
 	{
 	}
 }

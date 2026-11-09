@@ -1,4 +1,4 @@
-package com.dogonfire.werewolf.events;
+package com.dogonfire.werewolf.api.event;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;

@@ -1,5 +1,6 @@
 package com.dogonfire.werewolf.managers;
 
+import com.dogonfire.werewolf.api.Clan;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,8 +37,8 @@ public class WolfFormManager
 
 	public Stats getStats(UUID playerId)
 	{
-		ClanManager.ClanType clan = ctx.getWerewolfManager().getWerewolfClan(playerId);
-		Map<ClanManager.ClanType, Stats> stats = ctx.getClanManager().isAlpha(playerId) ? this.plugin.getSettings().wolfForm().alphaStats() : this.plugin.getSettings().wolfForm().stats();
+		Clan clan = ctx.getWerewolfManager().getWerewolfClan(playerId);
+		Map<Clan, Stats> stats = ctx.getClanManager().isAlpha(playerId) ? this.plugin.getSettings().wolfForm().alphaStats() : this.plugin.getSettings().wolfForm().stats();
 		return stats.get(clan);
 	}
 

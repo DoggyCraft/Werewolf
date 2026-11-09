@@ -22,9 +22,9 @@ import org.bukkit.potion.PotionEffectType;
 import com.dogonfire.werewolf.config.Settings.LimitEquation;
 import com.dogonfire.werewolf.config.Settings.Skin;
 import com.dogonfire.werewolf.config.Settings.Stats;
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 import com.dogonfire.werewolf.managers.ItemManager.ArmorPiece;
-import com.dogonfire.werewolf.managers.MoonManager.MoonPhase;
+import com.dogonfire.werewolf.api.MoonPhase;
 
 /**
  * Reads {@link Settings} from config.yml. Missing keys come from the bundled config.yml (Bukkit sets it as the
@@ -206,11 +206,11 @@ public class SettingsLoader
 		double itemDamage = this.config.getDouble("Werewolf.ItemDamage");
 		double armorMultiplier = atLeast("Werewolf.ArmorMultiplier", 0.0D);
 
-		Map<ClanType, Stats> stats = new EnumMap<ClanType, Stats>(ClanType.class);
-		Map<ClanType, Stats> alphaStats = new EnumMap<ClanType, Stats>(ClanType.class);
-		Map<ClanType, List<PotionEffect>> effects = new EnumMap<ClanType, List<PotionEffect>>(ClanType.class);
+		Map<Clan, Stats> stats = new EnumMap<Clan, Stats>(Clan.class);
+		Map<Clan, Stats> alphaStats = new EnumMap<Clan, Stats>(Clan.class);
+		Map<Clan, List<PotionEffect>> effects = new EnumMap<Clan, List<PotionEffect>>(Clan.class);
 
-		for (ClanType clan : ClanType.values())
+		for (Clan clan : Clan.values())
 		{
 			String path = "Werewolf.Stats." + clan.name() + ".";
 			Stats clanStats = new Stats(
@@ -327,9 +327,9 @@ public class SettingsLoader
 
 	private Settings.Clans loadClans()
 	{
-		Map<ClanType, String> names = new EnumMap<ClanType, String>(ClanType.class);
-		Map<ClanType, Skin> skins = new EnumMap<ClanType, Skin>(ClanType.class);
-		for (ClanType clan : ClanType.values())
+		Map<Clan, String> names = new EnumMap<Clan, String>(Clan.class);
+		Map<Clan, Skin> skins = new EnumMap<Clan, Skin>(Clan.class);
+		for (Clan clan : Clan.values())
 		{
 			names.put(clan, this.config.getString("Clans." + clan.name() + "Name"));
 			skins.put(clan, loadSkin(clan.name()));

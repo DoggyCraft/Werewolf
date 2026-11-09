@@ -12,7 +12,7 @@ import org.bukkit.util.StringUtil;
 import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.CommandUtil;
 import com.dogonfire.werewolf.commands.SubCommand;
-import com.dogonfire.werewolf.events.WerewolfCureEvent;
+import com.dogonfire.werewolf.api.event.WerewolfCureEvent;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
 /** /ww cure <player>: cures a werewolf, online or offline. Unlike /ww toggle it never turns anyone into a werewolf */

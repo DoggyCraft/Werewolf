@@ -91,10 +91,8 @@ public class WerewolfAPI
 		if (Werewolf.instance().vampireEnabled)
 		{
 			Player player = Bukkit.getPlayer(playerId);
-			if (player == null) {
-				player = (Player) Bukkit.getOfflinePlayer(playerId);
-			}
-			return VampireAPI.isVampire(player);
+			// VampireAPI only works on online players
+			return player != null && VampireAPI.isVampire(player);
 		}
 		return false;
 	}

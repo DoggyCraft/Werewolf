@@ -1366,26 +1366,18 @@ public class Commands implements TabExecutor
 		if (sender instanceof Player)
 		{
 			player = (Player) sender;
-
-			// Is Werewolf compatible with this version of the server?
-			if (!Werewolf.isCompatible())
-			{
-				player.sendMessage(ChatColor.RED + "Your server version is incompatible with this version of the Werewolf plugin");
-				player.sendMessage(ChatColor.RED + "This version of the Werewolf plugin is compatible with " + ChatColor.GOLD + Werewolf.MIN + ChatColor.RED + " to " + ChatColor.GOLD + Werewolf.MAX);
-				return false;
-			}
 		}
 
-		if (label.equalsIgnoreCase("growl"))
+		if (cmd.getName().equalsIgnoreCase("growl"))
 		{
 			commandGrowl(player);
 		}
-		if (label.equalsIgnoreCase("howl"))
+		if (cmd.getName().equalsIgnoreCase("howl"))
 		{
 			commandHowl(player);
 		}
 
-		if ((label.equalsIgnoreCase("werewolf")) || (label.equalsIgnoreCase("ww")))
+		if (cmd.getName().equalsIgnoreCase("werewolf"))
 		{
 			if (args.length == 0)
 			{
@@ -1497,7 +1489,7 @@ public class Commands implements TabExecutor
 				}
 				else if (args[0].equalsIgnoreCase("on"))
 				{
-					if (!player.isOp())
+					if (player != null && !player.isOp())
 					{
 						this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NoPermissionForCommand, ChatColor.RED));
 						return false;
@@ -1523,13 +1515,13 @@ public class Commands implements TabExecutor
 				}
 				else if (args[0].equalsIgnoreCase("off"))
 				{
-					if (!player.isOp())
+					if (player != null && !player.isOp())
 					{
 						this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NoPermissionForCommand, ChatColor.RED));
 						return false;
 					}
 
-					Werewolf.pluginEnabled = true;
+					Werewolf.pluginEnabled = false;
 					this.plugin.log(" has been disabled");
 
 					if (player != null)

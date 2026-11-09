@@ -8,6 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
@@ -23,6 +24,7 @@ public abstract class SubCommand
 	}
 
 	protected final Werewolf plugin;
+	protected final WerewolfContext ctx;
 	private final String name;
 	private final String permission;
 	private final boolean playerOnly;
@@ -35,9 +37,10 @@ public abstract class SubCommand
 	 * @param usage usage text shown in /ww help, or null to leave the command out of the help listing
 	 * @param helpKey language string for the help line, with $Type set to the usage
 	 */
-	protected SubCommand(Werewolf plugin, String name, String permission, boolean playerOnly, String usage, LANGUAGESTRING helpKey)
+	protected SubCommand(WerewolfContext ctx, String name, String permission, boolean playerOnly, String usage, LANGUAGESTRING helpKey)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 		this.name = name;
 		this.permission = permission;
 		this.playerOnly = playerOnly;
@@ -89,7 +92,7 @@ public abstract class SubCommand
 
 	public boolean isPermitted(Player player, String[] args)
 	{
-		return CommandUtil.hasPermission(player, permission(args));
+		return CommandUtil.hasPermission(ctx, player, permission(args));
 	}
 
 	/** Whether the command makes sense right now for this player (feature enabled, clan alpha, ...). Only affects help and tab completion */
@@ -113,7 +116,7 @@ public abstract class SubCommand
 	/** Lines this command adds to /ww help for a player */
 	public List<HelpEntry> help(Player player)
 	{
-		if (usage() == null || !isAvailable(player) || !CommandUtil.hasPermission(player, this.permission))
+		if (usage() == null || !isAvailable(player) || !CommandUtil.hasPermission(ctx, player, this.permission))
 		{
 			return List.of();
 		}
@@ -129,12 +132,12 @@ public abstract class SubCommand
 		return new ArrayList<String>();
 	}
 
-	protected static LanguageManager lang()
+	protected LanguageManager lang()
 	{
-		return Werewolf.getLanguageManager();
+		return ctx.getLanguageManager();
 	}
 
-	protected static String text(LANGUAGESTRING key, ChatColor color)
+	protected String text(LANGUAGESTRING key, ChatColor color)
 	{
 		return lang().getLanguageString(key, color);
 	}

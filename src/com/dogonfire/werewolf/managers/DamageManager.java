@@ -70,37 +70,4 @@ public class DamageManager
 
 		return dotProduct > 0.95D;
 	}
-
-	public static boolean isPlayerInCone(Player player, Location startpoint, int radius, int degrees, int direction)
-	{
-		int[] startPos = { (int) startpoint.getX(), (int) startpoint.getZ() };
-
-		int[] endA = { (int) (radius * Math.cos(direction - degrees / 2)), (int) (radius * Math.sin(direction - degrees / 2)) };
-
-		Location l = player.getLocation();
-		if (!isPointInCircle(startPos[0], startPos[1], radius, l.getBlockX(), l.getBlockY()))
-		{
-			return false;
-		}
-		int[] playerVector = getVectorForPoints(startPos[0], startPos[1], l.getBlockX(), l.getBlockY());
-
-		double angle = getAngleBetweenVectors(endA, playerVector);
-		return ((Math.toDegrees(angle) < degrees) && (Math.toDegrees(angle) > 0.0D));
-	}
-
-	public static int[] getVectorForPoints(int x1, int y1, int x2, int y2)
-	{
-		return new int[] { x2 - x1, y2 - y1 };
-	}
-
-	public static boolean isPointInCircle(int cx, int cy, int radius, int px, int py)
-	{
-		double dist = px - cx ^ 2 + (py - cy) ^ 0x2;
-		return dist < (radius ^ 0x2);
-	}
-
-	public static double getAngleBetweenVectors(int[] vector1, int[] vector2)
-	{
-		return Math.atan2(vector2[1], vector2[0]) - Math.atan2(vector1[1], vector1[0]);
-	}
 }

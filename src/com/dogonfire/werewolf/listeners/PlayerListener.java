@@ -5,12 +5,13 @@ import java.util.Random;
 
 import com.dogonfire.werewolf.managers.DamageManager;
 import com.dogonfire.werewolf.managers.LanguageManager;
+import com.dogonfire.werewolf.managers.TrophyManager;
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.disguises.WerewolfDisguiseAPI;
 import com.dogonfire.werewolf.events.WerewolfCureEvent;
 import com.dogonfire.werewolf.events.WerewolfTransformEvent;
 import com.dogonfire.werewolf.tasks.CheckTransformationTask;
-import com.dogonfire.werewolf.tasks.PotionEffectTask;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Particle;
@@ -41,36 +42,38 @@ public class PlayerListener implements Listener
 {
 	public static final String	IMMUNE_WOLFBANE	= "werewolf.immunewolfbane";
 
-	private Werewolf	plugin	= null;
+	private final Werewolf	plugin;
+	private final WerewolfContext ctx;
 	private Random		random	= new Random();
 
-	public PlayerListener(Werewolf plugin)
+	public PlayerListener(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
 	public void onPlayerJoin(PlayerJoinEvent event)
 	{
-		if (!Werewolf.pluginEnabled)
+		if (!ctx.isWerewolvesEnabled())
 		{
 			return;
 		}
-		Werewolf.getWerewolfManager().unsetWerewolfSkin(event.getPlayer().getUniqueId(), true, WerewolfTransformEvent.Reason.FORCED);
+		ctx.getWerewolfManager().unsetWerewolfSkin(event.getPlayer().getUniqueId(), true, WerewolfTransformEvent.Reason.FORCED);
 		
-		if (Werewolf.getWerewolfManager().isWerewolf(event.getPlayer().getUniqueId()))
+		if (ctx.getWerewolfManager().isWerewolf(event.getPlayer().getUniqueId()))
 		{
 			// Clear wolf form effects left over from quitting (or a crash) while in wolf form
-			Werewolf.getWolfFormManager().removeWolfForm(event.getPlayer(), true);
+			ctx.getWolfFormManager().removeWolfForm(event.getPlayer(), true);
 		}
 
-		this.plugin.getServer().getScheduler().scheduleSyncDelayedTask(this.plugin, new CheckTransformationTask(plugin, event.getPlayer().getUniqueId()), 20L);
+		this.plugin.getServer().getScheduler().scheduleSyncDelayedTask(this.plugin, new CheckTransformationTask(ctx, event.getPlayer().getUniqueId()), 20L);
 	}
 
 	@EventHandler
 	public void onPlayerWorldChange(PlayerChangedWorldEvent event)
 	{
-		Werewolf.getWerewolfManager().unsetWerewolfSkin(event.getPlayer().getUniqueId(), true, WerewolfTransformEvent.Reason.FORCED);
+		ctx.getWerewolfManager().unsetWerewolfSkin(event.getPlayer().getUniqueId(), true, WerewolfTransformEvent.Reason.FORCED);
 	}
 
 	/*
@@ -82,7 +85,7 @@ public class PlayerListener implements Listener
 	@EventHandler(ignoreCancelled = true)
 	public void onPlayerAnimation(PlayerAnimationEvent event)
 	{
-		if (!Werewolf.pluginEnabled || WerewolfDisguiseAPI.getBackend() != WerewolfDisguiseAPI.Backend.LIBSDISGUISES)
+		if (!ctx.isWerewolvesEnabled() || ctx.getDisguises().getBackend() != WerewolfDisguiseAPI.Backend.LIBSDISGUISES)
 		{
 			return;
 		}
@@ -92,7 +95,7 @@ public class PlayerListener implements Listener
 			return;
 		}
 
-		Player nearestWerewolf = Werewolf.getWerewolfManager().getNearestWerewolf(event.getPlayer().getUniqueId());
+		Player nearestWerewolf = ctx.getWerewolfManager().getNearestWerewolf(event.getPlayer().getUniqueId());
 		if (nearestWerewolf != null && nearestWerewolf.getNoDamageTicks() <= nearestWerewolf.getMaximumNoDamageTicks() / 2 && DamageManager.canPlayerHit(event.getPlayer(), nearestWerewolf.getLocation()))
 		{
 			double damage = DamageManager.getDamageFromItemInHand(event.getPlayer());
@@ -107,7 +110,7 @@ public class PlayerListener implements Listener
 	public void onFlightAttempt(PlayerToggleFlightEvent event)
 	{
 		Player player = event.getPlayer();
-		if (!Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
+		if (!ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 		{
 			return;
 		}
@@ -117,11 +120,11 @@ public class PlayerListener implements Listener
 	@EventHandler
 	public void onPlayerMove(PlayerMoveEvent event)
 	{
-		if (!Werewolf.pluginEnabled)
+		if (!ctx.isWerewolvesEnabled())
 		{
 			return;
 		}
-		if (!Werewolf.getWerewolfManager().hasWerewolfSkin(event.getPlayer().getUniqueId()))
+		if (!ctx.getWerewolfManager().hasWerewolfSkin(event.getPlayer().getUniqueId()))
 		{
 			return;
 		}
@@ -145,7 +148,6 @@ public class PlayerListener implements Listener
 						wolf.setOwner(player);
 						wolf.setTamed(true);
 
-						Werewolf.getWerewolfManager().increaseNumberOfPackWolvesForPlayer(player.getUniqueId());
 					}
 				}
 			}
@@ -157,11 +159,11 @@ public class PlayerListener implements Listener
 	{
 		if (event.getEntity().getKiller() == null || event.getEntity().getKiller().getUniqueId() == null)
 		{
-			if (this.plugin.getSettings().general().renameWerewolves() && Werewolf.getWerewolfManager().hasWerewolfSkin(event.getEntity().getUniqueId()))
+			if (this.plugin.getSettings().general().renameWerewolves() && ctx.getWerewolfManager().hasWerewolfSkin(event.getEntity().getUniqueId()))
 			{
 				String werewolfName = "Werewolf";
 				if (plugin.getSettings().names().enabled()) {
-					werewolfName = Werewolf.getWerewolfManager().getWerewolfName(event.getEntity().getUniqueId());
+					werewolfName = ctx.getWerewolfManager().getWerewolfName(event.getEntity().getUniqueId());
 				}
 				switch (this.random.nextInt(3))
 				{
@@ -186,11 +188,11 @@ public class PlayerListener implements Listener
 
 		if (this.plugin.getSettings().general().renameWerewolves())
 		{
-			if (Werewolf.getWerewolfManager().hasWerewolfSkin(event.getEntity().getKiller().getUniqueId()))
+			if (ctx.getWerewolfManager().hasWerewolfSkin(event.getEntity().getKiller().getUniqueId()))
 			{
 				String werewolfName = "Werewolf";
 				if (plugin.getSettings().names().enabled()) {
-					werewolfName = Werewolf.getWerewolfManager().getWerewolfName(event.getEntity().getKiller().getUniqueId());
+					werewolfName = ctx.getWerewolfManager().getWerewolfName(event.getEntity().getKiller().getUniqueId());
 				}
 				switch (this.random.nextInt(4))
 				{
@@ -210,11 +212,11 @@ public class PlayerListener implements Listener
 						break;
 				}
 			}
-			else if (Werewolf.getWerewolfManager().hasWerewolfSkin(event.getEntity().getUniqueId()))
+			else if (ctx.getWerewolfManager().hasWerewolfSkin(event.getEntity().getUniqueId()))
 			{
 				String werewolfName = "Werewolf";
 				if (plugin.getSettings().names().enabled()) {
-					werewolfName = Werewolf.getWerewolfManager().getWerewolfName(event.getEntity().getUniqueId());
+					werewolfName = ctx.getWerewolfManager().getWerewolfName(event.getEntity().getUniqueId());
 				}
 				if (killerName != null)
 				{
@@ -227,7 +229,8 @@ public class PlayerListener implements Listener
 			}
 		}
 
-		if (this.plugin.getSettings().general().trophiesEnabled() && Werewolf.getWerewolfManager().hasWerewolfSkin(event.getEntity().getUniqueId()))
+		TrophyManager trophyManager = ctx.getTrophyManager();
+		if (trophyManager != null && ctx.getWerewolfManager().hasWerewolfSkin(event.getEntity().getUniqueId()))
 		{
 			Player killer = this.plugin.getServer().getPlayer(killerName);
 
@@ -242,10 +245,10 @@ public class PlayerListener implements Listener
 					case STONE_SWORD:
 					case WOODEN_SWORD:
 					{
-						org.bukkit.inventory.ItemStack trophy = Werewolf.getTrophyManager().getTrophyFromWerewolfPlayer(killer.getUniqueId(), event.getEntity().getUniqueId());
+						org.bukkit.inventory.ItemStack trophy = trophyManager.getTrophyFromWerewolfPlayer(killer.getUniqueId(), event.getEntity().getUniqueId());
 						event.getDrops().add(trophy);
 
-						event.getEntity().getKiller().sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.YouCutTheHeadOfWerewolf, ChatColor.WHITE));
+						event.getEntity().getKiller().sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.YouCutTheHeadOfWerewolf, ChatColor.WHITE));
 					} break;
 
 					default:
@@ -254,17 +257,17 @@ public class PlayerListener implements Listener
 			}
 		}
 
-		if (Werewolf.getWerewolfManager().hasWerewolfSkin(event.getEntity().getUniqueId()))
+		if (ctx.getWerewolfManager().hasWerewolfSkin(event.getEntity().getUniqueId()))
 		{
 			if (this.plugin.getSettings().general().cureWerewolfWhenSlain())
 			{
-				Werewolf.getWerewolfManager().unmakeWerewolf(event.getEntity().getUniqueId(), WerewolfCureEvent.Cause.SLAIN);
+				ctx.getWerewolfManager().unmakeWerewolf(event.getEntity().getUniqueId(), WerewolfCureEvent.Cause.SLAIN);
 			}
 			else
 			{
-				Werewolf.getWerewolfManager().unsetWerewolfSkin(event.getEntity().getUniqueId(), false, WerewolfTransformEvent.Reason.FORCED);
+				ctx.getWerewolfManager().unsetWerewolfSkin(event.getEntity().getUniqueId(), false, WerewolfTransformEvent.Reason.FORCED);
 
-				Werewolf.getWerewolfManager().setInfectedThisNight(event.getEntity().getUniqueId(), event.getEntity().getName(), true);
+				ctx.getWerewolfManager().setInfectedThisNight(event.getEntity().getUniqueId(), event.getEntity().getName(), true);
 			}
 		}
 	}
@@ -272,7 +275,7 @@ public class PlayerListener implements Listener
 	@EventHandler
 	public void onPotionSplash(PotionSplashEvent event)
 	{
-		if (!Werewolf.getItemManager().isWolfbanePotion(event.getPotion().getItem())) 
+		if (!ctx.getItemManager().isWolfbanePotion(event.getPotion().getItem())) 
 		{
 			return;
 		}
@@ -284,33 +287,33 @@ public class PlayerListener implements Listener
 			{
 				Player player = (Player) livingEntity;
 
-				if (player.hasPermission(IMMUNE_WOLFBANE) || !Werewolf.getWerewolfManager().isWerewolf(player))
+				if (player.hasPermission(IMMUNE_WOLFBANE) || !ctx.getWerewolfManager().isWerewolf(player))
 				{
 					continue;
 				}
 
 				// In human form, wolfbane holds the beast back: the /ww transform cooldown starts over
-				if (Werewolf.getWerewolfManager().isFullWerewolf(player.getUniqueId()) && !Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
+				if (ctx.getWerewolfManager().isFullWerewolf(player.getUniqueId()) && !ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 				{
-					Werewolf.getWerewolfManager().restartTransformCooldown(player.getUniqueId());
+					ctx.getWerewolfManager().restartTransformCooldown(player.getUniqueId());
 					if (plugin.getSettings().cooldowns().transform() > 0)
 					{
-						Werewolf.getLanguageManager().setAmount("" + plugin.getSettings().cooldowns().transform());
-						player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WolfbaneHumanForm, ChatColor.LIGHT_PURPLE));
+						ctx.getLanguageManager().setAmount("" + plugin.getSettings().cooldowns().transform());
+						player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WolfbaneHumanForm, ChatColor.LIGHT_PURPLE));
 					}
 					continue;
 				}
 
-				if (Werewolf.getWerewolfManager().isWolfForm(player.getUniqueId()) && random.nextInt(100) < plugin.getSettings().items().wolfbaneUntransformChance())
+				if (ctx.getWerewolfManager().isWolfForm(player.getUniqueId()) && random.nextInt(100) < plugin.getSettings().items().wolfbaneUntransformChance())
 				{
-					Werewolf.server.getScheduler().scheduleSyncDelayedTask(this.plugin, new PotionEffectTask(this.plugin, player, new PotionEffect(PotionEffectType.POISON, 4 * 20, 2)), 16L);
+					this.plugin.getServer().getScheduler().runTaskLater(this.plugin, () -> player.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 4 * 20, 2, false, false)), 16L);
 					
 					player.spawnParticle(Particle.FIREWORK, player.getLocation(), 100);
 					DustOptions dustOptions = new DustOptions(Color.BLACK, 1);
 					player.spawnParticle(Particle.DUST, player.getLocation().add(new Vector(0, 1, 0)), 100, dustOptions);
 					player.spawnParticle(Particle.DUST, player.getLocation().add(new Vector(0, 2, 0)), 100, dustOptions);
 
-					plugin.untransform(player, WerewolfTransformEvent.Reason.WOLFBANE);
+					ctx.getWerewolfManager().untransform(player, WerewolfTransformEvent.Reason.WOLFBANE);
 				}
 			}
 		}
@@ -321,9 +324,9 @@ public class PlayerListener implements Listener
 	@EventHandler
 	public void onRespawn(PlayerRespawnEvent event)
 	{
-		if (Werewolf.getWerewolfManager().isWolfForm(event.getPlayer().getUniqueId()))
+		if (ctx.getWerewolfManager().isWolfForm(event.getPlayer().getUniqueId()))
 		{
-			plugin.disguiseWerewolf(event.getPlayer());
+			ctx.getWerewolfManager().disguiseWerewolf(event.getPlayer());
 		}
 	}
 }

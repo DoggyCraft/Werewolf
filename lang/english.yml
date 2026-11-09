@@ -109,9 +109,9 @@ HelpInfectSelf:
 HelpInfectOther:
 - $Type - Infects a player with the Werewolf infection
 HelpToggleSelf:
-- $Type - Toggles Werewolf status for a player
-HelpToggleOther:
 - $Type - Toggles Werewolf status for yourself
+HelpToggleOther:
+- $Type - Toggles Werewolf status for a player
 HelpInfectionotion:
 - $Type - Creates a Werewolf infection potion
 HelpInfectionotion:
@@ -452,3 +452,7 @@ AdminInvalidClan:
 - Unknown clan. Use one of $Type
 AdminChangeCancelled:
 - Another plugin prevented that change for $PlayerName
+ClanHomeNotSet:
+- $Type has no clan home yet. The alpha can set one with /ww sethome
+EconomyUnavailable:
+- The server economy is not available right now, so nothing can be paid or bought

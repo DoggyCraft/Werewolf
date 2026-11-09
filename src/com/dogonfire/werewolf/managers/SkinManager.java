@@ -4,20 +4,21 @@ import java.util.HashMap;
 import java.util.UUID;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.disguises.IWerewolfDisguiseFactory.WerewolfDisguise;
-import com.dogonfire.werewolf.disguises.WerewolfDisguiseAPI;
 
 public class SkinManager
 {
-	private Werewolf plugin;
+	private final Werewolf plugin;
+	private final WerewolfContext ctx;
 	private HashMap<UUID, WerewolfDisguise>	skins	= new HashMap<UUID, WerewolfDisguise>();
-	protected int							nextID	= -2147483648;
 
-	public SkinManager(Werewolf p)
+	public SkinManager(WerewolfContext ctx)
 	{
-		this.plugin = p;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	public WerewolfDisguise getSkin(Player player)
@@ -25,15 +26,7 @@ public class SkinManager
 		return this.skins.get(player.getUniqueId());
 	}
 
-	public WerewolfDisguise getDisguise(Player player)
-	{
-		return this.skins.get(player.getUniqueId());
-	}
 
-	public int getNextAvailableID()
-	{
-		return this.nextID++;
-	}
 
 	public boolean setWerewolfSkin(Player player, String werewolfName)
 	{
@@ -57,18 +50,18 @@ public class SkinManager
 		UUID werewolfAccountId;
 		String werewolfAccountName;
 
-		ClanManager.ClanType clantype = Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId());
+		ClanManager.ClanType clantype = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
 
 		// Get the correct account, if alpha, alphaskin, else the clanskin
-		if (plugin.getSettings().clans().enabled() && Werewolf.getClanManager().isAlpha(player.getUniqueId()))
+		if (plugin.getSettings().clans().enabled() && ctx.getClanManager().isAlpha(player.getUniqueId()))
 		{
-			werewolfAccountId = Werewolf.getClanManager().getWerewolfAccountIdForAlpha(clantype);
-			werewolfAccountName = Werewolf.getClanManager().getWerewolfAccountForAlpha(clantype);
+			werewolfAccountId = ctx.getClanManager().getWerewolfAccountIdForAlpha(clantype);
+			werewolfAccountName = ctx.getClanManager().getWerewolfAccountForAlpha(clantype);
 		}
 		else
 		{
-			werewolfAccountId = Werewolf.getClanManager().getWerewolfAccountIdForClan(clantype);
-			werewolfAccountName = Werewolf.getClanManager().getWerewolfAccountForClan(clantype);
+			werewolfAccountId = ctx.getClanManager().getWerewolfAccountIdForClan(clantype);
+			werewolfAccountName = ctx.getClanManager().getWerewolfAccountForClan(clantype);
 		}
 
 		if (werewolfName.isEmpty())
@@ -76,7 +69,7 @@ public class SkinManager
 			werewolfName = "Werewolf";
 		}
 
-		WerewolfDisguise skin = WerewolfDisguiseAPI.getDisguise(werewolfAccountId, werewolfAccountName);
+		WerewolfDisguise skin = ctx.getDisguises().getDisguise(werewolfAccountId, werewolfAccountName);
 		
 		if (skin == null)
 		{
@@ -86,12 +79,12 @@ public class SkinManager
 
 		plugin.logDebug("Skin: " + skin.toString() + ". SkinName: " + skin.getSkinAccountName() + " - SkinUUID: " + skin.getSkinAccountUUID());
 
-		if(WerewolfDisguiseAPI.disguise(player, skin, werewolfName))
+		if(ctx.getDisguises().disguise(player, skin, werewolfName))
 		{
 			plugin.logDebug("Disguised player " + player.getName() + "!");
 			if (howl)
 			{
-				Werewolf.getWerewolfManager().howl(player);
+				ctx.getWerewolfManager().howl(player);
 			}
 		}
 		else
@@ -111,7 +104,7 @@ public class SkinManager
 			return;
 		}
 
-		if(WerewolfDisguiseAPI.undisguise(player))
+		if(ctx.getDisguises().undisguise(player))
 		{
 			plugin.logDebug("Undisguised player " + player.getName() + "!");
 		}

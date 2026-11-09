@@ -6,16 +6,16 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
 /** /ww check <player>: whether an online player is a werewolf */
 public class CheckCommand extends SubCommand
 {
-	public CheckCommand(Werewolf plugin)
+	public CheckCommand(WerewolfContext ctx)
 	{
-		super(plugin, "check", "werewolf.check", false, "/ww check <playername>", LANGUAGESTRING.HelpCheck);
+		super(ctx, "check", "werewolf.check", false, "/ww check <playername>", LANGUAGESTRING.HelpCheck);
 	}
 
 	@Override
@@ -33,11 +33,11 @@ public class CheckCommand extends SubCommand
 			return;
 		}
 
-		if (Werewolf.getWerewolfManager().isFullWerewolf(checkPlayer.getUniqueId()))
+		if (ctx.getWerewolfManager().isFullWerewolf(checkPlayer.getUniqueId()))
 		{
 			if (player != null)
 			{
-				int level = Werewolf.getWerewolfManager().getNumberOfTransformations(checkPlayer.getUniqueId());
+				int level = ctx.getWerewolfManager().getNumberOfTransformations(checkPlayer.getUniqueId());
 				lang().setPlayerName(checkPlayer.getName());
 				lang().setType(String.valueOf(level));
 				send(player, LANGUAGESTRING.PlayerIsAFullWerewolf, ChatColor.AQUA);
@@ -47,7 +47,7 @@ public class CheckCommand extends SubCommand
 				this.plugin.log(checkPlayer.getName() + " is a full werewolf");
 			}
 		}
-		else if (Werewolf.getWerewolfManager().isInfectedWerewolf(checkPlayer.getUniqueId()))
+		else if (ctx.getWerewolfManager().isInfectedWerewolf(checkPlayer.getUniqueId()))
 		{
 			if (player != null)
 			{

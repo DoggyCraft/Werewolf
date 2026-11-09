@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.events.TrackerTargetEvent;
 import com.dogonfire.werewolf.events.WerewolfSniffEvent;
 
@@ -12,15 +13,17 @@ import me.chancesd.pvpmanager.PvPManager;
 /**
  * Trackers can't lock onto, and werewolves can't sniff, players that PvPManager wouldn't let the hunter attack (PvP
  * toggled off on either side, newbie/respawn protection, PvP-free world...). Only registered when PvPManager 4.x is
- * enabled.
+ * enabled and Integrations.PvPManager is on.
  */
 public class PvPManagerIntegration implements IntegrationListener
 {
 	private final Werewolf	plugin;
+	private final WerewolfContext ctx;
 
-	public PvPManagerIntegration(Werewolf plugin)
+	public PvPManagerIntegration(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	@EventHandler(ignoreCancelled = true)

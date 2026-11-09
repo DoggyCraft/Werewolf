@@ -4,16 +4,19 @@ import java.util.UUID;
 import org.bukkit.entity.Player;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 
 /* From https://github.com/PlaceholderAPI/PlaceholderAPI/wiki/PlaceholderExpansion#internal-class */
 
 public class WerewolfPlaceholderExpansion extends PlaceholderExpansion
 {
-	private Werewolf plugin;
+	private final Werewolf plugin;
+	private final WerewolfContext ctx;
 
-	public WerewolfPlaceholderExpansion(Werewolf plugin)
+	public WerewolfPlaceholderExpansion(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	@Override
@@ -60,9 +63,9 @@ public class WerewolfPlaceholderExpansion extends PlaceholderExpansion
 		{
 			UUID playerUUID = player.getUniqueId();
 			String clan = "";
-			if (Werewolf.getClanManager().getClanName(playerUUID) != null)
+			if (ctx.getClanManager().getClanName(playerUUID) != null)
 			{
-				clan = Werewolf.getClanManager().getClanName(playerUUID);
+				clan = ctx.getClanManager().getClanName(playerUUID);
 			}
 			return clan;
 		}
@@ -71,7 +74,7 @@ public class WerewolfPlaceholderExpansion extends PlaceholderExpansion
 		if ("werewolf".equals(identifier))
 		{
 			String isWerewolf = "";
-			if (Werewolf.getWerewolfManager().isWerewolf(player))
+			if (ctx.getWerewolfManager().isWerewolf(player))
 			{
 				isWerewolf = "Werewolf";
 			}

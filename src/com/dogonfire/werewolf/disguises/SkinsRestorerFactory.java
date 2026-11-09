@@ -2,6 +2,7 @@ package com.dogonfire.werewolf.disguises;
 
 import com.dogonfire.werewolf.managers.ClanManager;
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.config.Settings;
 import net.skinsrestorer.api.SkinsRestorer;
 import net.skinsrestorer.api.SkinsRestorerProvider;
@@ -16,6 +17,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
 {
+    private final WerewolfContext ctx;
+    private final Werewolf plugin;
     private final SkinsRestorer skinsRestorer;
 
     // Skin each player had set in SkinsRestorer before transforming; restored on undisguise
@@ -24,20 +27,20 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
     public class SkinsRestorerWerewolfDisguise extends WerewolfDisguise
     {
         public SkinsRestorerWerewolfDisguise(UUID accountId, String accountName) {
-            super(accountId, accountName);
+            super(SkinsRestorerFactory.this.ctx, accountId, accountName);
         }
 
         @Override
         public boolean disguise(Player player, String werewolfName) {
-            Werewolf.instance().logDebug("Disguising player " + player.getName() + " using SkinsRestorer...");
+            plugin.logDebug("Disguising player " + player.getName() + " using SkinsRestorer...");
 
-            if(!Werewolf.instance().getServer().getPluginManager().getPlugin("SkinsRestorer").isEnabled())
+            if(!plugin.getServer().getPluginManager().getPlugin("SkinsRestorer").isEnabled())
             {
-                Werewolf.instance().logDebug("Didn't disguise player... SkinsRestorer is not enabled!");
+                plugin.logDebug("Didn't disguise player... SkinsRestorer is not enabled!");
                 return false;
             }
 
-            Werewolf.instance().logDebug("[SkinsRestorer] Started Disguising of player: " + player.getName());
+            plugin.logDebug("[SkinsRestorer] Started Disguising of player: " + player.getName());
 
             try
             {
@@ -47,13 +50,13 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
                 skinsRestorer.getPlayerStorage().getSkinIdOfPlayer(playerId).ifPresent(id -> previousSkins.putIfAbsent(playerId, id));
 
                 String skinName;
-                if (Werewolf.getClanManager().isAlpha(playerId)) {
+                if (ctx.getClanManager().isAlpha(playerId)) {
                     skinName = "Alpha";
                 }
                 else {
-                    skinName = Werewolf.getWerewolfManager().getWerewolfClan(playerId).name();
+                    skinName = ctx.getWerewolfManager().getWerewolfClan(playerId).name();
                 }
-                Werewolf.instance().logDebug("[SkinsRestorer] Disguising " + player.getName() + " using the " + skinName + " skin.");
+                plugin.logDebug("[SkinsRestorer] Disguising " + player.getName() + " using the " + skinName + " skin.");
                 skinsRestorer.getPlayerStorage().setSkinIdOfPlayer(playerId, SkinIdentifier.ofCustom(skinName));
 
                 // Force skin refresh for player
@@ -62,7 +65,7 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
             }
             catch (DataRequestException e)
             {
-                Werewolf.instance().log("[SkinsRestorer] Failed to apply skin for player");
+                plugin.log("[SkinsRestorer] Failed to apply skin for player");
                 e.printStackTrace();
             }
             return false;
@@ -70,15 +73,15 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
 
         @Override
         public boolean undisguise(Player player) {
-            Werewolf.instance().logDebug("Undisguising player " + player.getName() + " using SkinsRestorer...");
+            plugin.logDebug("Undisguising player " + player.getName() + " using SkinsRestorer...");
 
-            if(!Werewolf.instance().getServer().getPluginManager().getPlugin("SkinsRestorer").isEnabled())
+            if(!plugin.getServer().getPluginManager().getPlugin("SkinsRestorer").isEnabled())
             {
-                Werewolf.instance().logDebug("Didn't undisguise player... SkinsRestorer is not enabled!");
+                plugin.logDebug("Didn't undisguise player... SkinsRestorer is not enabled!");
                 return false;
             }
 
-            Werewolf.instance().logDebug("[SkinsRestorer] Undisguise - Start undisguise!");
+            plugin.logDebug("[SkinsRestorer] Undisguise - Start undisguise!");
 
             try
             {
@@ -96,18 +99,20 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
             }
             catch (DataRequestException e)
             {
-                Werewolf.instance().log("[SkinsRestorer] Failed to apply skin for player");
+                plugin.log("[SkinsRestorer] Failed to apply skin for player");
                 e.printStackTrace();
             }
             return false;
         }
     }
 
-    public SkinsRestorerFactory()
+    public SkinsRestorerFactory(WerewolfContext ctx)
     {
+        this.ctx = ctx;
+        this.plugin = ctx.getPlugin();
         this.skinsRestorer = SkinsRestorerProvider.get();
 
-        Settings.Clans clans = Werewolf.instance().getSettings().clans();
+        Settings.Clans clans = ctx.getSettings().clans();
         skinsRestorer.getSkinStorage().setCustomSkinData("Alpha", SkinProperty.of(clans.alphaSkin().value(), clans.alphaSkin().signature()));
         for (ClanManager.ClanType clan : ClanManager.ClanType.values())
         {

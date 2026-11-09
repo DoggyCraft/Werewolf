@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
@@ -17,9 +18,9 @@ public class AddBountyCommand extends SubCommand
 {
 	private static final List<String> AMOUNTS = List.of("100", "200", "300", "500", "1000", "2000", "2500", "5000");
 
-	public AddBountyCommand(Werewolf plugin)
+	public AddBountyCommand(WerewolfContext ctx)
 	{
-		super(plugin, "addbounty", "werewolf.addbounty", true, "/ww addbounty <amount>", LANGUAGESTRING.HelpAddBounty);
+		super(ctx, "addbounty", "werewolf.addbounty", true, "/ww addbounty <amount>", LANGUAGESTRING.HelpAddBounty);
 	}
 
 	@Override
@@ -31,13 +32,13 @@ public class AddBountyCommand extends SubCommand
 	@Override
 	public void execute(CommandSender sender, Player player, String[] args)
 	{
-		if (!this.plugin.vaultEnabled)
+		if (ctx.getHuntManager() == null)
 		{
 			send(player, ChatColor.RED + "Vault not detected. Werewolf hunts & bounties are disabled.");
 			return;
 		}
 
-		if (Werewolf.getWerewolfManager().isWerewolf(player))
+		if (ctx.getWerewolfManager().isWerewolf(player))
 		{
 			send(player, ChatColor.RED + "Werewolves cannot add to the Werewolf bounty!");
 			return;
@@ -60,7 +61,7 @@ public class AddBountyCommand extends SubCommand
 			return;
 		}
 
-		Werewolf.getHuntManager().addBounty(player.getName(), bounty);
+		ctx.getHuntManager().addBounty(player.getName(), bounty);
 
 		this.plugin.log(player.getName() + ": /werewolf addbounty " + bounty);
 	}

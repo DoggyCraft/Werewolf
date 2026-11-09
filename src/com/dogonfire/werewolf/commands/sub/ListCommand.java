@@ -8,31 +8,31 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.managers.ClanManager.ClanType;
 
 /** /ww list: the top members of the player's clan */
 public class ListCommand extends SubCommand
 {
-	public ListCommand(Werewolf plugin)
+	public ListCommand(WerewolfContext ctx)
 	{
-		super(plugin, "list", "werewolf.list", true, null, null);
+		super(ctx, "list", "werewolf.list", true, null, null);
 	}
 
 	@Override
 	public void execute(CommandSender sender, Player player, String[] args)
 	{
-		if (!Werewolf.getWerewolfManager().isWerewolf(player))
+		if (!ctx.getWerewolfManager().isWerewolf(player))
 		{
 			player.sendMessage(ChatColor.RED + "You are not a werewolf");
 			return;
 		}
 
-		ClanType clan = Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId());
-		List<UUID> list = Werewolf.getWerewolfManager().getWerewolfClanMembersRanked(clan);
+		ClanType clan = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
+		List<UUID> list = ctx.getWerewolfManager().getWerewolfClanMembersRanked(clan);
 
-		player.sendMessage(ChatColor.GOLD + "--------- The Members of " + Werewolf.getClanManager().getClanName(clan) + " ---------");
+		player.sendMessage(ChatColor.GOLD + "--------- The Members of " + ctx.getClanManager().getClanName(clan) + " ---------");
 		if (list.size() > 15)
 		{
 			list = list.subList(0, 15);
@@ -42,7 +42,7 @@ public class ListCommand extends SubCommand
 		for (UUID memberId : list)
 		{
 			String memberName = this.plugin.getServer().getOfflinePlayer(memberId).getName();
-			int numberOfTransformations = Werewolf.getWerewolfManager().getNumberOfTransformations(memberId);
+			int numberOfTransformations = ctx.getWerewolfManager().getNumberOfTransformations(memberId);
 			String rank = String.format("%2d", n);
 
 			if (Objects.equals(memberName, player.getName()))

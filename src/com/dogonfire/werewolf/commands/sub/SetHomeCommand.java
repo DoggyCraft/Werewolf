@@ -4,7 +4,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.managers.ClanManager.ClanType;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
@@ -12,15 +12,15 @@ import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 /** /ww sethome: the clan alpha sets the clan home */
 public class SetHomeCommand extends SubCommand
 {
-	public SetHomeCommand(Werewolf plugin)
+	public SetHomeCommand(WerewolfContext ctx)
 	{
-		super(plugin, "sethome", "werewolf.sethome", true, "/ww sethome", LANGUAGESTRING.HelpSetHome);
+		super(ctx, "sethome", "werewolf.sethome", true, "/ww sethome", LANGUAGESTRING.HelpSetHome);
 	}
 
 	@Override
 	public boolean isAvailable(Player player)
 	{
-		return this.plugin.getSettings().clans().enabled() && player != null && Werewolf.getClanManager().isAlpha(player.getUniqueId());
+		return this.plugin.getSettings().clans().enabled() && player != null && ctx.getClanManager().isAlpha(player.getUniqueId());
 	}
 
 	@Override
@@ -31,21 +31,21 @@ public class SetHomeCommand extends SubCommand
 			send(player, ChatColor.RED + "Clans are not enabled.");
 			return;
 		}
-		if (!Werewolf.getWerewolfManager().isWerewolf(player))
+		if (!ctx.getWerewolfManager().isWerewolf(player))
 		{
 			send(player, LANGUAGESTRING.WerewolfCommandIsNotWerewolf, ChatColor.RED);
 			return;
 		}
 
-		ClanType clan = Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId());
+		ClanType clan = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
 
-		if (!Werewolf.getClanManager().isAlpha(clan, player.getUniqueId()))
+		if (!ctx.getClanManager().isAlpha(clan, player.getUniqueId()))
 		{
 			send(player, LANGUAGESTRING.YouAreNotTheAlphaOfTheClan, ChatColor.RED);
 			return;
 		}
 
-		Werewolf.getClanManager().setHomeForClan(clan, player.getLocation());
+		ctx.getClanManager().setHomeForClan(clan, player.getLocation());
 
 		send(player, LANGUAGESTRING.ClanSetHome, ChatColor.GREEN);
 	}

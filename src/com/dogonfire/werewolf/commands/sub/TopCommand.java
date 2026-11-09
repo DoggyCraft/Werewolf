@@ -9,6 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
@@ -19,24 +20,24 @@ public class TopCommand extends SubCommand
 	{
 	}
 
-	public TopCommand(Werewolf plugin)
+	public TopCommand(WerewolfContext ctx)
 	{
-		super(plugin, "top", "werewolf.top", false, "/ww top", LANGUAGESTRING.HelpTop);
+		super(ctx, "top", "werewolf.top", false, "/ww top", LANGUAGESTRING.HelpTop);
 	}
 
 	@Override
 	public void execute(CommandSender sender, Player player, String[] args)
 	{
-		if (!this.plugin.vaultEnabled)
+		if (ctx.getHuntManager() == null)
 		{
 			send(player, ChatColor.RED + "Vault not detected. Werewolf hunts & bounties are disabled.");
 			return;
 		}
 
 		List<Hunter> hunters = new ArrayList<Hunter>();
-		for (String hunterName : Werewolf.getHuntManager().getHunters())
+		for (String hunterName : ctx.getHuntManager().getHunters())
 		{
-			int kills = Werewolf.getHuntManager().getHunterKills(hunterName);
+			int kills = ctx.getHuntManager().getHunterKills(hunterName);
 			if (kills > 0)
 			{
 				hunters.add(new Hunter(hunterName, kills));

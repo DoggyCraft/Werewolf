@@ -9,16 +9,19 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 
 /** Runs a {@link SubCommand} as its own command (/growl, /howl), with the same console and permission checks as /ww */
 public class SingleCommandExecutor implements TabExecutor
 {
 	private final Werewolf plugin;
+	private final WerewolfContext ctx;
 	private final SubCommand command;
 
-	public SingleCommandExecutor(Werewolf plugin, SubCommand command)
+	public SingleCommandExecutor(WerewolfContext ctx, SubCommand command)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 		this.command = command;
 	}
 
@@ -39,7 +42,7 @@ public class SingleCommandExecutor implements TabExecutor
 
 		if (!this.command.isPermitted(player, fullArgs))
 		{
-			CommandUtil.sendNoPermission(this.plugin, player);
+			CommandUtil.sendNoPermission(ctx, player);
 			return true;
 		}
 

@@ -3,6 +3,7 @@ package com.dogonfire.werewolf.listeners;
 import com.dogonfire.werewolf.managers.ClanManager;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.events.WerewolfCureEvent;
 import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
 
@@ -20,11 +21,13 @@ import org.bukkit.inventory.ItemStack;
 
 public class InteractListener implements Listener
 {
-	private Werewolf	plugin	= null;
+	private final Werewolf	plugin;
+	private final WerewolfContext ctx;
 
-	public InteractListener(Werewolf plugin)
+	public InteractListener(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	private boolean checkForDefense(PlayerInteractEvent event)
@@ -34,7 +37,7 @@ public class InteractListener implements Listener
 		Material type = player.getInventory().getItemInMainHand().getType();
 		if (isForbiddenDefense(type))
 		{
-			player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfTryDefense, ChatColor.RED));
+			player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfTryDefense, ChatColor.RED));
 			event.setCancelled(true);
 			return true;
 		}
@@ -47,48 +50,32 @@ public class InteractListener implements Listener
 		Player player = event.getPlayer();
 		ItemStack handItem = player.getInventory().getItemInMainHand();
 		
-		if(!Werewolf.getItemManager().isCurePotion(handItem))
+		if(!ctx.getItemManager().isCurePotion(handItem))
 		{
 			return false;
 		}
 
-		/*
-		if (!handItem.hasItemMeta())
+		if (!ctx.getPermissionsManager().hasPermission(player, "werewolf.potion.cure.drink") && !player.isOp())
 		{
 			return false;
 		}
 		
-		if (handItem.getItemMeta().getDisplayName().length() < 10)
+		if (!ctx.getWerewolfManager().isWerewolf(player.getUniqueId()))
 		{
-			return false;
+			player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkCureFailure, ChatColor.LIGHT_PURPLE));
 		}
-		
-		if (!handItem.getItemMeta().getDisplayName().substring(2).contains("Werewolf cure"))
-		{
-			return false;
-		}
-*/		
-		if (!Werewolf.getPermissionsManager().hasPermission(player, "werewolf.potion.cure.drink") && !player.isOp())
-		{
-			return false;
-		}
-		
-		if (!Werewolf.getWerewolfManager().isWerewolf(player.getUniqueId()))
-		{
-			player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkCureFailure, ChatColor.LIGHT_PURPLE));
-		}
-		else if (!Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
+		else if (!ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 		{
 			if (Math.random() < this.plugin.getSettings().infection().cureChance())
 			{
-				if (Werewolf.getWerewolfManager().unmakeWerewolf(player.getUniqueId(), WerewolfCureEvent.Cause.CURE_POTION))
+				if (ctx.getWerewolfManager().unmakeWerewolf(player.getUniqueId(), WerewolfCureEvent.Cause.CURE_POTION))
 				{
-					player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkCureSuccess, ChatColor.LIGHT_PURPLE));
+					player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkCureSuccess, ChatColor.LIGHT_PURPLE));
 				}
 			}
 			else
 			{
-				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkCureFailure, ChatColor.LIGHT_PURPLE));
+				player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkCureFailure, ChatColor.LIGHT_PURPLE));
 			}
 		}
 		else
@@ -112,44 +99,23 @@ public class InteractListener implements Listener
 		Player player = event.getPlayer();
 		ItemStack handItem = player.getInventory().getItemInMainHand();
 
-		if(!Werewolf.getItemManager().isInfectionPotion(handItem))
+		if(!ctx.getItemManager().isInfectionPotion(handItem))
 		{
 			return false;
 		}
 
-/*		
-		if (!handItem.hasItemMeta())
-		{
-			return false;
-		}
-		if (!(player instanceof Player))
-		{
-			this.plugin.logDebug("Non-player tried to drink a werewolf potion!");
-			return false;
-		}
-		if (handItem.getItemMeta().getDisplayName().length() < 10)
-		{
-			return false;
-		}
-
-		
-		if (!handItem.getItemMeta().getDisplayName().substring(2).contains("Werewolf infection"))
-		{
-			return false;
-		}
-*/
-		if ((!Werewolf.getPermissionsManager().hasPermission(player, "werewolf.potion.infection.drink")) && (!player.isOp()))
+		if ((!ctx.getPermissionsManager().hasPermission(player, "werewolf.potion.infection.drink")) && (!player.isOp()))
 		{
 			return false;
 		}
 		
-		if (Werewolf.getWerewolfManager().isWerewolf(player))
+		if (ctx.getWerewolfManager().isWerewolf(player))
 		{
-			player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkInfectionFailure, ChatColor.LIGHT_PURPLE));
+			player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkInfectionFailure, ChatColor.LIGHT_PURPLE));
 		}
-		else if (Werewolf.getMoonManager().isTransformationNight(player.getWorld()))
+		else if (ctx.getMoonManager().isTransformationNight(player.getWorld()))
 		{
-			player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkInfectionSuccess, ChatColor.LIGHT_PURPLE));
+			player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkInfectionSuccess, ChatColor.LIGHT_PURPLE));
 			plugin.log(player.getName() + " contracted the werewolf infection by drinking a potion!");
 			
 			final Player targetPlayer = player;
@@ -158,13 +124,13 @@ public class InteractListener implements Listener
 			{
 				public void run()
 				{
-					Werewolf.getWerewolfManager().makeWerewolf(targetPlayer, true, ClanManager.ClanType.Potion, WerewolfInfectionEvent.Source.POTION);
+					ctx.getWerewolfManager().makeWerewolf(targetPlayer, true, ClanManager.ClanType.Potion, WerewolfInfectionEvent.Source.POTION);
 				}
 			}, 140L);
 		}
 		else
 		{
-			player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkInfectionFailure, ChatColor.LIGHT_PURPLE));
+			player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkInfectionFailure, ChatColor.LIGHT_PURPLE));
 		}
 		
 		if (player.getInventory().getItemInMainHand().getAmount() == 1)
@@ -182,12 +148,12 @@ public class InteractListener implements Listener
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent event)
 	{
-		if (!Werewolf.pluginEnabled)
+		if (!ctx.isWerewolvesEnabled())
 		{
 			return;
 		}
 		Player player = event.getPlayer();
-		if (((event.getAction().equals(Action.RIGHT_CLICK_AIR)) || (event.getAction().equals(Action.RIGHT_CLICK_BLOCK))) && (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId())))
+		if (((event.getAction().equals(Action.RIGHT_CLICK_AIR)) || (event.getAction().equals(Action.RIGHT_CLICK_BLOCK))) && (ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId())))
 		{
 			checkForDefense(event);
 		}
@@ -196,11 +162,11 @@ public class InteractListener implements Listener
 	@EventHandler
 	public void onPlayerConsumeEvent(PlayerItemConsumeEvent event)
 	{
-		if (!Werewolf.pluginEnabled)
+		if (!ctx.isWerewolvesEnabled())
 		{
 			return;
 		}
-		if (Werewolf.getWerewolfManager().isWerewolf(event.getPlayer()))
+		if (ctx.getWerewolfManager().isWerewolf(event.getPlayer()))
 		{
 			if (!checkForDrinkingWerewolfCurePotion(event))
 			{
@@ -220,7 +186,7 @@ public class InteractListener implements Listener
 		{
 			Player player = (Player) event.getTargetEntity();
 
-			if (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
+			if (ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 			{
 				event.setCancelled(true);
 			}

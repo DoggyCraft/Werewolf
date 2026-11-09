@@ -1,7 +1,9 @@
 package com.dogonfire.werewolf.tasks;
 
 import com.dogonfire.werewolf.managers.LanguageManager;
+import com.dogonfire.werewolf.managers.WerewolfScoreboardManager;
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -12,12 +14,14 @@ import org.bukkit.potion.PotionEffectType;
 
 public class DisguiseTask implements Runnable
 {
-	private Werewolf	plugin;
+	private final Werewolf	plugin;
+	private final WerewolfContext ctx;
 	private Player		player	= null;
 
-	public DisguiseTask(Werewolf instance, Player p)
+	public DisguiseTask(WerewolfContext ctx, Player p)
 	{
-		this.plugin = instance;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 		this.player = p;
 	}
 
@@ -28,7 +32,7 @@ public class DisguiseTask implements Runnable
 		{
 			if (stack != null && !stack.getType().equals(Material.AIR) && stack.getAmount() != 0)
 			{
-				if (Werewolf.getWerewolfManager().hasToDropItems(this.player.getUniqueId()))
+				if (ctx.getWerewolfManager().hasToDropItems(this.player.getUniqueId()))
 				{
 					this.player.getWorld().dropItemNaturally(this.player.getLocation(), stack);
 				}
@@ -59,7 +63,7 @@ public class DisguiseTask implements Runnable
 		{
 			return;
 		}
-		if (Werewolf.getWerewolfManager().hasToDropItems(this.player.getUniqueId()))
+		if (ctx.getWerewolfManager().hasToDropItems(this.player.getUniqueId()))
 		{
 			this.player.getWorld().dropItemNaturally(this.player.getLocation(), stack);
 		}
@@ -87,7 +91,7 @@ public class DisguiseTask implements Runnable
 		{
 			return;
 		}
-		if (Werewolf.getWerewolfManager().hasToDropItems(this.player.getUniqueId()))
+		if (ctx.getWerewolfManager().hasToDropItems(this.player.getUniqueId()))
 		{
 			this.player.getWorld().dropItemNaturally(this.player.getLocation(), stack);
 		}
@@ -115,19 +119,15 @@ public class DisguiseTask implements Runnable
 		}
 
 		// Cured in the tick since the transformation was started
-		if (!Werewolf.getWerewolfManager().isWerewolf(this.player))
+		if (!ctx.getWerewolfManager().isWerewolf(this.player))
 		{
 			return;
 		}
 
-		/*
-		 * if (Werewolf.getWerewolfManager().hasWerewolfSkin(this.player.
-		 * getUniqueId())) { return; }
-		 */
+		final Player nauseous = this.player;
+		this.plugin.getServer().getScheduler().runTaskLater(this.plugin, () -> nauseous.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 100, 1, false, false)), 1L);
 
-		Werewolf.server.getScheduler().scheduleSyncDelayedTask(this.plugin, new PotionEffectTask(this.plugin, this.player, new PotionEffect(PotionEffectType.NAUSEA, 100, 1)), 1L);
-
-		Werewolf.getWolfFormManager().applyWolfForm(this.player);
+		ctx.getWolfFormManager().applyWolfForm(this.player);
 
 		dropArmor();
 		dropOffHandItem();
@@ -137,7 +137,7 @@ public class DisguiseTask implements Runnable
 
 		if (plugin.getSettings().names().enabled())
 		{
-			String werewolfName = Werewolf.getWerewolfManager().getWerewolfName(player.getUniqueId());
+			String werewolfName = ctx.getWerewolfManager().getWerewolfName(player.getUniqueId());
 
 			if (werewolfName != "")
 			{
@@ -227,50 +227,45 @@ public class DisguiseTask implements Runnable
 			}
 		}
 
-		Werewolf.getWerewolfManager().pushPlayerData(this.player);
-		Werewolf.getStatisticsManager().clearStatistics(this.player.getUniqueId());
+		ctx.getWerewolfManager().pushPlayerData(this.player);
+		ctx.getStatisticsManager().clearStatistics(this.player.getUniqueId());
 
-		if (plugin.getSettings().general().scoreboardsEnabled())
+		WerewolfScoreboardManager scoreboards = ctx.getWerewolfScoreboardManager();
+		if (scoreboards != null)
 		{
-			Werewolf.getWerewolfScoreboardManager().newPlayerHuntingScoreboard(this.player);
+			scoreboards.newPlayerHuntingScoreboard(this.player);
 		}
 
 		// Before trying to disguise, check if Disguises are enabled...
-		if (plugin.disguisesEnabled)
+		if (ctx.isDisguisesEnabled())
 		{
-			Werewolf.getSkinManager().setWerewolfSkin(this.player, this.player.getPlayerListName());
+			ctx.getSkinManager().setWerewolfSkin(this.player, this.player.getPlayerListName());
 		}
 
-		Werewolf.getWerewolfManager().setLastTransformation(this.player.getUniqueId());
-
-		// if (this.plugin.healthBarEnabled)
-		// {
-		// ScoreboardManager localScoreboardManager =
-		// Bukkit.getScoreboardManager();
-		// }
+		ctx.getWerewolfManager().setLastTransformation(this.player.getUniqueId());
 
 		if (this.plugin.getSettings().general().werewolfGroupEnabled())
 		{
-			String originalGroup = Werewolf.getPermissionsManager().getGroup(this.player.getName());
-			Werewolf.getWerewolfManager().setOriginalPermissionGroup(this.player.getUniqueId(), originalGroup);
-			Werewolf.getPermissionsManager().setGroup(this.player.getName(), this.plugin.getSettings().general().werewolfGroupName());
+			String originalGroup = ctx.getPermissionsManager().getGroup(this.player.getName());
+			ctx.getWerewolfManager().setOriginalPermissionGroup(this.player.getUniqueId(), originalGroup);
+			ctx.getPermissionsManager().setGroup(this.player.getName(), this.plugin.getSettings().general().werewolfGroupName());
 		}
 
-		Werewolf.getLanguageManager().setAmount("" + Werewolf.getWerewolfManager().getNumberOfTransformations(this.player.getUniqueId()));
+		ctx.getLanguageManager().setAmount("" + ctx.getWerewolfManager().getNumberOfTransformations(this.player.getUniqueId()));
 
-		this.player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.Transform, ChatColor.LIGHT_PURPLE));
+		this.player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.Transform, ChatColor.LIGHT_PURPLE));
 
-		if (Werewolf.getPermissionsManager().hasPermission(this.player, "werewolf.howl"))
+		if (ctx.getPermissionsManager().hasPermission(this.player, "werewolf.howl"))
 		{
-			Werewolf.getLanguageManager().setType("/howl");
-			String message = Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.InfoCommandHowl, ChatColor.AQUA);
+			ctx.getLanguageManager().setType("/howl");
+			String message = ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.InfoCommandHowl, ChatColor.AQUA);
 			this.player.sendMessage(message);
 		}
 
-		if (Werewolf.getPermissionsManager().hasPermission(this.player, "werewolf.growl"))
+		if (ctx.getPermissionsManager().hasPermission(this.player, "werewolf.growl"))
 		{
-			Werewolf.getLanguageManager().setType("/growl");
-			String message = Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.InfoCommandGrowl, ChatColor.AQUA);
+			ctx.getLanguageManager().setType("/growl");
+			String message = ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.InfoCommandGrowl, ChatColor.AQUA);
 			this.player.sendMessage(message);
 		}
 

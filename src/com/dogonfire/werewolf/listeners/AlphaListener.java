@@ -10,7 +10,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 
 import com.dogonfire.werewolf.Werewolf;
-import com.dogonfire.werewolf.WerewolfAPI;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.events.NewAlphaEvent;
 import com.dogonfire.werewolf.managers.ClanManager;
 import com.dogonfire.werewolf.managers.LanguageManager;
@@ -23,10 +23,12 @@ import com.dogonfire.werewolf.managers.WerewolfManager;
 public class AlphaListener implements Listener
 {
 	private final Werewolf	plugin;
+	private final WerewolfContext ctx;
 
-	public AlphaListener(Werewolf plugin)
+	public AlphaListener(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	/*
@@ -36,39 +38,39 @@ public class AlphaListener implements Listener
 	@EventHandler(priority = EventPriority.LOW)
 	public void onAlphaDeath(PlayerDeathEvent event)
 	{
-		if (!Werewolf.pluginEnabled || !this.plugin.getSettings().clans().enabled())
+		if (!ctx.isWerewolvesEnabled() || !this.plugin.getSettings().clans().enabled())
 		{
 			return;
 		}
 
 		Player victim = event.getEntity();
 		Player killer = victim.getKiller();
-		WerewolfManager werewolfManager = Werewolf.getWerewolfManager();
+		WerewolfManager werewolfManager = ctx.getWerewolfManager();
 		if (killer == null || killer.equals(victim) || !werewolfManager.isWerewolf(victim))
 		{
 			return;
 		}
 
 		ClanManager.ClanType clan = werewolfManager.getWerewolfClan(victim.getUniqueId());
-		if (!Werewolf.getClanManager().isAlpha(clan, victim.getUniqueId()))
+		if (!ctx.getClanManager().isAlpha(clan, victim.getUniqueId()))
 		{
 			return;
 		}
 
-		LanguageManager languageManager = Werewolf.getLanguageManager();
+		LanguageManager languageManager = ctx.getLanguageManager();
 
 		if (werewolfManager.isWerewolf(killer))
 		{
-			if (werewolfManager.getWerewolfClan(killer.getUniqueId()) == clan && Werewolf.getClanManager().assignAlphaInClan(clan, killer.getUniqueId()))
+			if (werewolfManager.getWerewolfClan(killer.getUniqueId()) == clan && ctx.getClanManager().assignAlphaInClan(clan, killer.getUniqueId()))
 			{
 				languageManager.setPlayerName(killer.getName());
 				werewolfManager.sendMessageToClan(clan, languageManager.getLanguageString(LanguageManager.LANGUAGESTRING.NewClanAlpha, ChatColor.WHITE));
 			}
 		}
-		else if (this.plugin.getSettings().hunting().enabled() && WerewolfAPI.isHuman(killer))
+		else if (this.plugin.getSettings().hunting().enabled() && ctx.getWerewolfManager().isHuman(killer))
 		{
-			UUID runnerUp = Werewolf.getClanManager().getRunnerUp(clan);
-			if (runnerUp != null && Werewolf.getClanManager().assignAlphaInClan(clan, runnerUp))
+			UUID runnerUp = ctx.getClanManager().getRunnerUp(clan);
+			if (runnerUp != null && ctx.getClanManager().assignAlphaInClan(clan, runnerUp))
 			{
 				languageManager.setPlayerName(killer.getName());
 				werewolfManager.sendMessageToClan(clan, languageManager.getLanguageString(LanguageManager.LANGUAGESTRING.AlphaSlainByHunter, ChatColor.WHITE));
@@ -83,7 +85,7 @@ public class AlphaListener implements Listener
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onNewAlpha(NewAlphaEvent event)
 	{
-		Werewolf.getWerewolfManager().refreshWerewolfSkinLater(event.getOldAlphaId());
-		Werewolf.getWerewolfManager().refreshWerewolfSkinLater(event.getNewAlphaId());
+		ctx.getWerewolfManager().refreshWerewolfSkinLater(event.getOldAlphaId());
+		ctx.getWerewolfManager().refreshWerewolfSkinLater(event.getNewAlphaId());
 	}
 }

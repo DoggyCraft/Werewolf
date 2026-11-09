@@ -7,7 +7,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.CommandUtil;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.events.WerewolfCureEvent;
@@ -20,9 +20,9 @@ public class ToggleCommand extends SubCommand
 	private static final String SELF_PERMISSION = "werewolf.togglewerewolfself";
 	private static final String OTHER_PERMISSION = "werewolf.togglewerewolf";
 
-	public ToggleCommand(Werewolf plugin)
+	public ToggleCommand(WerewolfContext ctx)
 	{
-		super(plugin, "toggle", SELF_PERMISSION, false, null, null);
+		super(ctx, "toggle", SELF_PERMISSION, false, null, null);
 	}
 
 	@Override
@@ -46,18 +46,18 @@ public class ToggleCommand extends SubCommand
 	@Override
 	public boolean isListed(Player player)
 	{
-		return CommandUtil.hasPermission(player, OTHER_PERMISSION) || CommandUtil.hasPermission(player, SELF_PERMISSION);
+		return CommandUtil.hasPermission(ctx, player, OTHER_PERMISSION) || CommandUtil.hasPermission(ctx, player, SELF_PERMISSION);
 	}
 
 	@Override
 	public List<HelpEntry> help(Player player)
 	{
 		List<HelpEntry> entries = new ArrayList<HelpEntry>();
-		if (CommandUtil.hasPermission(player, OTHER_PERMISSION))
+		if (CommandUtil.hasPermission(ctx, player, OTHER_PERMISSION))
 		{
 			entries.add(new HelpEntry("/ww toggle <playername>", LANGUAGESTRING.HelpToggleOther));
 		}
-		if (CommandUtil.hasPermission(player, SELF_PERMISSION))
+		if (CommandUtil.hasPermission(ctx, player, SELF_PERMISSION))
 		{
 			entries.add(new HelpEntry("/ww toggle", LANGUAGESTRING.HelpToggleSelf));
 		}
@@ -79,22 +79,22 @@ public class ToggleCommand extends SubCommand
 
 	private void toggleSelf(Player player)
 	{
-		if (!Werewolf.getWerewolfManager().isWerewolf(player))
+		if (!ctx.getWerewolfManager().isWerewolf(player))
 		{
-			if (!Werewolf.getWerewolfManager().makeWerewolf(player, true, CommandUtil.randomClan(), WerewolfInfectionEvent.Source.COMMAND))
+			if (!ctx.getWerewolfManager().makeWerewolf(player, true, CommandUtil.randomClan(), WerewolfInfectionEvent.Source.COMMAND))
 			{
 				lang().setPlayerName(player.getName());
 				send(player, LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED);
 				return;
 			}
 
-			Werewolf.getWerewolfManager().setInfectedThisNight(player.getUniqueId(), player.getName(), false);
+			ctx.getWerewolfManager().setInfectedThisNight(player.getUniqueId(), player.getName(), false);
 
 			send(player, LANGUAGESTRING.NowAWerewolf, ChatColor.AQUA);
 		}
 		else
 		{
-			if (!Werewolf.getWerewolfManager().unmakeWerewolf(player.getUniqueId(), WerewolfCureEvent.Cause.COMMAND))
+			if (!ctx.getWerewolfManager().unmakeWerewolf(player.getUniqueId(), WerewolfCureEvent.Cause.COMMAND))
 			{
 				lang().setPlayerName(player.getName());
 				send(player, LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED);
@@ -115,15 +115,15 @@ public class ToggleCommand extends SubCommand
 			return;
 		}
 
-		if (!Werewolf.getWerewolfManager().isWerewolf(target))
+		if (!ctx.getWerewolfManager().isWerewolf(target))
 		{
-			if (!Werewolf.getWerewolfManager().makeWerewolf(target, true, CommandUtil.randomClan(), WerewolfInfectionEvent.Source.COMMAND))
+			if (!ctx.getWerewolfManager().makeWerewolf(target, true, CommandUtil.randomClan(), WerewolfInfectionEvent.Source.COMMAND))
 			{
 				lang().setPlayerName(target.getName());
 				send(player, LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED);
 				return;
 			}
-			Werewolf.getWerewolfManager().setInfectedThisNight(target.getUniqueId(), target.getName(), false);
+			ctx.getWerewolfManager().setInfectedThisNight(target.getUniqueId(), target.getName(), false);
 			if (player != null)
 			{
 				player.sendMessage(ChatColor.AQUA + target.getName() + " is now a werewolf! ");
@@ -137,7 +137,7 @@ public class ToggleCommand extends SubCommand
 		}
 		else
 		{
-			if (!Werewolf.getWerewolfManager().unmakeWerewolf(target.getUniqueId(), WerewolfCureEvent.Cause.COMMAND))
+			if (!ctx.getWerewolfManager().unmakeWerewolf(target.getUniqueId(), WerewolfCureEvent.Cause.COMMAND))
 			{
 				lang().setPlayerName(target.getName());
 				send(player, LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED);

@@ -8,7 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
-import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.CommandUtil;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
@@ -21,9 +21,9 @@ public class InfectCommand extends SubCommand
 	private static final String SELF_PERMISSION = "werewolf.infectself";
 	private static final String OTHER_PERMISSION = "werewolf.infect";
 
-	public InfectCommand(Werewolf plugin)
+	public InfectCommand(WerewolfContext ctx)
 	{
-		super(plugin, "infect", SELF_PERMISSION, false, null, null);
+		super(ctx, "infect", SELF_PERMISSION, false, null, null);
 	}
 
 	@Override
@@ -47,18 +47,18 @@ public class InfectCommand extends SubCommand
 	@Override
 	public boolean isListed(Player player)
 	{
-		return CommandUtil.hasPermission(player, OTHER_PERMISSION) || CommandUtil.hasPermission(player, SELF_PERMISSION);
+		return CommandUtil.hasPermission(ctx, player, OTHER_PERMISSION) || CommandUtil.hasPermission(ctx, player, SELF_PERMISSION);
 	}
 
 	@Override
 	public List<HelpEntry> help(Player player)
 	{
 		List<HelpEntry> entries = new ArrayList<HelpEntry>();
-		if (CommandUtil.hasPermission(player, SELF_PERMISSION))
+		if (CommandUtil.hasPermission(ctx, player, SELF_PERMISSION))
 		{
 			entries.add(new HelpEntry("/ww infect", LANGUAGESTRING.HelpInfectSelf));
 		}
-		if (CommandUtil.hasPermission(player, OTHER_PERMISSION))
+		if (CommandUtil.hasPermission(ctx, player, OTHER_PERMISSION))
 		{
 			entries.add(new HelpEntry("/ww infect <playername> [clan]", LANGUAGESTRING.HelpInfectOther));
 		}
@@ -80,9 +80,9 @@ public class InfectCommand extends SubCommand
 
 	private void infectSelf(Player player)
 	{
-		if (!Werewolf.getWerewolfManager().isWerewolf(player))
+		if (!ctx.getWerewolfManager().isWerewolf(player))
 		{
-			if (Werewolf.getWerewolfManager().makeWerewolf(player, false, CommandUtil.randomClan(), WerewolfInfectionEvent.Source.COMMAND))
+			if (ctx.getWerewolfManager().makeWerewolf(player, false, CommandUtil.randomClan(), WerewolfInfectionEvent.Source.COMMAND))
 			{
 				player.sendMessage(ChatColor.AQUA + "You now have the werewolf infection!");
 			}
@@ -110,10 +110,10 @@ public class InfectCommand extends SubCommand
 		ClanType clan;
 		if (args.length >= 3)
 		{
-			clan = CommandUtil.parseClan(args[2]);
+			clan = CommandUtil.parseClan(ctx, args[2]);
 			if (clan == null)
 			{
-				lang().setType(String.join(", ", CommandUtil.clanNames()));
+				lang().setType(String.join(", ", CommandUtil.clanNames(ctx)));
 				send(player, LANGUAGESTRING.AdminInvalidClan, ChatColor.RED);
 				return;
 			}
@@ -123,13 +123,13 @@ public class InfectCommand extends SubCommand
 			clan = CommandUtil.randomClan();
 		}
 
-		if (Werewolf.getWerewolfManager().isWerewolf(target))
+		if (ctx.getWerewolfManager().isWerewolf(target))
 		{
 			send(player, ChatColor.RED + target.getName() + " already is a werewolf! Please cure them first...");
 			return;
 		}
 
-		if (!Werewolf.getWerewolfManager().makeWerewolf(target, false, clan, WerewolfInfectionEvent.Source.COMMAND))
+		if (!ctx.getWerewolfManager().makeWerewolf(target, false, clan, WerewolfInfectionEvent.Source.COMMAND))
 		{
 			lang().setPlayerName(target.getName());
 			send(player, LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED);
@@ -153,7 +153,7 @@ public class InfectCommand extends SubCommand
 		List<String> result = new ArrayList<String>();
 		if (args.length == 3)
 		{
-			StringUtil.copyPartialMatches(args[2], CommandUtil.clanNames(), result);
+			StringUtil.copyPartialMatches(args[2], CommandUtil.clanNames(ctx), result);
 		}
 		return result;
 	}

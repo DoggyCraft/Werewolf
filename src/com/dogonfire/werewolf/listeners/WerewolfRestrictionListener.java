@@ -19,6 +19,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.events.WerewolfTransformEvent;
 import com.dogonfire.werewolf.managers.LanguageManager;
 
@@ -31,22 +32,24 @@ public class WerewolfRestrictionListener implements Listener
 	public static final String	BYPASS_BLOCKED_COMMANDS	= "werewolf.bypass.blockedcommands";
 
 	private final Werewolf		plugin;
+	private final WerewolfContext ctx;
 
-	public WerewolfRestrictionListener(Werewolf plugin)
+	public WerewolfRestrictionListener(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	@EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
 	public void onCommand(PlayerCommandPreprocessEvent event)
 	{
-		if (!Werewolf.pluginEnabled)
+		if (!ctx.isWerewolvesEnabled())
 		{
 			return;
 		}
 
 		Player player = event.getPlayer();
-		if (!Werewolf.getWerewolfManager().isWerewolf(player) || player.hasPermission(BYPASS_BLOCKED_COMMANDS))
+		if (!ctx.getWerewolfManager().isWerewolf(player) || player.hasPermission(BYPASS_BLOCKED_COMMANDS))
 		{
 			return;
 		}
@@ -58,11 +61,11 @@ public class WerewolfRestrictionListener implements Listener
 		{
 			message = LanguageManager.LANGUAGESTRING.BlockedCommand;
 		}
-		else if (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()) && isBlocked(command, this.plugin.getSettings().blockedCommands().wolfForm()))
+		else if (ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()) && isBlocked(command, this.plugin.getSettings().blockedCommands().wolfForm()))
 		{
 			message = LanguageManager.LANGUAGESTRING.BlockedCommandWolfForm;
 		}
-		else if (Werewolf.getClanManager().isAlpha(player.getUniqueId()) && isBlocked(command, this.plugin.getSettings().blockedCommands().alpha()))
+		else if (ctx.getClanManager().isAlpha(player.getUniqueId()) && isBlocked(command, this.plugin.getSettings().blockedCommands().alpha()))
 		{
 			message = LanguageManager.LANGUAGESTRING.BlockedCommandAlpha;
 		}
@@ -70,7 +73,7 @@ public class WerewolfRestrictionListener implements Listener
 		if (message != null)
 		{
 			event.setCancelled(true);
-			player.sendMessage(Werewolf.getLanguageManager().getLanguageString(message, ChatColor.RED));
+			player.sendMessage(ctx.getLanguageManager().getLanguageString(message, ChatColor.RED));
 		}
 	}
 
@@ -129,7 +132,7 @@ public class WerewolfRestrictionListener implements Listener
 	@EventHandler(ignoreCancelled = true)
 	public void onPotionEffect(EntityPotionEffectEvent event)
 	{
-		if (!Werewolf.pluginEnabled || !(event.getEntity() instanceof Player) || event.getNewEffect() == null)
+		if (!ctx.isWerewolvesEnabled() || !(event.getEntity() instanceof Player) || event.getNewEffect() == null)
 		{
 			return;
 		}
@@ -140,7 +143,7 @@ public class WerewolfRestrictionListener implements Listener
 		}
 
 		Player player = (Player) event.getEntity();
-		if (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()) && Werewolf.getWolfFormManager().isBlockedPotion(player, event.getNewEffect().getType()))
+		if (ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()) && ctx.getWolfFormManager().isBlockedPotion(player, event.getNewEffect().getType()))
 		{
 			event.setCancelled(true);
 		}
@@ -148,29 +151,29 @@ public class WerewolfRestrictionListener implements Listener
 
 	private boolean isOnDiet(Player player)
 	{
-		if (!this.plugin.getSettings().diet().enabled() || !Werewolf.getWerewolfManager().isWerewolf(player))
+		if (!this.plugin.getSettings().diet().enabled() || !ctx.getWerewolfManager().isWerewolf(player))
 		{
 			return false;
 		}
 
-		return this.plugin.getSettings().diet().humanForm() || Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId());
+		return this.plugin.getSettings().diet().humanForm() || ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId());
 	}
 
 	@EventHandler(ignoreCancelled = true)
 	public void onConsume(PlayerItemConsumeEvent event)
 	{
-		if (!Werewolf.pluginEnabled)
+		if (!ctx.isWerewolvesEnabled())
 		{
 			return;
 		}
 
 		Player player = event.getPlayer();
-		if (!Werewolf.getWolfFormManager().isBlockedFood(event.getItem().getType()) || !isOnDiet(player))
+		if (!ctx.getWolfFormManager().isBlockedFood(event.getItem().getType()) || !isOnDiet(player))
 		{
 			return;
 		}
 
-		player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfTryEat, ChatColor.RED));
+		player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfTryEat, ChatColor.RED));
 
 		if (this.plugin.getSettings().diet().preventConsumption())
 		{
@@ -186,7 +189,7 @@ public class WerewolfRestrictionListener implements Listener
 	@EventHandler(ignoreCancelled = true)
 	public void onEatCake(PlayerInteractEvent event)
 	{
-		if (!Werewolf.pluginEnabled || event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getClickedBlock() == null)
+		if (!ctx.isWerewolvesEnabled() || event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getClickedBlock() == null)
 		{
 			return;
 		}
@@ -198,7 +201,7 @@ public class WerewolfRestrictionListener implements Listener
 		}
 
 		Player player = event.getPlayer();
-		if (!Werewolf.getWolfFormManager().isBlockedFood(Material.CAKE) || !isOnDiet(player))
+		if (!ctx.getWolfFormManager().isBlockedFood(Material.CAKE) || !isOnDiet(player))
 		{
 			return;
 		}
@@ -207,7 +210,7 @@ public class WerewolfRestrictionListener implements Listener
 		{
 			if (player.getFoodLevel() < 20 || player.getGameMode() == GameMode.CREATIVE)
 			{
-				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfTryEat, ChatColor.RED));
+				player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfTryEat, ChatColor.RED));
 			}
 			event.setCancelled(true);
 		}
@@ -253,7 +256,7 @@ public class WerewolfRestrictionListener implements Listener
 
 		if (event.getReason() == WerewolfTransformEvent.Reason.CONTROLLED || event.getReason() == WerewolfTransformEvent.Reason.COMMAND)
 		{
-			event.getPlayer().sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.CannotTransformInGameMode, ChatColor.RED));
+			event.getPlayer().sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.CannotTransformInGameMode, ChatColor.RED));
 		}
 	}
 }

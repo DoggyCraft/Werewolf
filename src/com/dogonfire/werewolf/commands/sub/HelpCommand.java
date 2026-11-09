@@ -5,6 +5,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.commands.WerewolfCommand;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
@@ -14,9 +15,9 @@ public class HelpCommand extends SubCommand
 {
 	private final WerewolfCommand root;
 
-	public HelpCommand(Werewolf plugin, WerewolfCommand root)
+	public HelpCommand(WerewolfContext ctx, WerewolfCommand root)
 	{
-		super(plugin, "help", null, false, null, null);
+		super(ctx, "help", null, false, null, null);
 		this.root = root;
 	}
 

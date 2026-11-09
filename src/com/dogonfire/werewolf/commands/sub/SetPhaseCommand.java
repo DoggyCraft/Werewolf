@@ -9,7 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
-import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 import com.dogonfire.werewolf.managers.MoonManager;
@@ -17,9 +17,9 @@ import com.dogonfire.werewolf.managers.MoonManager;
 /** /ww setphase <phase> [world]: moves the world's time forward to the next night with that moon phase */
 public class SetPhaseCommand extends SubCommand
 {
-	public SetPhaseCommand(Werewolf plugin)
+	public SetPhaseCommand(WerewolfContext ctx)
 	{
-		super(plugin, "setphase", "werewolf.setphase", false, "/ww setphase <phase> [world]", LANGUAGESTRING.HelpSetPhase);
+		super(ctx, "setphase", "werewolf.setphase", false, "/ww setphase <phase> [world]", LANGUAGESTRING.HelpSetPhase);
 	}
 
 	@Override
@@ -58,10 +58,10 @@ public class SetPhaseCommand extends SubCommand
 			world = this.plugin.getServer().getWorlds().get(0);
 		}
 
-		Werewolf.getMoonManager().setMoonPhase(world, phase);
+		ctx.getMoonManager().setMoonPhase(world, phase);
 
 		lang().setPlayerName(world.getName());
-		lang().setType(Werewolf.getMoonManager().getPhaseName(Werewolf.getMoonManager().getMoonPhase(world)));
+		lang().setType(ctx.getMoonManager().getPhaseName(ctx.getMoonManager().getMoonPhase(world)));
 		send(player, LANGUAGESTRING.MoonPhaseSet, ChatColor.AQUA);
 
 		this.plugin.log(sender.getName() + " set the moon phase in " + world.getName() + " to " + phase.name());

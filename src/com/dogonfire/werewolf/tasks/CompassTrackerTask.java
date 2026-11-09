@@ -1,101 +1,78 @@
 package com.dogonfire.werewolf.tasks;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
-import com.dogonfire.werewolf.Werewolf;
-import org.bukkit.Server;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
 
+import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
+
+/** /ww hunt: points the compass of every hunter at the nearest werewolf. Owned by HuntManager; runs while anyone hunts */
 public class CompassTrackerTask implements Runnable
 {
-	private static ArrayList<UUID>		watchList	= new ArrayList<UUID>();
-	private static int					taskId		= -2;
-	private static Werewolf plugin;
-	private static long					updateRate	= 100L;
+	private static final long		UPDATE_RATE	= 100L;
 
-	public static void setPlugin(Werewolf newPlugin)
+	private final WerewolfContext	ctx;
+	private final Werewolf			plugin;
+	private final List<UUID>		watchList	= new ArrayList<UUID>();
+	private BukkitTask				task;
+
+	public CompassTrackerTask(WerewolfContext ctx)
 	{
-		plugin = newPlugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
-	public static void setUpdateRate(long newUpdateRate)
+	private void start()
 	{
-		updateRate = newUpdateRate;
+		if (this.task == null)
+		{
+			this.task = this.plugin.getServer().getScheduler().runTaskTimer(this.plugin, this, 40L, UPDATE_RATE);
+		}
+	}
 
-		stop();
+	public void stop()
+	{
+		if (this.task != null)
+		{
+			this.task.cancel();
+			this.task = null;
+		}
+	}
+
+	public boolean hasWatcher(UUID watcherId)
+	{
+		return this.watchList.contains(watcherId);
+	}
+
+	public void addWatcher(UUID watcherId)
+	{
+		this.watchList.add(watcherId);
 		start();
 	}
 
-	public static boolean start()
+	public void removeWatcher(UUID watcherId)
 	{
-		if (!isRunning())
-		{
-			taskId = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, new CompassTrackerTask(), 40L, updateRate);
-			if (isRunning())
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	public static boolean isRunning()
-	{
-		return taskId > 0;
-	}
-
-	public static void stop()
-	{
-		if (isRunning())
-		{
-			plugin.getServer().getScheduler().cancelTask(taskId);
-		}
-		taskId = -2;
-	}
-
-	public static boolean hasWatcher(UUID watcherId)
-	{
-		return watchList.contains(watcherId);
-	}
-
-	public static void addWatcher(UUID watcherId)
-	{
-		watchList.add(watcherId);
-
-		start();
-	}
-
-
-	public static void removeWatcher(UUID watcherId)
-	{
-		if (watchList.contains(watcherId))
-		{
-			watchList.remove(watcherId);
-		}
-		
-		if (watchList.isEmpty())
+		this.watchList.remove(watcherId);
+		if (this.watchList.isEmpty())
 		{
 			stop();
 		}
 	}
 
+	@Override
 	public void run()
 	{
-		Server server = plugin.getServer();
-		
-		for (UUID playerId : watchList)
+		for (UUID playerId : this.watchList)
 		{
-			Player watcher = server.getPlayer(playerId);
+			Player watcher = this.plugin.getServer().getPlayer(playerId);
 			if (watcher != null)
 			{
-				Player watched = Werewolf.getWerewolfManager().getNearestWerewolf(watcher.getUniqueId());
-				if (watched == null)
-				{
-					watcher.setCompassTarget(watcher.getLocation());
-					continue;
-				}
-				watcher.setCompassTarget(watched.getLocation());
+				Player watched = this.ctx.getWerewolfManager().getNearestWerewolf(watcher.getUniqueId());
+				watcher.setCompassTarget(watched != null ? watched.getLocation() : watcher.getLocation());
 			}
 		}
 	}

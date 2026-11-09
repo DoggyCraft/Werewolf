@@ -2,153 +2,156 @@ package com.dogonfire.werewolf;
 
 import java.util.UUID;
 
-import com.clanjhoo.vampire.VampireAPI;
 import com.dogonfire.werewolf.managers.ClanManager;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import com.dogonfire.werewolf.Werewolf;
-
 public class WerewolfAPI
-{	
+{
+	private static volatile WerewolfContext	ctx;
+
+	// Set by the plugin on enable, cleared on disable
+	static void setContext(WerewolfContext context)
+	{
+		ctx = context;
+	}
+
+	private static WerewolfContext ctx()
+	{
+		WerewolfContext context = ctx;
+		if (context == null)
+		{
+			throw new IllegalStateException("Werewolf is not enabled");
+		}
+		return context;
+	}
+
+	/** Does nothing; kept so plugins built against older versions still link */
+	@Deprecated
 	public static void setFullWerewolf(UUID playerId)
 	{
-		// Werewolf.getWerewolfManager().makeWerewolf(player, turnNow, clan);
+	}
+
+	/** Whether the Werewolf plugin is enabled, so the other methods can be used */
+	public static boolean isEnabled()
+	{
+		return ctx != null;
 	}
 
 	public static ItemStack newWerewolfSilverSword()
 	{
-		return Werewolf.getItemManager().newSilverSword(1);
+		return ctx().getItemManager().newSilverSword(1);
 	}
 
 	public static ItemStack newWerewolfLoreBook()
 	{
-		return Werewolf.getItemManager().newLoreBook();
+		return ctx().getItemManager().newLoreBook();
 	}
 
 	public static ItemStack newWerewolfCurePotion()
 	{
-		return Werewolf.getItemManager().newCurePotion();
+		return ctx().getItemManager().newCurePotion();
 	}
 
 	public static ItemStack newWerewolfInfectionPotion()
 	{
-		return Werewolf.getItemManager().newInfectionPotion();
+		return ctx().getItemManager().newInfectionPotion();
 	}
 
 	public static ItemStack newWerewolfWolfbanePotion()
 	{
-		return Werewolf.getItemManager().newWolfbanePotion();
+		return ctx().getItemManager().newWolfbanePotion();
 	}
 
 	public static boolean isWerewolfSilverSword(ItemStack item)
 	{
-		return Werewolf.getItemManager().isSilverSword(item);
+		return ctx().getItemManager().isSilverSword(item);
 	}
 
 	public static ItemStack newWerewolfTracker()
 	{
-		return Werewolf.getItemManager().newWerewolfTracker();
+		return ctx().getItemManager().newWerewolfTracker();
 	}
 
 	public static boolean isWerewolfSilverArmor(ItemStack item)
 	{
-		return Werewolf.getItemManager().isSilverArmor(item);
+		return ctx().getItemManager().isSilverArmor(item);
 	}
 
 	public static boolean isWerewolfTracker(ItemStack item)
 	{
-		return Werewolf.getItemManager().isWerewolfTracker(item);
+		return ctx().getItemManager().isWerewolfTracker(item);
 	}
 
 	public static boolean isWerewolfLoreBook(ItemStack item)
 	{
-		return Werewolf.getItemManager().isLoreBook(item);
+		return ctx().getItemManager().isLoreBook(item);
 	}
 
 	public static boolean isWerewolfCurePotion(ItemStack item)
 	{
-		return Werewolf.getItemManager().isCurePotion(item);
+		return ctx().getItemManager().isCurePotion(item);
 	}
 
 	public static boolean isWerewolfInfectionPotion(ItemStack item)
 	{
-		return Werewolf.getItemManager().isInfectionPotion(item);
+		return ctx().getItemManager().isInfectionPotion(item);
 	}
 
 	public static boolean isWerewolfWolfbanePotion(ItemStack item)
 	{
-		return Werewolf.getItemManager().isWolfbanePotion(item);
+		return ctx().getItemManager().isWolfbanePotion(item);
 	}
 
 	public static boolean isWerewolf(UUID playerId)
 	{
-		return Werewolf.getWerewolfManager().isWerewolf(playerId);
+		return ctx().getWerewolfManager().isWerewolf(playerId);
 	}
 
 	public static boolean isWerewolf(Player player)
 	{
 		return isWerewolf(player.getUniqueId());
 	}
+
 	public static boolean isVampire(Player player)
 	{
-		if (Werewolf.instance().vampireEnabled)
-		{
-			try
-			{
-				return VampireAPI.isVampire(player);
-			}
-			catch (AssertionError e)
-			{
-				// VampireRevamp hasn't loaded this player's data yet
-				return false;
-			}
-		}
-		return false;
+		return ctx().getWerewolfManager().isVampire(player);
 	}
 
 	public static boolean isVampire(UUID playerId)
 	{
-		if (Werewolf.instance().vampireEnabled)
-		{
-			Player player = Bukkit.getPlayer(playerId);
-			// VampireAPI only works on online players
-			return player != null && isVampire(player);
-		}
-		return false;
+		return ctx().getWerewolfManager().isVampire(playerId);
 	}
 
 	public static boolean isHuman(UUID playerId)
 	{
-		return !isWerewolf(playerId) && !isVampire(playerId);
+		return ctx().getWerewolfManager().isHuman(playerId);
 	}
 
 	public static boolean isHuman(Player player)
 	{
-		return isHuman(player.getUniqueId());
+		return ctx().getWerewolfManager().isHuman(player.getUniqueId());
 	}
 
 	public static boolean isAlpha(UUID playerId)
 	{
-		return Werewolf.getClanManager().isAlpha(playerId);
+		return ctx().getClanManager().isAlpha(playerId);
 	}
 
 	public static boolean isAlpha(Player player)
 	{
-		return Werewolf.getClanManager().isAlpha(player.getUniqueId());
+		return ctx().getClanManager().isAlpha(player.getUniqueId());
 	}
 
 	public static int getNumberOfWerewolves()
 	{
-		return Werewolf.getWerewolfManager().getNumberOfWerewolves();
+		return ctx().getWerewolfManager().getNumberOfWerewolves();
 	}
 
 	public static ClanManager.ClanType getWerewolfClan(UUID playerId) {
 		if (!isWerewolf(playerId)) {
 			return null;
 		}
-		return Werewolf.getWerewolfManager().getWerewolfClan(playerId);
+		return ctx().getWerewolfManager().getWerewolfClan(playerId);
 	}
 }

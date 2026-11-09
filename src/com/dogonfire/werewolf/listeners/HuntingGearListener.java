@@ -23,7 +23,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import com.dogonfire.werewolf.Werewolf;
-import com.dogonfire.werewolf.WerewolfAPI;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.events.TrackerTargetEvent.TargetType;
 import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
 import com.dogonfire.werewolf.events.WerewolfTransformEvent;
@@ -37,16 +37,18 @@ import com.dogonfire.werewolf.managers.LanguageManager;
 public class HuntingGearListener implements Listener
 {
 	private final Werewolf	plugin;
+	private final WerewolfContext ctx;
 	private final Random	random	= new Random();
 
-	public HuntingGearListener(Werewolf plugin)
+	public HuntingGearListener(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	private void sendMessage(Player player, LanguageManager.LANGUAGESTRING message, ChatColor color)
 	{
-		player.sendMessage(Werewolf.getLanguageManager().getLanguageString(message, color));
+		player.sendMessage(ctx.getLanguageManager().getLanguageString(message, color));
 	}
 
 	// Silver armor gives its wearer a chance to shake off a werewolf bite (not potions or commands)
@@ -58,7 +60,7 @@ public class HuntingGearListener implements Listener
 			return;
 		}
 
-		int purity = Werewolf.getItemManager().getSilverArmorPurity(event.getPlayer());
+		int purity = ctx.getItemManager().getSilverArmorPurity(event.getPlayer());
 		if (purity > 0 && this.random.nextInt(100) < purity)
 		{
 			event.setCancelled(true);
@@ -68,7 +70,7 @@ public class HuntingGearListener implements Listener
 
 	private boolean mayNotWearSilver(Player player)
 	{
-		return Werewolf.pluginEnabled && !WerewolfAPI.isHuman(player);
+		return ctx.isWerewolvesEnabled() && !ctx.getWerewolfManager().isHuman(player);
 	}
 
 	// Right-clicking armor equips it
@@ -80,7 +82,7 @@ public class HuntingGearListener implements Listener
 			return;
 		}
 
-		if (!Werewolf.getItemManager().isSilverArmor(event.getItem()) || !mayNotWearSilver(event.getPlayer()))
+		if (!ctx.getItemManager().isSilverArmor(event.getItem()) || !mayNotWearSilver(event.getPlayer()))
 		{
 			return;
 		}
@@ -111,11 +113,11 @@ public class HuntingGearListener implements Listener
 			{
 				placed = player.getInventory().getItemInOffHand();
 			}
-			equipping = Werewolf.getItemManager().isSilverArmor(placed);
+			equipping = ctx.getItemManager().isSilverArmor(placed);
 		}
 		else if (event.isShiftClick() && event.getView().getTopInventory().getType() == InventoryType.CRAFTING)
 		{
-			equipping = Werewolf.getItemManager().isSilverArmor(event.getCurrentItem());
+			equipping = ctx.getItemManager().isSilverArmor(event.getCurrentItem());
 		}
 
 		if (equipping && mayNotWearSilver(player))
@@ -129,7 +131,7 @@ public class HuntingGearListener implements Listener
 	public void onDispenseArmor(BlockDispenseArmorEvent event)
 	{
 		LivingEntity target = event.getTargetEntity();
-		if (target instanceof Player && Werewolf.getItemManager().isSilverArmor(event.getItem()) && mayNotWearSilver((Player) target))
+		if (target instanceof Player && ctx.getItemManager().isSilverArmor(event.getItem()) && mayNotWearSilver((Player) target))
 		{
 			event.setCancelled(true);
 		}
@@ -144,7 +146,7 @@ public class HuntingGearListener implements Listener
 		}
 
 		ItemStack item = event.getItem();
-		TargetType type = Werewolf.getTrackerManager().getTrackerType(item);
+		TargetType type = ctx.getTrackerManager().getTrackerType(item);
 		if (type == null)
 		{
 			return;
@@ -152,7 +154,7 @@ public class HuntingGearListener implements Listener
 
 		Player hunter = event.getPlayer();
 		// Right-clicking fires once per hand; with a tracker in each hand only the main hand counts
-		if (event.getHand() == EquipmentSlot.OFF_HAND && Werewolf.getTrackerManager().getTrackerType(hunter.getInventory().getItemInMainHand()) != null)
+		if (event.getHand() == EquipmentSlot.OFF_HAND && ctx.getTrackerManager().getTrackerType(hunter.getInventory().getItemInMainHand()) != null)
 		{
 			return;
 		}
@@ -171,20 +173,20 @@ public class HuntingGearListener implements Listener
 		}
 
 		String itemName = getItemName(item);
-		if (!WerewolfAPI.isHuman(hunter))
+		if (!ctx.getWerewolfManager().isHuman(hunter))
 		{
-			Werewolf.getLanguageManager().setType(itemName);
+			ctx.getLanguageManager().setType(itemName);
 			sendMessage(hunter, LanguageManager.LANGUAGESTRING.TrackerOnlyHumans, ChatColor.RED);
 			return;
 		}
 
 		if (rightClick)
 		{
-			Werewolf.getTrackerManager().lock(hunter, type, itemName);
+			ctx.getTrackerManager().lock(hunter, type, itemName);
 		}
 		else
 		{
-			Werewolf.getTrackerManager().clear(hunter, itemName);
+			ctx.getTrackerManager().clear(hunter, itemName);
 		}
 	}
 
@@ -201,16 +203,16 @@ public class HuntingGearListener implements Listener
 	@EventHandler(ignoreCancelled = true)
 	public void onCraftTracker(CraftItemEvent event)
 	{
-		if (!(event.getWhoClicked() instanceof Player) || Werewolf.getTrackerManager().getTrackerType(event.getRecipe().getResult()) == null)
+		if (!(event.getWhoClicked() instanceof Player) || ctx.getTrackerManager().getTrackerType(event.getRecipe().getResult()) == null)
 		{
 			return;
 		}
 
 		Player player = (Player) event.getWhoClicked();
-		if (!WerewolfAPI.isHuman(player))
+		if (!ctx.getWerewolfManager().isHuman(player))
 		{
 			event.setCancelled(true);
-			Werewolf.getLanguageManager().setType(getItemName(event.getRecipe().getResult()));
+			ctx.getLanguageManager().setType(getItemName(event.getRecipe().getResult()));
 			sendMessage(player, LanguageManager.LANGUAGESTRING.TrackerOnlyHumansCraft, ChatColor.RED);
 		}
 	}
@@ -219,12 +221,12 @@ public class HuntingGearListener implements Listener
 	@EventHandler(ignoreCancelled = true)
 	public void onSniff(PlayerInteractEntityEvent event)
 	{
-		if (!Werewolf.pluginEnabled || event.getHand() != EquipmentSlot.HAND || !(event.getRightClicked() instanceof Player))
+		if (!ctx.isWerewolvesEnabled() || event.getHand() != EquipmentSlot.HAND || !(event.getRightClicked() instanceof Player))
 		{
 			return;
 		}
 
-		Werewolf.getScentManager().sniff(event.getPlayer(), (Player) event.getRightClicked());
+		ctx.getScentManager().sniff(event.getPlayer(), (Player) event.getRightClicked());
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -232,14 +234,14 @@ public class HuntingGearListener implements Listener
 	{
 		if (!event.isToWolfForm())
 		{
-			Werewolf.getScentManager().stopTracking(event.getPlayer());
+			ctx.getScentManager().stopTracking(event.getPlayer());
 		}
 	}
 
 	@EventHandler
 	public void onQuit(PlayerQuitEvent event)
 	{
-		Werewolf.getScentManager().clear(event.getPlayer());
-		Werewolf.getTrackerManager().remove(event.getPlayer().getUniqueId());
+		ctx.getScentManager().clear(event.getPlayer());
+		ctx.getTrackerManager().remove(event.getPlayer().getUniqueId());
 	}
 }

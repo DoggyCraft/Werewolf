@@ -5,7 +5,7 @@ import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.events.WerewolfTransformEvent;
 
@@ -14,9 +14,9 @@ public class PluginToggleCommand extends SubCommand
 {
 	private final boolean enable;
 
-	public PluginToggleCommand(Werewolf plugin, boolean enable)
+	public PluginToggleCommand(WerewolfContext ctx, boolean enable)
 	{
-		super(plugin, enable ? "on" : "off", null, false, null, null);
+		super(ctx, enable ? "on" : "off", null, false, null, null);
 		this.enable = enable;
 	}
 
@@ -29,7 +29,7 @@ public class PluginToggleCommand extends SubCommand
 	@Override
 	public void execute(CommandSender sender, Player player, String[] args)
 	{
-		Werewolf.pluginEnabled = this.enable;
+		this.ctx.setWerewolvesEnabled(this.enable);
 		this.plugin.log(this.enable ? " has been enabled" : " has been disabled");
 
 		if (player != null)
@@ -41,11 +41,11 @@ public class PluginToggleCommand extends SubCommand
 		{
 			if (this.enable)
 			{
-				if (Werewolf.getMoonManager().isNight(world))
+				if (ctx.getMoonManager().isNight(world))
 				{
 					for (Player werewolf : world.getPlayers())
 					{
-						Werewolf.getWerewolfManager().setWerewolfSkin(werewolf, WerewolfTransformEvent.Reason.COMMAND);
+						ctx.getWerewolfManager().setWerewolfSkin(werewolf, WerewolfTransformEvent.Reason.COMMAND);
 					}
 				}
 			}
@@ -53,7 +53,7 @@ public class PluginToggleCommand extends SubCommand
 			{
 				for (Player werewolf : world.getPlayers())
 				{
-					Werewolf.getWerewolfManager().unsetWerewolfSkin(werewolf.getUniqueId(), true, WerewolfTransformEvent.Reason.COMMAND);
+					ctx.getWerewolfManager().unsetWerewolfSkin(werewolf.getUniqueId(), true, WerewolfTransformEvent.Reason.COMMAND);
 				}
 			}
 		}

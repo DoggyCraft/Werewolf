@@ -4,21 +4,21 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
 
-/** /ww reload: reloads config.yml */
+/** /ww reload: reloads config.yml, the language file and edited data files, and restarts the features */
 public class ReloadCommand extends SubCommand
 {
-	public ReloadCommand(Werewolf plugin)
+	public ReloadCommand(WerewolfContext ctx)
 	{
-		super(plugin, "reload", "werewolf.reload", false, null, null);
+		super(ctx, "reload", "werewolf.reload", false, null, null);
 	}
 
 	@Override
 	public void execute(CommandSender sender, Player player, String[] args)
 	{
-		this.plugin.reloadSettings();
+		this.plugin.reload();
 		if (player == null)
 		{
 			this.plugin.log(this.plugin.getDescription().getFullName() + ": Reloaded configuration.");

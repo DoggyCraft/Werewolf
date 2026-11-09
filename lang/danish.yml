@@ -73,9 +73,9 @@ HelpInfectSelf:
 HelpInfectOther:
 - /werewolf infect <playername>&f - Giv varulve infektionen til en spiller
 HelpToggleSelf:
-- /werewolf toggle <playername>&f - Skift varulve status for en spiller
-HelpToggleOther:
 - /werewolf toggle&f - Skift varulve status for dig selv
+HelpToggleOther:
+- /werewolf toggle <playername>&f - Skift varulve status for en spiller
 HelpPotion:
 - /werewolf potion&f - Lav en varulve infektions potion
 HelpCure:

@@ -47,9 +47,9 @@ HelpInfectSelf:
 HelpInfectOther:
 - /werewolf infect <playername>&f - 感染同伴成为狼人
 HelpToggleSelf:
-- /werewolf toggle <playername>&f - 切换同伴狼人状态
-HelpToggleOther:
 - /werewolf toggle&f -  切换自己狼人状态
+HelpToggleOther:
+- /werewolf toggle <playername>&f - 切换同伴狼人状态
 HelpPotion:
 - /werewolf potion&f - 打造一瓶狼人感染药水
 HelpCure:

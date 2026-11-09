@@ -1,104 +1,125 @@
 package com.dogonfire.werewolf.disguises;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
+
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.disguises.IWerewolfDisguiseFactory.WerewolfDisguise;
 
-import net.md_5.bungee.api.ChatColor;
-
-// Let's abstract disguise commands away, so that we don't depend on a particular Disguise plugin
-public abstract class WerewolfDisguiseAPI
+/** Hides which skin backend is in use, so that we don't depend on a particular disguise plugin */
+public class WerewolfDisguiseAPI
 {
 	public enum Backend
 	{
 		BUILTIN, LIBSDISGUISES, SKINSRESTORER
 	}
 
-	static IWerewolfDisguiseFactory werewolfDisguiser;
-	static private Backend activeBackend;
-	static private HashMap<UUID, WerewolfDisguise> disguises = new HashMap<UUID, WerewolfDisguise>(); 
-	static private HashMap<UUID, UUID> disguisedPlayers = new HashMap<UUID, UUID>(); 
-	
+	private final WerewolfContext				ctx;
+	private final Werewolf						plugin;
+	private IWerewolfDisguiseFactory			werewolfDisguiser;
+	private Backend								activeBackend;
+	// Disguises by skin account, and the disguise each disguised player wears
+	private final Map<UUID, WerewolfDisguise>	disguises	= new HashMap<UUID, WerewolfDisguise>();
+	private final Map<UUID, WerewolfDisguise>	worn		= new HashMap<UUID, WerewolfDisguise>();
+
+	public WerewolfDisguiseAPI(WerewolfContext ctx)
+	{
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
+	}
+
 	/**
+	 * Picks the skin backend. Called on enable and when /ww reload changes Disguises.Backend (after every disguised
+	 * player was undisguised with the old backend).
+	 *
 	 * @param backend "auto" (built-in on Paper, otherwise LibsDisguises, then SkinsRestorer),
 	 *                or one of "builtin", "libsdisguises", "skinsrestorer" to force it
+	 * @return whether a backend is available
 	 */
-	public static boolean init(String backend)
+	public boolean init(String backend)
 	{
-		PluginManager pm = Werewolf.instance.getServer().getPluginManager();
+		PluginManager pm = this.plugin.getServer().getPluginManager();
 		boolean libsDisguises = pm.getPlugin("LibsDisguises") != null && pm.getPlugin("LibsDisguises").isEnabled();
 		boolean skinsRestorer = pm.getPlugin("SkinsRestorer") != null && pm.getPlugin("SkinsRestorer").isEnabled();
 		boolean paper = isPaper();
 		backend = backend == null ? "auto" : backend.toLowerCase();
 
-		werewolfDisguiser = null;
-		activeBackend = null;
-		disguises.clear();
+		this.werewolfDisguiser = null;
+		this.activeBackend = null;
+		this.disguises.clear();
+		this.worn.clear();
 
 		switch (backend)
 		{
 		case "builtin":
 			if (paper)
 			{
-				werewolfDisguiser = new PaperSkinFactory();
-				activeBackend = Backend.BUILTIN;
+				use(new PaperSkinFactory(this.ctx), Backend.BUILTIN);
 			}
 			break;
 		case "libsdisguises":
 			if (libsDisguises)
 			{
-				werewolfDisguiser = new LibsDisguisesFactory();
-				activeBackend = Backend.LIBSDISGUISES;
+				use(new LibsDisguisesFactory(this.ctx), Backend.LIBSDISGUISES);
 			}
 			break;
 		case "skinsrestorer":
 			if (skinsRestorer)
 			{
-				werewolfDisguiser = new SkinsRestorerFactory();
-				activeBackend = Backend.SKINSRESTORER;
+				use(new SkinsRestorerFactory(this.ctx), Backend.SKINSRESTORER);
 			}
 			break;
 		default:
 			if (!backend.equals("auto"))
 			{
-				Werewolf.instance().log("Unknown Disguises.Backend '" + backend + "', using auto.");
+				this.plugin.log("Unknown Disguises.Backend '" + backend + "', using auto.");
 			}
 			if (paper)
 			{
-				werewolfDisguiser = new PaperSkinFactory();
-				activeBackend = Backend.BUILTIN;
+				use(new PaperSkinFactory(this.ctx), Backend.BUILTIN);
 			}
 			else if (libsDisguises)
 			{
-				werewolfDisguiser = new LibsDisguisesFactory();
-				activeBackend = Backend.LIBSDISGUISES;
+				use(new LibsDisguisesFactory(this.ctx), Backend.LIBSDISGUISES);
 			}
 			else if (skinsRestorer)
 			{
-				werewolfDisguiser = new SkinsRestorerFactory();
-				activeBackend = Backend.SKINSRESTORER;
+				use(new SkinsRestorerFactory(this.ctx), Backend.SKINSRESTORER);
 			}
 			break;
 		}
 
-		if (werewolfDisguiser == null)
+		if (this.werewolfDisguiser == null)
 		{
-			Werewolf.instance().log(ChatColor.RED + "No usable skin backend for Disguises.Backend '" + backend + "' (built-in needs Paper; otherwise install LibsDisguises or SkinsRestorer)... Werewolf disguises are disabled!");
+			this.plugin.log(ChatColor.RED + "No usable skin backend for Disguises.Backend '" + backend + "' (built-in needs Paper; otherwise install LibsDisguises or SkinsRestorer)... Werewolf disguises are disabled!");
 			return false;
 		}
 
-		Werewolf.instance().log("Using " + werewolfDisguiser.getClass().getSimpleName().replace("Factory", "") + " for werewolf skins.");
+		this.plugin.log("Using " + this.werewolfDisguiser.getClass().getSimpleName().replace("Factory", "") + " for werewolf skins.");
 		return true;
 	}
 
-	/** The skin backend chosen by {@link #init(String)}, or null if disguises are disabled */
-	public static Backend getBackend()
+	private void use(IWerewolfDisguiseFactory factory, Backend backend)
 	{
-		return activeBackend;
+		this.werewolfDisguiser = factory;
+		this.activeBackend = backend;
+	}
+
+	public boolean isEnabled()
+	{
+		return this.werewolfDisguiser != null;
+	}
+
+	/** The skin backend chosen by {@link #init(String)}, or null if disguises are disabled */
+	public Backend getBackend()
+	{
+		return this.activeBackend;
 	}
 
 	// Checked by name so PaperSkinFactory (which links against Paper classes) is never loaded on Spigot
@@ -116,56 +137,59 @@ public abstract class WerewolfDisguiseAPI
 		}
 	}
 
-	public static WerewolfDisguise getDisguise(UUID disguiseAccountId, String disguiseAccountName)
+	public WerewolfDisguise getDisguise(UUID disguiseAccountId, String disguiseAccountName)
 	{
-		if (disguises.containsKey(disguiseAccountId))
+		WerewolfDisguise cached = this.disguises.get(disguiseAccountId);
+		if (cached != null)
 		{
-			return disguises.get(disguiseAccountId);
+			return cached;
 		}
-		
-		Werewolf.instance().logDebug("Creating new werewolf disguise - AccountId: " + disguiseAccountId + " AccountName: " + disguiseAccountName);
-		
-		WerewolfDisguise werewolfDisguise = werewolfDisguiser.newDisguise(disguiseAccountId, disguiseAccountName);
-		disguises.put(disguiseAccountId, werewolfDisguise);
+
+		if (this.werewolfDisguiser == null)
+		{
+			return null;
+		}
+
+		this.plugin.logDebug("Creating new werewolf disguise - AccountId: " + disguiseAccountId + " AccountName: " + disguiseAccountName);
+
+		WerewolfDisguise werewolfDisguise = this.werewolfDisguiser.newDisguise(disguiseAccountId, disguiseAccountName);
+		this.disguises.put(disguiseAccountId, werewolfDisguise);
 		return werewolfDisguise;
 	}
 
-	public static boolean disguise(Player player, WerewolfDisguise skin, String werewolfName)
-	{				
-		if(werewolfDisguiser==null)
+	public boolean disguise(Player player, WerewolfDisguise skin, String werewolfName)
+	{
+		if (this.werewolfDisguiser == null)
 		{
-			Werewolf.instance().log("[ERROR] Tried disguising a player without a disguise plugin!");
-			return false;
-		}
-		
-		if(!skin.disguise(player, werewolfName))
-		{
-			Werewolf.instance().log("[ERROR] Could not disguise player " + player.getName() + "!");
+			this.plugin.log("[ERROR] Tried disguising a player without a disguise plugin!");
 			return false;
 		}
 
-		disguises.put(player.getUniqueId(), skin);
+		if (!skin.disguise(player, werewolfName))
+		{
+			this.plugin.log("[ERROR] Could not disguise player " + player.getName() + "!");
+			return false;
+		}
 
-		disguisedPlayers.put(player.getUniqueId(), skin.getSkinAccountUUID());
-
-		return true;		
+		this.worn.put(player.getUniqueId(), skin);
+		return true;
 	}
 
-	public static boolean undisguise(Player player)
+	public boolean undisguise(Player player)
 	{
-		if(werewolfDisguiser==null)
+		if (this.werewolfDisguiser == null)
 		{
-			Werewolf.instance().log("[ERROR] Tried undisguising a player without a disguise plugin!");
+			this.plugin.log("[ERROR] Tried undisguising a player without a disguise plugin!");
 			return false;
 		}
-		
-		if(!disguises.get(player.getUniqueId()).undisguise(player))
+
+		WerewolfDisguise skin = this.worn.get(player.getUniqueId());
+		if (skin == null || !skin.undisguise(player))
 		{
 			return false;
 		}
 
-		disguisedPlayers.remove(player.getUniqueId());
-		
+		this.worn.remove(player.getUniqueId());
 		return true;
 	}
 }

@@ -9,7 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
-import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.CommandUtil;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
@@ -21,9 +21,9 @@ public class SetLevelCommand extends SubCommand
 
 	private final boolean add;
 
-	public SetLevelCommand(Werewolf plugin, boolean add)
+	public SetLevelCommand(WerewolfContext ctx, boolean add)
 	{
-		super(plugin,
+		super(ctx,
 				add ? "addlevel" : "setlevel",
 				add ? "werewolf.addlevel" : "werewolf.setlevel",
 				false,
@@ -45,11 +45,11 @@ public class SetLevelCommand extends SubCommand
 		{
 			if (this.add)
 			{
-				CommandUtil.sendUsage(this.plugin, player, "/ww addlevel <player> <amount>", LANGUAGESTRING.HelpAddLevel);
+				CommandUtil.sendUsage(ctx, player, "/ww addlevel <player> <amount>", LANGUAGESTRING.HelpAddLevel);
 			}
 			else
 			{
-				CommandUtil.sendUsage(this.plugin, player, "/ww setlevel <player> <level>", LANGUAGESTRING.HelpSetLevel);
+				CommandUtil.sendUsage(ctx, player, "/ww setlevel <player> <level>", LANGUAGESTRING.HelpSetLevel);
 			}
 			return;
 		}
@@ -70,18 +70,18 @@ public class SetLevelCommand extends SubCommand
 			return;
 		}
 
-		UUID playerId = CommandUtil.findWerewolf(this.plugin, player, args[1]);
+		UUID playerId = CommandUtil.findWerewolf(ctx, player, args[1]);
 		if (playerId == null)
 		{
 			return;
 		}
 
-		int level = this.add ? Werewolf.getWerewolfManager().getNumberOfTransformations(playerId) + amount : amount;
-		Werewolf.getWerewolfManager().setNumberOfTransformations(playerId, level);
+		int level = this.add ? ctx.getWerewolfManager().getNumberOfTransformations(playerId) + amount : amount;
+		ctx.getWerewolfManager().setNumberOfTransformations(playerId, level);
 
-		String name = Werewolf.getWerewolfManager().getPlayerName(playerId);
+		String name = ctx.getWerewolfManager().getPlayerName(playerId);
 		lang().setPlayerName(name);
-		lang().setAmount("" + Werewolf.getWerewolfManager().getNumberOfTransformations(playerId));
+		lang().setAmount("" + ctx.getWerewolfManager().getNumberOfTransformations(playerId));
 		send(player, LANGUAGESTRING.AdminLevelSet, ChatColor.GREEN);
 
 		this.plugin.log(CommandUtil.senderName(player) + ": /werewolf " + args[0] + " " + name + " " + args[2]);
@@ -93,7 +93,7 @@ public class SetLevelCommand extends SubCommand
 		List<String> result = new ArrayList<String>();
 		if (args.length == 2)
 		{
-			StringUtil.copyPartialMatches(args[1], CommandUtil.werewolfNames(this.plugin), result);
+			StringUtil.copyPartialMatches(args[1], CommandUtil.werewolfNames(ctx), result);
 		}
 		else if (args.length == 3)
 		{

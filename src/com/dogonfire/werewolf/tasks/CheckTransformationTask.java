@@ -5,18 +5,21 @@ import java.util.UUID;
 import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.events.WerewolfTransformEvent;
 
 
 public class CheckTransformationTask implements Runnable
 {
 	private UUID		playerId;
-	private Werewolf 	plugin;
+	private final Werewolf 	plugin;
+	private final WerewolfContext ctx;
 
-	public CheckTransformationTask(Werewolf plugin, UUID playerId)
+	public CheckTransformationTask(WerewolfContext ctx, UUID playerId)
 	{
 		this.playerId = playerId;
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	public void run()
@@ -28,13 +31,13 @@ public class CheckTransformationTask implements Runnable
 			return;
 		}		
 		
-		if (Werewolf.getWerewolfManager().canTransform(player))
+		if (ctx.getWerewolfManager().canTransform(player))
 		{
-			this.plugin.transform(player, WerewolfTransformEvent.Reason.MOON);
+			ctx.getWerewolfManager().transform(player, WerewolfTransformEvent.Reason.MOON);
 		}
-		else if (Werewolf.getWerewolfManager().canUntransform(player))
+		else if (ctx.getWerewolfManager().canUntransform(player))
 		{
-			this.plugin.untransform(player, WerewolfTransformEvent.Reason.MOON);
+			ctx.getWerewolfManager().untransform(player, WerewolfTransformEvent.Reason.MOON);
 		}
 	}
 }

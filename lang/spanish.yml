@@ -33,9 +33,9 @@ HelpInfectSelf:
 HelpInfectOther:
 - /werewolf infect <playername>&f - Infecta un jugador con la infección Hombre-lobo
 HelpToggleSelf:
-- /werewolf toggle <playername>&f - Quita la infeccion de hombre lobo a un jugador
-HelpToggleOther:
 - /werewolf toggle&f - Quita la infeccion de hombre lobo para ti mismo
+HelpToggleOther:
+- /werewolf toggle <playername>&f - Quita la infeccion de hombre lobo a un jugador
 HelpPotion:
 - /werewolf potion&f - Crea la pocion con la infeccion de hombre lobo
 HelpCure:

@@ -16,7 +16,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import com.dogonfire.werewolf.Werewolf;
-import com.dogonfire.werewolf.WerewolfAPI;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.events.TrackerTargetEvent;
 import com.dogonfire.werewolf.events.TrackerTargetEvent.TargetType;
 
@@ -39,20 +39,22 @@ public class TrackerManager
 	}
 
 	private final Werewolf			plugin;
+	private final WerewolfContext ctx;
 	private final Map<UUID, Lock>	locks	= new HashMap<UUID, Lock>();
 
-	public TrackerManager(Werewolf plugin)
+	public TrackerManager(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	public TargetType getTrackerType(ItemStack item)
 	{
-		if (Werewolf.getItemManager().isWerewolfTracker(item))
+		if (ctx.getItemManager().isWerewolfTracker(item))
 		{
 			return TargetType.WEREWOLF;
 		}
-		if (Werewolf.getItemManager().isVampireTracker(item))
+		if (ctx.getItemManager().isVampireTracker(item))
 		{
 			return TargetType.VAMPIRE;
 		}
@@ -79,21 +81,21 @@ public class TrackerManager
 			return false;
 		}
 
-		boolean night = Werewolf.getMoonManager().isNight(hunter.getWorld());
+		boolean night = ctx.getMoonManager().isNight(hunter.getWorld());
 
 		if (type == TargetType.WEREWOLF)
 		{
-			if (!Werewolf.getWerewolfManager().isWerewolf(target))
+			if (!ctx.getWerewolfManager().isWerewolf(target))
 			{
 				return false;
 			}
-			boolean wolfForm = Werewolf.getWerewolfManager().hasWerewolfSkin(target.getUniqueId());
+			boolean wolfForm = ctx.getWerewolfManager().hasWerewolfSkin(target.getUniqueId());
 			boolean formAllowed = wolfForm ? this.plugin.getSettings().hunting().trackWerewolfWolfForm() : this.plugin.getSettings().hunting().trackWerewolfHumanForm();
 			boolean timeAllowed = night ? this.plugin.getSettings().hunting().trackWerewolfNighttime() : this.plugin.getSettings().hunting().trackWerewolfDaytime();
 			return formAllowed && timeAllowed;
 		}
 
-		if (!WerewolfAPI.isVampire(target))
+		if (!ctx.getWerewolfManager().isVampire(target))
 		{
 			return false;
 		}
@@ -116,8 +118,8 @@ public class TrackerManager
 		if (existing != null)
 		{
 			Player target = this.plugin.getServer().getPlayer(existing.targetId);
-			Werewolf.getLanguageManager().setPlayerName(target != null ? target.getName() : "?");
-			hunter.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerAlreadyTracking, ChatColor.AQUA));
+			ctx.getLanguageManager().setPlayerName(target != null ? target.getName() : "?");
+			hunter.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerAlreadyTracking, ChatColor.AQUA));
 			return;
 		}
 
@@ -143,29 +145,29 @@ public class TrackerManager
 			this.locks.put(hunter.getUniqueId(), new Lock(target.getUniqueId(), type));
 			hunter.setCompassTarget(target.getLocation());
 
-			Werewolf.getLanguageManager().setType(itemName);
-			Werewolf.getLanguageManager().setPlayerName(target.getName());
-			Werewolf.getLanguageManager().setAmount("" + Math.round(hunter.getLocation().distance(target.getLocation())));
-			hunter.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerFound, ChatColor.AQUA));
+			ctx.getLanguageManager().setType(itemName);
+			ctx.getLanguageManager().setPlayerName(target.getName());
+			ctx.getLanguageManager().setAmount("" + Math.round(hunter.getLocation().distance(target.getLocation())));
+			hunter.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerFound, ChatColor.AQUA));
 			return;
 		}
 
-		hunter.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerNoTargets, ChatColor.RED));
+		hunter.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerNoTargets, ChatColor.RED));
 	}
 
 	/** Left-click: lets go of the target */
 	public void clear(Player hunter, String itemName)
 	{
 		Lock lock = this.locks.remove(hunter.getUniqueId());
-		Werewolf.getLanguageManager().setType(itemName);
+		ctx.getLanguageManager().setType(itemName);
 		if (lock == null)
 		{
-			hunter.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerNoTarget, ChatColor.RED));
+			hunter.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerNoTarget, ChatColor.RED));
 			return;
 		}
 
 		resetCompass(hunter);
-		hunter.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerCleared, ChatColor.AQUA));
+		hunter.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerCleared, ChatColor.AQUA));
 	}
 
 	/** Drops a hunter's lock without a message, e.g. when they leave */
@@ -207,7 +209,7 @@ public class TrackerManager
 			Lock lock = entry.getValue();
 			Player target = this.plugin.getServer().getPlayer(lock.targetId);
 
-			if (this.plugin.getSettings().hunting().enabled() && target != null && WerewolfAPI.isHuman(hunter) && isHoldingTracker(hunter, lock.type) && isValidTarget(hunter, target, lock.type))
+			if (this.plugin.getSettings().hunting().enabled() && target != null && ctx.getWerewolfManager().isHuman(hunter) && isHoldingTracker(hunter, lock.type) && isValidTarget(hunter, target, lock.type))
 			{
 				TrackerTargetEvent event = new TrackerTargetEvent(hunter, target, lock.type, true);
 				this.plugin.getServer().getPluginManager().callEvent(event);
@@ -215,9 +217,9 @@ public class TrackerManager
 				{
 					hunter.setCompassTarget(target.getLocation());
 
-					Werewolf.getLanguageManager().setPlayerName(target.getName());
-					Werewolf.getLanguageManager().setAmount("" + Math.round(hunter.getLocation().distance(target.getLocation())));
-					String message = Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerActionBar, ChatColor.AQUA);
+					ctx.getLanguageManager().setPlayerName(target.getName());
+					ctx.getLanguageManager().setAmount("" + Math.round(hunter.getLocation().distance(target.getLocation())));
+					String message = ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerActionBar, ChatColor.AQUA);
 					hunter.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(message));
 					continue;
 				}
@@ -227,8 +229,8 @@ public class TrackerManager
 			resetCompass(hunter);
 
 			String targetName = target != null ? target.getName() : this.plugin.getServer().getOfflinePlayer(lock.targetId).getName();
-			Werewolf.getLanguageManager().setPlayerName(targetName != null ? targetName : "?");
-			hunter.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerLost, ChatColor.RED));
+			ctx.getLanguageManager().setPlayerName(targetName != null ? targetName : "?");
+			hunter.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerLost, ChatColor.RED));
 		}
 	}
 }

@@ -9,7 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
-import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.CommandUtil;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.managers.ClanManager.ClanType;
@@ -18,9 +18,9 @@ import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 /** /ww setalpha <player>: makes a werewolf the alpha of their own clan */
 public class SetAlphaCommand extends SubCommand
 {
-	public SetAlphaCommand(Werewolf plugin)
+	public SetAlphaCommand(WerewolfContext ctx)
 	{
-		super(plugin, "setalpha", "werewolf.setalpha", false, "/ww setalpha <playername>", LANGUAGESTRING.HelpSetAlpha);
+		super(ctx, "setalpha", "werewolf.setalpha", false, "/ww setalpha <playername>", LANGUAGESTRING.HelpSetAlpha);
 	}
 
 	@Override
@@ -46,30 +46,30 @@ public class SetAlphaCommand extends SubCommand
 
 		if (args.length < 2)
 		{
-			CommandUtil.sendUsage(this.plugin, player, "/ww setalpha <player>", LANGUAGESTRING.HelpSetAlpha);
+			CommandUtil.sendUsage(ctx, player, "/ww setalpha <player>", LANGUAGESTRING.HelpSetAlpha);
 			return;
 		}
 
-		UUID playerId = CommandUtil.findWerewolf(this.plugin, player, args[1]);
+		UUID playerId = CommandUtil.findWerewolf(ctx, player, args[1]);
 		if (playerId == null)
 		{
 			return;
 		}
 
-		String name = Werewolf.getWerewolfManager().getPlayerName(playerId);
-		ClanType clan = Werewolf.getWerewolfManager().getWerewolfClan(playerId);
+		String name = ctx.getWerewolfManager().getPlayerName(playerId);
+		ClanType clan = ctx.getWerewolfManager().getWerewolfClan(playerId);
 		lang().setPlayerName(name);
 
-		if (!Werewolf.getClanManager().assignAlphaInClan(clan, playerId))
+		if (!ctx.getClanManager().assignAlphaInClan(clan, playerId))
 		{
 			send(player, LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED);
 			return;
 		}
 
-		Werewolf.getWerewolfManager().sendMessageToClan(clan, text(LANGUAGESTRING.NewClanAlpha, ChatColor.WHITE));
+		ctx.getWerewolfManager().sendMessageToClan(clan, text(LANGUAGESTRING.NewClanAlpha, ChatColor.WHITE));
 
 		lang().setPlayerName(name);
-		lang().setType(Werewolf.getClanManager().getClanName(clan));
+		lang().setType(ctx.getClanManager().getClanName(clan));
 		send(player, LANGUAGESTRING.AdminAlphaSet, ChatColor.GREEN);
 
 		this.plugin.log(CommandUtil.senderName(player) + ": /werewolf setalpha " + name);
@@ -81,7 +81,7 @@ public class SetAlphaCommand extends SubCommand
 		List<String> result = new ArrayList<String>();
 		if (args.length == 2)
 		{
-			StringUtil.copyPartialMatches(args[1], CommandUtil.werewolfNames(this.plugin), result);
+			StringUtil.copyPartialMatches(args[1], CommandUtil.werewolfNames(ctx), result);
 		}
 		return result;
 	}

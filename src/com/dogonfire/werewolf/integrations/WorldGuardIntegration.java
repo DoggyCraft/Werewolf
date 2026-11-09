@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.events.TrackerTargetEvent;
 import com.dogonfire.werewolf.events.WerewolfSniffEvent;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
@@ -15,15 +16,17 @@ import com.sk89q.worldguard.protection.regions.RegionQuery;
 
 /**
  * Trackers can't lock onto, and werewolves can't sniff, players while either side is in a region with PvP denied, or
- * while the target is in an invincible region. Only registered when WorldGuard is enabled.
+ * while the target is in an invincible region. Only registered when WorldGuard is enabled and Integrations.WorldGuard is on.
  */
 public class WorldGuardIntegration implements IntegrationListener
 {
 	private final Werewolf	plugin;
+	private final WerewolfContext ctx;
 
-	public WorldGuardIntegration(Werewolf plugin)
+	public WorldGuardIntegration(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	@EventHandler(ignoreCancelled = true)

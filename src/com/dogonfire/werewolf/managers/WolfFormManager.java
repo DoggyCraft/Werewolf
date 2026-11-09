@@ -12,6 +12,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.config.Settings.Stats;
 
 /**
@@ -24,17 +25,19 @@ public class WolfFormManager
 	private static final int						REFRESH_BELOW_TICKS	= 400;
 
 	private final Werewolf							plugin;
+	private final WerewolfContext ctx;
 	private final Map<UUID, List<PotionEffect>>		appliedEffects		= new HashMap<UUID, List<PotionEffect>>();
 
-	public WolfFormManager(Werewolf plugin)
+	public WolfFormManager(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	public Stats getStats(UUID playerId)
 	{
-		ClanManager.ClanType clan = Werewolf.getWerewolfManager().getWerewolfClan(playerId);
-		Map<ClanManager.ClanType, Stats> stats = Werewolf.getClanManager().isAlpha(playerId) ? this.plugin.getSettings().wolfForm().alphaStats() : this.plugin.getSettings().wolfForm().stats();
+		ClanManager.ClanType clan = ctx.getWerewolfManager().getWerewolfClan(playerId);
+		Map<ClanManager.ClanType, Stats> stats = ctx.getClanManager().isAlpha(playerId) ? this.plugin.getSettings().wolfForm().alphaStats() : this.plugin.getSettings().wolfForm().stats();
 		return stats.get(clan);
 	}
 
@@ -63,8 +66,15 @@ public class WolfFormManager
 
 	private List<PotionEffect> getClanEffects(UUID playerId)
 	{
-		List<PotionEffect> effects = this.plugin.getSettings().wolfForm().effects().get(Werewolf.getWerewolfManager().getWerewolfClan(playerId));
+		List<PotionEffect> effects = this.plugin.getSettings().wolfForm().effects().get(ctx.getWerewolfManager().getWerewolfClan(playerId));
 		return effects != null ? effects : new ArrayList<PotionEffect>();
+	}
+
+	// Configured effects are shown without particles, and no longer than the client can display
+	private static void addWithoutParticles(Player player, PotionEffect effect)
+	{
+		int duration = Math.min(effect.getDuration(), Short.MAX_VALUE);
+		player.addPotionEffect(new PotionEffect(effect.getType(), duration, effect.getAmplifier(), effect.isAmbient(), false));
 	}
 
 	/** Gives a player who just turned into wolf form their clan's walk speed and effects. */
@@ -75,7 +85,7 @@ public class WolfFormManager
 
 		for (PotionEffect effect : effects)
 		{
-			Werewolf.pu.addPotionEffectNoGraphic(player, effect);
+			addWithoutParticles(player, effect);
 		}
 
 		refreshWolfForm(player);
@@ -107,7 +117,7 @@ public class WolfFormManager
 			if (current == null || current.getAmplifier() < effect.getAmplifier()
 					|| (current.getAmplifier() == effect.getAmplifier() && !current.isInfinite() && current.getDuration() < REFRESH_BELOW_TICKS))
 			{
-				Werewolf.pu.addPotionEffectNoGraphic(player, effect);
+				addWithoutParticles(player, effect);
 			}
 		}
 
@@ -130,7 +140,7 @@ public class WolfFormManager
 		if (effects == null)
 		{
 			// Nothing recorded (e.g. the server restarted while they were in wolf form): fall back to their clan's list
-			boolean useClan = fallbackToClanEffects && Werewolf.getWerewolfManager().isWerewolf(player.getUniqueId());
+			boolean useClan = fallbackToClanEffects && ctx.getWerewolfManager().isWerewolf(player.getUniqueId());
 			effects = useClan ? getClanEffects(player.getUniqueId()) : new ArrayList<PotionEffect>();
 		}
 
@@ -139,7 +149,7 @@ public class WolfFormManager
 			PotionEffect current = player.getPotionEffect(effect.getType());
 			if (current != null && current.getAmplifier() == effect.getAmplifier())
 			{
-				Werewolf.pu.removePotionEffectNoGraphic(player, effect.getType());
+				player.removePotionEffect(effect.getType());
 			}
 		}
 

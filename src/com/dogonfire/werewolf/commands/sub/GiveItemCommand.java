@@ -7,7 +7,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.CommandUtil;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.managers.ItemManager;
@@ -23,82 +23,82 @@ public class GiveItemCommand extends SubCommand
 	private final boolean intoHand;
 	private final Supplier<ItemStack[]> items;
 
-	public GiveItemCommand(Werewolf plugin, String name, String permission, String usage, LANGUAGESTRING helpKey, LANGUAGESTRING createdMessage, boolean intoHand, Supplier<ItemStack[]> items)
+	public GiveItemCommand(WerewolfContext ctx, String name, String permission, String usage, LANGUAGESTRING helpKey, LANGUAGESTRING createdMessage, boolean intoHand, Supplier<ItemStack[]> items)
 	{
-		super(plugin, name, permission, true, usage, helpKey);
+		super(ctx, name, permission, true, usage, helpKey);
 		this.createdMessage = createdMessage;
 		this.intoHand = intoHand;
 		this.items = items;
 	}
 
-	public static GiveItemCommand infectionPotion(Werewolf plugin)
+	public static GiveItemCommand infectionPotion(WerewolfContext ctx)
 	{
-		return new GiveItemCommand(plugin, "infectionpotion", "werewolf.potion.infection.create", "/ww infectionpotion", LANGUAGESTRING.HelpInfectionPotion,
-				LANGUAGESTRING.CreatedWerewolfInfectionPotion, true, () -> new ItemStack[] { Werewolf.getItemManager().newInfectionPotion() });
+		return new GiveItemCommand(ctx, "infectionpotion", "werewolf.potion.infection.create", "/ww infectionpotion", LANGUAGESTRING.HelpInfectionPotion,
+				LANGUAGESTRING.CreatedWerewolfInfectionPotion, true, () -> new ItemStack[] { ctx.getItemManager().newInfectionPotion() });
 	}
 
-	public static GiveItemCommand curePotion(Werewolf plugin)
+	public static GiveItemCommand curePotion(WerewolfContext ctx)
 	{
-		return new GiveItemCommand(plugin, "curepotion", "werewolf.potion.cure.create", "/ww curepotion", LANGUAGESTRING.HelpCurePotion,
-				LANGUAGESTRING.CreatedWerewolfCurePotion, true, () -> new ItemStack[] { Werewolf.getItemManager().newCurePotion() });
+		return new GiveItemCommand(ctx, "curepotion", "werewolf.potion.cure.create", "/ww curepotion", LANGUAGESTRING.HelpCurePotion,
+				LANGUAGESTRING.CreatedWerewolfCurePotion, true, () -> new ItemStack[] { ctx.getItemManager().newCurePotion() });
 	}
 
-	public static GiveItemCommand wolfbane(Werewolf plugin)
+	public static GiveItemCommand wolfbane(WerewolfContext ctx)
 	{
-		return new GiveItemCommand(plugin, "wolfbane", "werewolf.potion.wolfbane.create", "/ww wolfbane", LANGUAGESTRING.HelpWolfbanePotion,
-				LANGUAGESTRING.CreatedWerewolfWolfbanePotion, true, () -> new ItemStack[] { Werewolf.getItemManager().newWolfbanePotion() });
+		return new GiveItemCommand(ctx, "wolfbane", "werewolf.potion.wolfbane.create", "/ww wolfbane", LANGUAGESTRING.HelpWolfbanePotion,
+				LANGUAGESTRING.CreatedWerewolfWolfbanePotion, true, () -> new ItemStack[] { ctx.getItemManager().newWolfbanePotion() });
 	}
 
-	public static GiveItemCommand silverSword(Werewolf plugin)
+	public static GiveItemCommand silverSword(WerewolfContext ctx)
 	{
-		return new GiveItemCommand(plugin, "silversword", "werewolf.silversword.create", "/ww silversword", LANGUAGESTRING.HelpSilverSword,
-				LANGUAGESTRING.CreatedWerewolfSilverSword, true, () -> new ItemStack[] { Werewolf.getItemManager().newSilverSword(1) });
+		return new GiveItemCommand(ctx, "silversword", "werewolf.silversword.create", "/ww silversword", LANGUAGESTRING.HelpSilverSword,
+				LANGUAGESTRING.CreatedWerewolfSilverSword, true, () -> new ItemStack[] { ctx.getItemManager().newSilverSword(1) });
 	}
 
-	public static GiveItemCommand loreBook(Werewolf plugin)
+	public static GiveItemCommand loreBook(WerewolfContext ctx)
 	{
-		return new GiveItemCommand(plugin, "lorebook", "werewolf.lorebook.create", "/ww lorebook", LANGUAGESTRING.HelpLoreBook,
-				LANGUAGESTRING.CreatedWerewolfLoreBook, true, () -> new ItemStack[] { Werewolf.getItemManager().newLoreBook() });
+		return new GiveItemCommand(ctx, "lorebook", "werewolf.lorebook.create", "/ww lorebook", LANGUAGESTRING.HelpLoreBook,
+				LANGUAGESTRING.CreatedWerewolfLoreBook, true, () -> new ItemStack[] { ctx.getItemManager().newLoreBook() });
 	}
 
-	public static GiveItemCommand silverArmor(Werewolf plugin)
+	public static GiveItemCommand silverArmor(WerewolfContext ctx)
 	{
-		return new GiveItemCommand(plugin, "silverarmor", "werewolf.silverarmor.create", "/ww silverarmor", LANGUAGESTRING.HelpSilverArmor,
+		return new GiveItemCommand(ctx, "silverarmor", "werewolf.silverarmor.create", "/ww silverarmor", LANGUAGESTRING.HelpSilverArmor,
 				LANGUAGESTRING.CreatedSilverArmor, false, () ->
 				{
 					ItemManager.ArmorPiece[] pieces = ItemManager.ArmorPiece.values();
 					ItemStack[] armor = new ItemStack[pieces.length];
 					for (int i = 0; i < pieces.length; i++)
 					{
-						armor[i] = Werewolf.getItemManager().newSilverArmor(pieces[i]);
+						armor[i] = ctx.getItemManager().newSilverArmor(pieces[i]);
 					}
 					return armor;
 				});
 	}
 
-	public static GiveItemCommand werewolfTracker(Werewolf plugin)
+	public static GiveItemCommand werewolfTracker(WerewolfContext ctx)
 	{
-		return new GiveItemCommand(plugin, "tracker", "werewolf.tracker.create", "/ww tracker", LANGUAGESTRING.HelpTracker,
-				LANGUAGESTRING.CreatedWerewolfTracker, false, () -> new ItemStack[] { Werewolf.getItemManager().newWerewolfTracker() })
+		return new GiveItemCommand(ctx, "tracker", "werewolf.tracker.create", "/ww tracker", LANGUAGESTRING.HelpTracker,
+				LANGUAGESTRING.CreatedWerewolfTracker, false, () -> new ItemStack[] { ctx.getItemManager().newWerewolfTracker() })
 		{
 			@Override
 			protected String usage()
 			{
-				return plugin.vampireEnabled ? "/ww tracker|vampiretracker" : "/ww tracker";
+				return ctx.isVampireEnabled() ? "/ww tracker|vampiretracker" : "/ww tracker";
 			}
 		};
 	}
 
 	/** Has no help line of its own; /ww tracker's line mentions it when VampireRevamp is present */
-	public static GiveItemCommand vampireTracker(Werewolf plugin)
+	public static GiveItemCommand vampireTracker(WerewolfContext ctx)
 	{
-		return new GiveItemCommand(plugin, "vampiretracker", "werewolf.tracker.create", null, null,
-				LANGUAGESTRING.CreatedWerewolfTracker, false, () -> new ItemStack[] { Werewolf.getItemManager().newVampireTracker() })
+		return new GiveItemCommand(ctx, "vampiretracker", "werewolf.tracker.create", null, null,
+				LANGUAGESTRING.CreatedWerewolfTracker, false, () -> new ItemStack[] { ctx.getItemManager().newVampireTracker() })
 		{
 			@Override
 			public boolean isAvailable(Player player)
 			{
-				return plugin.vampireEnabled;
+				return ctx.isVampireEnabled();
 			}
 		};
 	}

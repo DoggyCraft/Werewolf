@@ -47,9 +47,9 @@ HelpInfectSelf:
 HelpInfectOther:
 - /werewolf infect <playername>&f - Contamine le joueur sélectionné de l'infection du loup-garou
 HelpToggleSelf:
-- /werewolf toggle <playername>&f - Activer/Désactiver le mode loup-garou
+- /werewolf toggle&f - Activer/Désactiver le mode loup-garou
 HelpToggleOther:
-- /werewolf toggle&f - Activer/Désactiver le mode loup-garou au joueur sélectionné
+- /werewolf toggle <playername>&f - Activer/Désactiver le mode loup-garou au joueur sélectionné
 HelpPotion:
 - /werewolf potion&f - Crée une potion d'infection de loup-garou
 HelpCure:

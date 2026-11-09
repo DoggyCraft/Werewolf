@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 
 /**
  * Built-in skin changing using Paper's Player#setPlayerProfile. Paper refreshes the player
@@ -20,18 +21,26 @@ public class PaperSkinFactory implements IWerewolfDisguiseFactory
 
 	// The player's own skin, kept so it can be put back when they turn human
 	private final Map<UUID, ProfileProperty>	originalSkins	= new ConcurrentHashMap<>();
+	private final WerewolfContext				ctx;
+	private final Werewolf						plugin;
+
+	public PaperSkinFactory(WerewolfContext ctx)
+	{
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
+	}
 
 	public class PaperWerewolfDisguise extends WerewolfDisguise
 	{
 		public PaperWerewolfDisguise(UUID accountId, String accountName)
 		{
-			super(accountId, accountName);
+			super(PaperSkinFactory.this.ctx, accountId, accountName);
 		}
 
 		@Override
 		public boolean disguise(Player player, String werewolfName)
 		{
-			Werewolf.instance().logDebug("Disguising player " + player.getName() + " using the built-in Paper skins...");
+			plugin.logDebug("Disguising player " + player.getName() + " using the built-in Paper skins...");
 
 			PlayerProfile profile = player.getPlayerProfile();
 
@@ -51,7 +60,7 @@ public class PaperSkinFactory implements IWerewolfDisguiseFactory
 		@Override
 		public boolean undisguise(Player player)
 		{
-			Werewolf.instance().logDebug("Undisguising player " + player.getName() + " using the built-in Paper skins...");
+			plugin.logDebug("Undisguising player " + player.getName() + " using the built-in Paper skins...");
 
 			PlayerProfile profile = player.getPlayerProfile();
 			ProfileProperty originalSkin = originalSkins.remove(player.getUniqueId());
@@ -63,9 +72,13 @@ public class PaperSkinFactory implements IWerewolfDisguiseFactory
 				return true;
 			}
 
-			// We don't know the original skin (e.g. the plugin was reloaded mid-transformation), so ask Mojang for it
-			PlayerProfile lookup = Werewolf.instance().getServer().createProfile(player.getUniqueId(), player.getName());
-			lookup.update().thenAccept(updated -> Werewolf.instance().getServer().getScheduler().runTask(Werewolf.instance(), () ->
+			// We don't know the original skin, so ask Mojang for it (the answer comes later, so not while disabling)
+			if (!plugin.isEnabled())
+			{
+				return false;
+			}
+			PlayerProfile lookup = plugin.getServer().createProfile(player.getUniqueId(), player.getName());
+			lookup.update().thenAccept(updated -> plugin.getServer().getScheduler().runTask(plugin, () ->
 			{
 				if (!player.isOnline())
 				{

@@ -10,18 +10,24 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 import com.dogonfire.werewolf.Werewolf;
-import com.dogonfire.werewolf.WerewolfAPI;
+import com.dogonfire.werewolf.WerewolfContext;
+import com.clanjhoo.vampire.VampireAPI;
 import org.bukkit.ChatColor;
+import org.bukkit.Effect;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 
 import com.dogonfire.werewolf.events.WerewolfCureEvent;
 import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
@@ -30,33 +36,32 @@ import com.dogonfire.werewolf.managers.ClanManager.ClanType;
 import com.dogonfire.werewolf.storage.WerewolfRecord;
 import com.dogonfire.werewolf.storage.WerewolfRepository;
 import com.dogonfire.werewolf.storage.WolfState;
-/*
-import org.bukkit.block.Biome;
-import org.bukkit.entity.Wolf;
-import org.bukkit.entity.EntityType;
-import org.bukkit.Location;
-*/
+import com.dogonfire.werewolf.tasks.DisguiseTask;
+import com.dogonfire.werewolf.tasks.UndisguiseTask;
 
 public class WerewolfManager
 {
-	private Werewolf plugin;
+	private final Werewolf plugin;
+	private final WerewolfContext ctx;
 	private final WerewolfRepository	werewolves;
 
 	private Random					random							= new Random();
 	private String					datePattern						= "HH:mm:ss dd-MM-yyyy";
 	private HashMap<UUID, String>	originalGroup					= new HashMap<UUID, String>();
-	private HashMap<UUID, String>	playerlistNames					= new HashMap<UUID, String>();
-	private HashMap<UUID, Long>		playersPouncing					= new HashMap<UUID, Long>();
-	private HashMap<UUID, Integer>	packWolves						= new HashMap<UUID, Integer>();
+	// Who is in wolf form, with their list name from before; concurrent because the async chat thread reads it
+	private final Map<UUID, String>	playerlistNames					= new ConcurrentHashMap<UUID, String>();
 	// Start time of wolf forms entered with /ww transform; only these are cut short by the time limit
 	private HashMap<UUID, Long>		controlledFormStarts			= new HashMap<UUID, Long>();
 	private HashMap<UUID, Long>		lastFormChanges					= new HashMap<UUID, Long>();
 	private HashMap<UUID, Long>		lastHowls						= new HashMap<UUID, Long>();
 	private HashMap<UUID, Long>		lastGrowls						= new HashMap<UUID, Long>();
+	// Set by onDisable: undisguise right away instead of in a task
+	private boolean					shuttingDown					= false;
 
-	public WerewolfManager(Werewolf plugin, WerewolfRepository werewolves)
+	public WerewolfManager(WerewolfContext ctx, WerewolfRepository werewolves)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 		this.werewolves = werewolves;
 	}
 
@@ -100,10 +105,6 @@ public class WerewolfManager
 	public void pushPlayerData(Player player)
 	{
 		String groupName = "NoGroup";
-
-		// this.plugin.logDebug("Putting " + player.getName() + ", " +
-		// player.getUniqueId() + " into the playerData (" +
-		// ChatColor.stripColor(player.getPlayerListName()) + ")");
 
 		this.playerlistNames.put(player.getUniqueId(), ChatColor.stripColor(player.getPlayerListName()));
 		this.originalGroup.put(player.getUniqueId(), groupName);
@@ -310,7 +311,7 @@ public class WerewolfManager
 
 		if (player != null)
 		{
-			Werewolf.pu.addPotionEffectNoGraphic(player, new PotionEffect(PotionEffectType.NAUSEA, 100, 1));
+			player.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 100, 1, false, false));
 		}
 
 		// The data goes now, so a re-infection right after is kept; only the skin change waits for the UndisguiseTask
@@ -319,9 +320,9 @@ public class WerewolfManager
 		popPlayerData(playerId);
 		this.controlledFormStarts.remove(playerId);
 
-		this.plugin.undisguiseCuredWerewolf(playerId, originalGroup);
+		this.undisguiseCuredWerewolf(playerId, originalGroup);
 
-		Werewolf.getClanManager().removeAlpha(playerId);
+		ctx.getClanManager().removeAlpha(playerId);
 
 		this.plugin.log(plugin.getServer().getOfflinePlayer(playerId).getName() + " was unmade from being a werewolf");
 		return true;
@@ -329,7 +330,7 @@ public class WerewolfManager
 
 	public void setWerewolfSkin(Player player, WerewolfTransformEvent.Reason reason)
 	{
-		if (!Werewolf.pluginEnabled)
+		if (!ctx.isWerewolvesEnabled())
 		{
 			return;
 		}
@@ -372,7 +373,7 @@ public class WerewolfManager
 			grantFullMoonLevel(player);
 		}
 
-		this.plugin.disguiseWerewolf(player);
+		this.disguiseWerewolf(player);
 	}
 
 	/**
@@ -381,7 +382,7 @@ public class WerewolfManager
 	 */
 	public boolean refreshWerewolfSkin(Player player)
 	{
-		if (!Werewolf.pluginEnabled || !player.isOnline() || !hasWerewolfSkin(player.getUniqueId()))
+		if (!ctx.isWerewolvesEnabled() || !player.isOnline() || !hasWerewolfSkin(player.getUniqueId()))
 		{
 			return false;
 		}
@@ -393,11 +394,11 @@ public class WerewolfManager
 			return false;
 		}
 
-		if (this.plugin.disguisesEnabled)
+		if (ctx.isDisguisesEnabled())
 		{
-			Werewolf.getSkinManager().refreshWerewolfSkin(player, player.getPlayerListName());
+			ctx.getSkinManager().refreshWerewolfSkin(player, player.getPlayerListName());
 		}
-		Werewolf.getWolfFormManager().refreshWolfForm(player);
+		ctx.getWolfFormManager().refreshWolfForm(player);
 		return true;
 	}
 
@@ -462,25 +463,163 @@ public class WerewolfManager
 			Player player = this.plugin.getServer().getPlayer(playerId);
 			if (player != null)
 			{
-				String message = Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.Untransform, ChatColor.LIGHT_PURPLE);
+				String message = ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.Untransform, ChatColor.LIGHT_PURPLE);
 				player.sendMessage(message);
 			}
 		}
 
 		this.plugin.log(playerName + " turned into human form!");
 
-		this.plugin.undisguiseWerewolf(playerId, makeVisible);
+		this.undisguiseWerewolf(playerId, makeVisible);
+	}
+
+	public void transform(Player player, WerewolfTransformEvent.Reason reason)
+	{
+		if (!isWerewolvesAllowedInWorld(player))
+		{
+			return;
+		}
+
+		if (!hasWerewolfSkin(player.getUniqueId()))
+		{
+			playSmoke(player);
+			setWerewolfSkin(player, reason);
+		}
+		else
+		{
+			this.plugin.log("Could not transform " + player.getName() + ": Not a werewolf!");
+		}
+	}
+
+	public void untransform(Player player, WerewolfTransformEvent.Reason reason)
+	{
+		playSmoke(player);
+		unsetWerewolfSkin(player.getUniqueId(), true, reason);
+	}
+
+	private void playSmoke(Player player)
+	{
+		World world = player.getWorld();
+		world.playEffect(player.getLocation(), Effect.SMOKE, 100);
+		world.playEffect(player.getLocation().add(new Vector(0, 1, 0)), Effect.SMOKE, 100);
+		world.playEffect(player.getLocation().add(new Vector(0, 2, 0)), Effect.SMOKE, 100);
+	}
+
+	/** onDisable: everyone in wolf form turns human right away, since tasks scheduled now would never run */
+	public void untransformAllForShutdown()
+	{
+		this.shuttingDown = true;
+		for (Player player : this.plugin.getServer().getOnlinePlayers())
+		{
+			if (!isWerewolf(player) || !hasWerewolfSkin(player.getUniqueId()))
+			{
+				continue;
+			}
+
+			try
+			{
+				untransform(player, WerewolfTransformEvent.Reason.FORCED);
+			}
+			catch (RuntimeException e)
+			{
+				this.plugin.getLogger().log(Level.WARNING, "Could not turn " + player.getName() + " back to human form", e);
+			}
+		}
+	}
+
+	/** Starts the transformation into wolf form (skin, stats, messages) next tick */
+	public void disguiseWerewolf(Player player)
+	{
+		this.plugin.getServer().getScheduler().runTaskLater(this.plugin, new DisguiseTask(this.ctx, player), 1L);
+	}
+
+	/** Back to human form (the werewolf's data is kept) */
+	public void undisguiseWerewolf(UUID playerId, boolean makeVisible)
+	{
+		runUndisguise(new UndisguiseTask(this.ctx, playerId, makeVisible, false, null));
+	}
+
+	/**
+	 * The visual part of a cure: the caller has already removed the player's data. {@code originalGroup} is the
+	 * permission group to put them back in, read before the data was removed.
+	 */
+	public void undisguiseCuredWerewolf(UUID playerId, String originalGroup)
+	{
+		runUndisguise(new UndisguiseTask(this.ctx, playerId, true, true, originalGroup));
+	}
+
+	private void runUndisguise(UndisguiseTask task)
+	{
+		if (this.shuttingDown)
+		{
+			task.run();
+		}
+		else
+		{
+			this.plugin.getServer().getScheduler().runTaskLater(this.plugin, task, 8L);
+		}
+	}
+
+	public boolean isWerewolvesAllowedInWorld(Player player)
+	{
+		return this.plugin.getSettings().allowedWorlds().contains(player.getWorld().getName());
+	}
+
+	public boolean isUnderOpenSky(Player player)
+	{
+		return player.getWorld().getHighestBlockYAt(player.getLocation()) <= player.getLocation().getBlockY();
+	}
+
+	/** VampireRevamp's VampireAPI is only called when that plugin is enabled */
+	public boolean isVampire(Player player)
+	{
+		if (!this.ctx.isVampireEnabled())
+		{
+			return false;
+		}
+
+		try
+		{
+			return VampireAPI.isVampire(player);
+		}
+		catch (AssertionError e)
+		{
+			// VampireRevamp hasn't loaded this player's data yet
+			return false;
+		}
+	}
+
+	public boolean isVampire(UUID playerId)
+	{
+		if (!this.ctx.isVampireEnabled())
+		{
+			return false;
+		}
+
+		// VampireAPI only works on online players
+		Player player = this.plugin.getServer().getPlayer(playerId);
+		return player != null && isVampire(player);
+	}
+
+	public boolean isHuman(UUID playerId)
+	{
+		return !isWerewolf(playerId) && !isVampire(playerId);
+	}
+
+	public boolean isHuman(Player player)
+	{
+		return isHuman(player.getUniqueId());
 	}
 
 	public boolean canTransform(Player player)
 	{
-		return !hasWerewolfSkin(player.getUniqueId()) && !isInfectedThisNight(player.getUniqueId()) && Werewolf.getMoonManager().isTransformationNight(player.getWorld()) && this.plugin.isWerewolvesAllowedInWorld(player) && this.plugin.isUnderOpenSky(player);
+		return !hasWerewolfSkin(player.getUniqueId()) && !isInfectedThisNight(player.getUniqueId()) && ctx.getMoonManager().isTransformationNight(player.getWorld()) && this.isWerewolvesAllowedInWorld(player) && this.isUnderOpenSky(player);
 	}
 
 	/** Morning reverts every wolf form except ones entered with /ww transform, which the time limit handles */
 	public boolean canUntransform(Player player)
 	{
-		return (hasWerewolfSkin(player.getUniqueId()) || isInfectedThisNight(player.getUniqueId())) && !Werewolf.getMoonManager().isNight(player.getWorld()) && !isControlledForm(player.getUniqueId());
+		return (hasWerewolfSkin(player.getUniqueId()) || isInfectedThisNight(player.getUniqueId())) && !ctx.getMoonManager().isNight(player.getWorld()) && !isControlledForm(player.getUniqueId());
 	}
 
 	public boolean isControlledForm(UUID playerId)
@@ -525,19 +664,19 @@ public class WerewolfManager
 			return false;
 		}
 
-		if (Werewolf.getMoonManager().isTransformationNight(player.getWorld()))
+		if (ctx.getMoonManager().isTransformationNight(player.getWorld()))
 		{
 			return false;
 		}
 
-		this.plugin.untransform(player, WerewolfTransformEvent.Reason.TIME_LIMIT);
+		this.untransform(player, WerewolfTransformEvent.Reason.TIME_LIMIT);
 		if (isControlledForm(player.getUniqueId()))
 		{
 			// A listener cancelled the untransformation
 			return false;
 		}
 
-		player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TransformationTimeExpired, ChatColor.LIGHT_PURPLE));
+		player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TransformationTimeExpired, ChatColor.LIGHT_PURPLE));
 		return true;
 	}
 
@@ -545,13 +684,13 @@ public class WerewolfManager
 	public void grantFullMoonLevel(Player player)
 	{
 		World world = player.getWorld();
-		if (!Werewolf.getMoonManager().isTransformationNight(world))
+		if (!ctx.getMoonManager().isTransformationNight(world))
 		{
 			return;
 		}
 
 		WerewolfRecord record = this.werewolves.get(player.getUniqueId());
-		String nightKey = Werewolf.getMoonManager().getNightKey(world);
+		String nightKey = ctx.getMoonManager().getNightKey(world);
 		if (record == null || nightKey.equals(record.getLastLevelNight()))
 		{
 			return;
@@ -560,8 +699,8 @@ public class WerewolfManager
 		record.setLastLevelNight(nightKey);
 		incrementNumberOfFullMoonTransformations(player.getUniqueId());
 
-		Werewolf.getLanguageManager().setAmount("" + getNumberOfTransformations(player.getUniqueId()));
-		player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.FullMoonLevelGained, ChatColor.LIGHT_PURPLE));
+		ctx.getLanguageManager().setAmount("" + getNumberOfTransformations(player.getUniqueId()));
+		player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.FullMoonLevelGained, ChatColor.LIGHT_PURPLE));
 	}
 
 	/** Seconds left before the werewolf can /ww transform into wolf form again, 0 if ready */
@@ -687,10 +826,6 @@ public class WerewolfManager
 		return getWolfState(playerId) == WolfState.WolfForm;
 	}
 
-	public boolean isHumanForm(UUID playerId)
-	{
-		return getWolfState(playerId) == WolfState.HumanForm;
-	}
 
 	/** The werewolf's name, given (and stored) the first time it is asked for; "" for players who are not werewolves */
 	public String getWerewolfName(UUID playerId)
@@ -760,7 +895,7 @@ public class WerewolfManager
 	{
 		public int compare(UUID member1, UUID member2)
 		{
-			return Werewolf.getWerewolfManager().getNumberOfTransformations(member2) - Werewolf.getWerewolfManager().getNumberOfTransformations(member1);
+			return getNumberOfTransformations(member2) - getNumberOfTransformations(member1);
 		}
 	}
 
@@ -820,9 +955,9 @@ public class WerewolfManager
 		// Leaving a clan as its alpha hands the old clan to its next best member; an empty clan gets this player
 		if (oldClan != null && oldClan != clan)
 		{
-			Werewolf.getClanManager().checkAlpha(oldClan);
+			ctx.getClanManager().checkAlpha(oldClan);
 		}
-		Werewolf.getClanManager().checkAlpha(clan);
+		ctx.getClanManager().checkAlpha(clan);
 	}
 
 	public void incrementNumberOfFullMoonTransformations(UUID playerId)
@@ -859,10 +994,6 @@ public class WerewolfManager
 		}
 	}
 
-	public boolean canControlledTransformation(UUID playerId)
-	{
-		return getNumberOfTransformations(playerId) >= this.plugin.getSettings().maturity().controlledTransformation();
-	}
 
 	public boolean hasToDropItems(UUID playerId)
 	{
@@ -996,7 +1127,7 @@ public class WerewolfManager
 	{
 		String message = "";
 
-		if (this.random.nextInt(20 + 10 * Werewolf.getWerewolfManager().getNumberOfTransformations(player.getUniqueId())) > 0)
+		if (this.random.nextInt(20 + 10 * this.getNumberOfTransformations(player.getUniqueId())) > 0)
 		{
 			return;
 		}
@@ -1006,24 +1137,24 @@ public class WerewolfManager
 			return;
 		}
 
-		if (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
+		if (this.hasWerewolfSkin(player.getUniqueId()))
 		{
-			message = Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.UrgesInfectedThisNight, ChatColor.LIGHT_PURPLE);
+			message = ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.UrgesInfectedThisNight, ChatColor.LIGHT_PURPLE);
 		}
 		else if (isInfectedWerewolf(player.getUniqueId()))
 		{
 			if (isInfectedThisNight(player.getUniqueId()))
 			{
-				message = Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.UrgesInfectedThisNight, ChatColor.LIGHT_PURPLE);
+				message = ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.UrgesInfectedThisNight, ChatColor.LIGHT_PURPLE);
 			}
 			else
 			{
-				message = Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.UrgesInfectedHumanForm, ChatColor.LIGHT_PURPLE);
+				message = ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.UrgesInfectedHumanForm, ChatColor.LIGHT_PURPLE);
 			}
 		}
-		else if (Werewolf.getMoonManager().isNight(player.getWorld()) && player.getWorld().getHighestBlockYAt(player.getLocation()) > player.getLocation().getBlockY())
+		else if (ctx.getMoonManager().isNight(player.getWorld()) && player.getWorld().getHighestBlockYAt(player.getLocation()) > player.getLocation().getBlockY())
 		{
-			message = Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.UrgesInside, ChatColor.LIGHT_PURPLE);
+			message = ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.UrgesInside, ChatColor.LIGHT_PURPLE);
 		}
 
 		if (!message.isEmpty())
@@ -1032,74 +1163,21 @@ public class WerewolfManager
 		}
 	}
 
-	public void setPouncing(UUID playerId)
-	{
-		this.playersPouncing.put(playerId, Long.valueOf(System.currentTimeMillis()));
-	}
-
-	public boolean isPouncing(UUID playerId)
-	{
-		return this.playersPouncing.containsKey(playerId);
-	}
-
-	public void removePouncing(UUID playerId)
-	{
-		if (!this.playersPouncing.containsKey(playerId))
-		{
-			return;
-		}
-
-		if (this.playersPouncing.get(playerId) < System.currentTimeMillis() - 1000L)
-		{
-			this.playersPouncing.remove(playerId);
-		}
-	}
-
-	public void increaseNumberOfPackWolvesForPlayer(UUID playerId)
-	{
-		int numberOfWolves = 0;
-		if (this.packWolves.containsKey(playerId))
-		{
-			numberOfWolves = ((Integer) this.packWolves.get(playerId)).intValue();
-		}
-		numberOfWolves++;
-
-		this.packWolves.put(playerId, numberOfWolves);
-	}
-
-	public int getNumberOfPackWolvesForPlayer(UUID playerId)
-	{
-		if (this.packWolves.containsKey(playerId))
-		{
-			return this.packWolves.get(playerId);
-		}
-
-		return 0;
-	}
-
-	public void clearNumberOfPackWolvesForPlayer(UUID playerId)
-	{
-		if (this.packWolves.containsKey(playerId))
-		{
-			this.packWolves.remove(playerId);
-		}
-	}
-
 	public void update()
 	{
-		if (!Werewolf.pluginEnabled)
+		if (!ctx.isWerewolvesEnabled())
 		{
 			return;
 		}
 
-		Werewolf.getMoonManager().update();
+		ctx.getMoonManager().update();
 
-		Werewolf.getClanManager().checkAlphas();
+		ctx.getClanManager().checkAlphas();
 
-		if (this.plugin.getSettings().infection().autoCureDays() > 0 && this.random.nextInt(100) == 0 && Werewolf.getWerewolfManager().getAllWerewolves().size() > 0)
+		if (this.plugin.getSettings().infection().autoCureDays() > 0 && this.random.nextInt(100) == 0 && this.getAllWerewolves().size() > 0)
 		{
-			int r = this.random.nextInt(Werewolf.getWerewolfManager().getAllWerewolves().size());
-			UUID werewolfPlayerId = (UUID) Werewolf.getWerewolfManager().getAllWerewolves().toArray()[r];
+			int r = this.random.nextInt(this.getAllWerewolves().size());
+			UUID werewolfPlayerId = (UUID) this.getAllWerewolves().toArray()[r];
 
 			if (!hasRecentTransformAutoCure(werewolfPlayerId))
 			{
@@ -1127,7 +1205,7 @@ public class WerewolfManager
 
 			// VampireIntegration stops werewolves becoming vampires (and the reverse), so this only catches hybrids made
 			// before that, or while one of the plugins was missing: the werewolf side goes
-			if (WerewolfAPI.isVampire(player))
+			if (this.isVampire(player))
 			{
 				this.plugin.log(player.getName() + " is a Vampire! Removing their Werewolf infection...");
 				unmakeWerewolf(player.getUniqueId(), WerewolfCureEvent.Cause.VAMPIRISM);
@@ -1135,19 +1213,19 @@ public class WerewolfManager
 			}
 			else if (canTransform(player))
 			{
-				this.plugin.transform(player, WerewolfTransformEvent.Reason.MOON);
+				this.transform(player, WerewolfTransformEvent.Reason.MOON);
 				changedForm.add(player);
 			}
 			else if (canUntransform(player))
 			{
-				this.plugin.untransform(player, WerewolfTransformEvent.Reason.MOON);
+				this.untransform(player, WerewolfTransformEvent.Reason.MOON);
 				changedForm.add(player);
 			}
 			else if (checkTransformationTimeLimit(player))
 			{
 				changedForm.add(player);
 			}
-			else if (hasWerewolfSkin(player.getUniqueId()) && this.plugin.isWerewolvesAllowedInWorld(player) && this.plugin.isUnderOpenSky(player))
+			else if (hasWerewolfSkin(player.getUniqueId()) && this.isWerewolvesAllowedInWorld(player) && this.isUnderOpenSky(player))
 			{
 				// Already in wolf form when the moon rose (e.g. after /ww transform): still counts for this night's level
 				grantFullMoonLevel(player);
@@ -1155,7 +1233,7 @@ public class WerewolfManager
 
 			if (!changedForm.contains(player) && hasWerewolfSkin(player.getUniqueId()))
 			{
-				Werewolf.getWolfFormManager().refreshWolfForm(player);
+				ctx.getWolfFormManager().refreshWolfForm(player);
 			}
 		}
 
@@ -1167,42 +1245,10 @@ public class WerewolfManager
 			sendWerewolfUrges(player);
 		}
 
-		/*
-		 * if (this.random.nextInt(10) == 0) { if
-		 * (isValidBiomeForWildWolf(player.getWorld().getBiome(player.
-		 * getLocation().getBlockX(), player.getLocation().getBlockZ()))) { int
-		 * wolves = getNumberOfPackWolvesForPlayer(player.getUniqueId()); if
-		 * (this.random.nextInt(50 * wolves + 50) == 0) { spawnWildWolf(player);
-		 * } } }
-		 */
-
-		if (this.plugin.getSettings().general().autoBounty() && this.plugin.vaultEnabled)
+		HuntManager huntManager = this.ctx.getHuntManager();
+		if (this.plugin.getSettings().general().autoBounty() && huntManager != null)
 		{
-			Werewolf.getHuntManager().autoAddBounty();
+			huntManager.autoAddBounty();
 		}
 	}
-
-	/*
-	 * private boolean isValidBiomeForWildWolf(Biome biome) { Boolean bool;
-	 * switch (biome) { case SNOWY_TAIGA: case SNOWY_TAIGA_HILLS: case TAIGA:
-	 * case GIANT_SPRUCE_TAIGA: case FOREST: bool = true; default: bool = false;
-	 * } return bool; }
-	 * 
-	 * private void spawnWildWolf(Player player) { World world =
-	 * player.getWorld(); Location center = player.getLocation(); int minDist =
-	 * 15; int maxDist = 20; int x; int z;
-	 * 
-	 * do { x = this.random.nextInt(maxDist * 2) - maxDist + center.getBlockX();
-	 * z = this.random.nextInt(maxDist * 2) - maxDist + center.getBlockZ(); }
-	 * while ((Math.abs(x - center.getBlockX()) < minDist) || (Math.abs(z -
-	 * center.getBlockZ()) < minDist));
-	 * 
-	 * int y = world.getHighestBlockYAt(x, z);
-	 * 
-	 * Location spawnLocation = new Location(world, x, y, z);
-	 * 
-	 * Wolf wolf = (Wolf) world.spawnEntity(spawnLocation, EntityType.WOLF);
-	 * 
-	 * wolf.setTarget(player); }
-	 */
 }

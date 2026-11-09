@@ -1,6 +1,7 @@
 package com.dogonfire.werewolf.managers;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,7 +14,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 public class LanguageManager
 {
-	private Werewolf plugin;
+	private final Werewolf plugin;
+	private final WerewolfContext ctx;
 	private FileConfiguration	languageConfig	= null;
 	private Random				random			= new Random();
 	private String				amount;
@@ -91,9 +93,10 @@ public class LanguageManager
 		return parseString(text, color);
 	}
 
-	public LanguageManager(Werewolf p)
+	public LanguageManager(WerewolfContext ctx)
 	{
-		this.plugin = p;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	public String getAuthor()
@@ -101,10 +104,6 @@ public class LanguageManager
 		return this.authorName;
 	}
 
-	public String getLanguageName()
-	{
-		return this.languageName;
-	}
 
 	public String parseString(String id, ChatColor color)
 	{
@@ -129,27 +128,6 @@ public class LanguageManager
 		return string;
 	}
 
-	public String parseStringForBook(String id)
-	{
-		String string = id;
-		if (string.contains("$ServerName"))
-		{
-			string = string.replace("$ServerName", this.plugin.getSettings().general().serverName());
-		}
-		if (string.contains("$PlayerName"))
-		{
-			string = string.replace("$PlayerName", this.playerName);
-		}
-		if (string.contains("$Amount"))
-		{
-			string = string.replace("$Amount", this.amount);
-		}
-		if (string.contains("$Type"))
-		{
-			string = string.replace("$Type", this.type);
-		}
-		return string;
-	}
 
 	public String getPlayerName()
 	{
@@ -393,6 +371,8 @@ public class LanguageManager
 		AdminUnknownPlayer,
 		AdminInvalidNumber,
 		AdminInvalidClan,
-		AdminChangeCancelled;
+		AdminChangeCancelled,
+		ClanHomeNotSet,
+		EconomyUnavailable;
 	}
 }

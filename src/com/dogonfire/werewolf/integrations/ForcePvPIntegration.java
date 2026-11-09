@@ -16,6 +16,7 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.managers.LanguageManager;
 
 import me.chancesd.pvpmanager.event.PlayerTogglePvPEvent;
@@ -27,19 +28,21 @@ import me.ryanhamshire.GriefPrevention.GriefPrevention;
 /**
  * Forces PvPManager's PvP on for players inside a GriefPrevention claim they have no trust in, and turns it back off
  * when they leave the claim or log out. Only players whose PvP this turned on are tracked and restored, and they can't
- * toggle PvP off while trespassing. Only registered when both GriefPrevention and PvPManager 4.x are enabled.
+ * toggle PvP off while trespassing. Only registered when both GriefPrevention and PvPManager 4.x are enabled and both Integrations toggles are on.
  */
 public class ForcePvPIntegration implements IntegrationListener
 {
 	public static final String	BYPASS_FORCE_PVP	= "werewolf.bypass.forcepvp";
 
 	private final Werewolf		plugin;
+	private final WerewolfContext ctx;
 	private final Set<UUID>		forced				= new HashSet<UUID>();
 	private boolean				restoring			= false;
 
-	public ForcePvPIntegration(Werewolf plugin)
+	public ForcePvPIntegration(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	private boolean isActive()
@@ -106,7 +109,7 @@ public class ForcePvPIntegration implements IntegrationListener
 		}
 
 		event.setCancelled(true);
-		event.getPlayer().sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ForcePvPCannotDisable, ChatColor.RED));
+		event.getPlayer().sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ForcePvPCannotDisable, ChatColor.RED));
 	}
 
 	private void update(Player player, Location location)
@@ -128,8 +131,8 @@ public class ForcePvPIntegration implements IntegrationListener
 		if (combatPlayer.hasPvPEnabled())
 		{
 			this.forced.add(player.getUniqueId());
-			Werewolf.getLanguageManager().setPlayerName(claim.getOwnerName());
-			player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ForcePvPTrespassing, ChatColor.RED));
+			ctx.getLanguageManager().setPlayerName(claim.getOwnerName());
+			player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ForcePvPTrespassing, ChatColor.RED));
 		}
 	}
 

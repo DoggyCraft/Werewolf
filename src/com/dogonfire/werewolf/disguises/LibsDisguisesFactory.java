@@ -5,26 +5,36 @@ import java.util.UUID;
 import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 
 import me.libraryaddict.disguise.DisguiseAPI;
 import me.libraryaddict.disguise.disguisetypes.PlayerDisguise;
 
 public class LibsDisguisesFactory implements IWerewolfDisguiseFactory
 {
+	private final WerewolfContext	ctx;
+	private final Werewolf			plugin;
+
+	public LibsDisguisesFactory(WerewolfContext ctx)
+	{
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
+	}
+
 	public class LibsDisguisesWerewolfDisguise extends WerewolfDisguise
 	{
 		public LibsDisguisesWerewolfDisguise(UUID werewolfDisguiseAccountId, String werewolfDisguiseAccountName)
 		{
-			super(werewolfDisguiseAccountId, werewolfDisguiseAccountName);
+			super(LibsDisguisesFactory.this.ctx, werewolfDisguiseAccountId, werewolfDisguiseAccountName);
 		}		
 				
 		public boolean disguise(Player player, String werewolfName)
 		{
-			Werewolf.instance().logDebug("Disguising player " + player.getName() + " using LibsDisguises...");
+			plugin.logDebug("Disguising player " + player.getName() + " using LibsDisguises...");
 
-			if(!Werewolf.instance().getServer().getPluginManager().getPlugin("LibsDisguises").isEnabled())
+			if(!plugin.getServer().getPluginManager().getPlugin("LibsDisguises").isEnabled())
 			{
-				Werewolf.instance().logDebug("Didn't disguise player... Libs Disguises not enabled!");
+				plugin.logDebug("Didn't disguise player... Libs Disguises not enabled!");
 				return false;	
 			}
 			
@@ -35,14 +45,14 @@ public class LibsDisguisesFactory implements IWerewolfDisguiseFactory
 					DisguiseAPI.setViewDisguiseToggled(player, false);
 				}
 
-				Werewolf.instance().logDebug("WerewolfName: " + werewolfName + " - WerewolfAccountName: " + getSkinAccountName());
+				plugin.logDebug("WerewolfName: " + werewolfName + " - WerewolfAccountName: " + getSkinAccountName());
 
 				PlayerDisguise skin = new PlayerDisguise(werewolfName, getSkinAccountName());
 				skin.getWatcher().setCapeEnabled(false);
 
-				if (Werewolf.instance().getSettings().names().enabled())
+				if (ctx.getSettings().names().enabled())
 				{
-					String customWerewolfName = Werewolf.getWerewolfManager().getWerewolfName(player.getUniqueId());
+					String customWerewolfName = ctx.getWerewolfManager().getWerewolfName(player.getUniqueId());
 					if (customWerewolfName != null && !customWerewolfName.isEmpty())
 					{
 						skin.getWatcher().setCustomName(customWerewolfName);
@@ -56,7 +66,7 @@ public class LibsDisguisesFactory implements IWerewolfDisguiseFactory
 			}
 			catch (NoClassDefFoundError e)
 			{
-				Werewolf.instance().logDebug("Couldn't disguise player... Libs Disguises not found!");
+				plugin.logDebug("Couldn't disguise player... Libs Disguises not found!");
 			}
 			return false;		
 		}
@@ -71,64 +81,12 @@ public class LibsDisguisesFactory implements IWerewolfDisguiseFactory
 			}
 			catch (NoClassDefFoundError e)
 			{
-				Werewolf.instance().logDebug("Couldn't un disguise player... Libs Disguises not found!");
+				plugin.logDebug("Couldn't un disguise player... Libs Disguises not found!");
 			}
 			return false;
 						
 		}		
 	}
-
-	/*
-	public boolean setDisguise(Player player, WerewolfDisguise werewolfDisguise)
-	{
-		try
-		{
-			if (DisguiseAPI.isViewSelfToggled(player))
-			{
-				DisguiseAPI.setViewDisguiseToggled(player, false);
-			}
-
-			Werewolf.instance().logDebug("WerewolfName: " + werewolfDisguise.getWerewolfName() + " - WerewolfAccountName: " + werewolfDisguise.getSkinAccountName());
-
-			PlayerDisguise skin = new PlayerDisguise(werewolfDisguise.getWerewolfName(), werewolfDisguise.getSkinAccountName());
-			skin.getWatcher().setCapeEnabled(false);
-
-			if (Werewolf.instance().getSettings().names().enabled())
-			{
-				String customWerewolfName = Werewolf.getWerewolfManager().getWerewolfName(player.getUniqueId());
-				if (customWerewolfName != null && !customWerewolfName.isEmpty())
-				{
-					skin.getWatcher().setCustomName(customWerewolfName);
-					skin.getWatcher().setCustomNameVisible(true);
-				}
-			}
-
-			DisguiseAPI.disguiseToAll(player, skin);
-
-			return true;
-		}
-		catch (NoClassDefFoundError e)
-		{
-			Werewolf.instance().logDebug("Couldn't disguise player... Libs Disguises not found!");
-		}
-		return false;
-	}*/
-
-	/*
-	public boolean removeDisguise(Player player)
-	{
-		try
-		{
-			DisguiseAPI.undisguiseToAll(player);
-			player.setCustomNameVisible(false);
-			return true;
-		}
-		catch (NoClassDefFoundError e)
-		{
-			Werewolf.instance().logDebug("Couldn't disguise player... Libs Disguises not found!");
-		}
-		return false;
-	}*/
 
 	@Override
 	public LibsDisguisesWerewolfDisguise newDisguise(UUID disguiseAccountId, String disguiseAccountName)

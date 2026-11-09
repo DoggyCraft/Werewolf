@@ -19,6 +19,7 @@ import org.bukkit.util.BlockIterator;
 import org.bukkit.util.Vector;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.events.WerewolfSniffEvent;
 
 /**
@@ -31,19 +32,21 @@ public class ScentManager
 	private static final int		EFFECT_TICKS	= 60;
 
 	private final Werewolf			plugin;
+	private final WerewolfContext ctx;
 	private final Random			random			= new Random();
 	private final Map<UUID, UUID>	targets			= new HashMap<UUID, UUID>();
 	private final Map<UUID, Long>	lastSniffs		= new HashMap<UUID, Long>();
 	private final Set<UUID>			tracking		= new HashSet<UUID>();
 
-	public ScentManager(Werewolf plugin)
+	public ScentManager(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	public boolean canScentTrack(UUID playerId)
 	{
-		return Werewolf.getWerewolfManager().getNumberOfTransformations(playerId) >= this.plugin.getSettings().maturity().scentTrack();
+		return ctx.getWerewolfManager().getNumberOfTransformations(playerId) >= this.plugin.getSettings().maturity().scentTrack();
 	}
 
 	public UUID getTarget(UUID werewolfId)
@@ -63,7 +66,7 @@ public class ScentManager
 	public boolean sniff(Player werewolf, Player target)
 	{
 		UUID werewolfId = werewolf.getUniqueId();
-		if (!Werewolf.getWerewolfManager().hasWerewolfSkin(werewolfId) || !canScentTrack(werewolfId) || werewolf.equals(target))
+		if (!ctx.getWerewolfManager().hasWerewolfSkin(werewolfId) || !canScentTrack(werewolfId) || werewolf.equals(target))
 		{
 			return false;
 		}
@@ -87,12 +90,12 @@ public class ScentManager
 		if (this.random.nextInt(100) < this.plugin.getSettings().scent().chance())
 		{
 			this.targets.put(werewolfId, target.getUniqueId());
-			Werewolf.getLanguageManager().setPlayerName(target.getName());
-			werewolf.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ScentFound, ChatColor.LIGHT_PURPLE));
+			ctx.getLanguageManager().setPlayerName(target.getName());
+			werewolf.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ScentFound, ChatColor.LIGHT_PURPLE));
 		}
 		else
 		{
-			werewolf.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ScentTry, ChatColor.GRAY));
+			werewolf.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ScentTry, ChatColor.GRAY));
 		}
 
 		return true;
@@ -151,7 +154,7 @@ public class ScentManager
 				continue;
 			}
 
-			if (!Werewolf.getWerewolfManager().hasWerewolfSkin(werewolfId))
+			if (!ctx.getWerewolfManager().hasWerewolfSkin(werewolfId))
 			{
 				stopTracking(werewolf);
 				continue;
@@ -162,7 +165,7 @@ public class ScentManager
 			if (target == null || !target.getWorld().equals(werewolf.getWorld()))
 			{
 				stopTracking(werewolf);
-				werewolf.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ScentLost, ChatColor.RED));
+				werewolf.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ScentLost, ChatColor.RED));
 				continue;
 			}
 
@@ -211,10 +214,10 @@ public class ScentManager
 
 	private void applyEffects(Player werewolf)
 	{
-		Werewolf.pu.addPotionEffectNoGraphic(werewolf, new PotionEffect(PotionEffectType.BLINDNESS, EFFECT_TICKS, 0, false, false));
+		werewolf.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, EFFECT_TICKS, 0, false, false));
 		if (this.plugin.getSettings().scent().slownessAmplifier() >= 0)
 		{
-			Werewolf.pu.addPotionEffectNoGraphic(werewolf, new PotionEffect(PotionEffectType.SLOWNESS, EFFECT_TICKS, this.plugin.getSettings().scent().slownessAmplifier(), false, false));
+			werewolf.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, EFFECT_TICKS, this.plugin.getSettings().scent().slownessAmplifier(), false, false));
 		}
 	}
 

@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.sub.AddBountyCommand;
 import com.dogonfire.werewolf.commands.sub.BountyCommand;
 import com.dogonfire.werewolf.commands.sub.CallCommand;
@@ -47,49 +48,51 @@ public class WerewolfCommand implements TabExecutor
 	static final String CONSOLE_MESSAGE = "You cannot use this command from the console.";
 
 	private final Werewolf plugin;
+	private final WerewolfContext ctx;
 	private final InfoScreen infoScreen;
 	private final List<SubCommand> subCommands = new ArrayList<SubCommand>();
 
-	public WerewolfCommand(Werewolf plugin)
+	public WerewolfCommand(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
-		this.infoScreen = new InfoScreen(plugin);
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
+		this.infoScreen = new InfoScreen(ctx);
 
 		// Registration order is the order of the /ww help listing
-		register(new HuntCommand(plugin));
-		register(new TopCommand(plugin));
-		register(new BountyCommand(plugin));
-		register(new AddBountyCommand(plugin));
-		register(new TransformCommand(plugin));
-		register(new IntentCommand(plugin));
-		register(new SetPhaseCommand(plugin));
-		register(new CheckCommand(plugin));
-		register(new InfectCommand(plugin));
-		register(new CureCommand(plugin));
-		register(new SetLevelCommand(plugin, false));
-		register(new SetLevelCommand(plugin, true));
-		register(new SetAlphaCommand(plugin));
-		register(new ToggleCommand(plugin));
-		register(GiveItemCommand.infectionPotion(plugin));
-		register(GiveItemCommand.curePotion(plugin));
-		register(GiveItemCommand.wolfbane(plugin));
-		register(GiveItemCommand.silverSword(plugin));
-		register(GiveItemCommand.loreBook(plugin));
-		register(GiveItemCommand.silverArmor(plugin));
-		register(GiveItemCommand.werewolfTracker(plugin));
-		register(new TrackCommand(plugin));
-		register(new ClanCommand(plugin));
-		register(new HomeCommand(plugin));
-		register(new CallCommand(plugin));
-		register(new SetHomeCommand(plugin));
+		register(new HuntCommand(ctx));
+		register(new TopCommand(ctx));
+		register(new BountyCommand(ctx));
+		register(new AddBountyCommand(ctx));
+		register(new TransformCommand(ctx));
+		register(new IntentCommand(ctx));
+		register(new SetPhaseCommand(ctx));
+		register(new CheckCommand(ctx));
+		register(new InfectCommand(ctx));
+		register(new CureCommand(ctx));
+		register(new SetLevelCommand(ctx, false));
+		register(new SetLevelCommand(ctx, true));
+		register(new SetAlphaCommand(ctx));
+		register(new ToggleCommand(ctx));
+		register(GiveItemCommand.infectionPotion(ctx));
+		register(GiveItemCommand.curePotion(ctx));
+		register(GiveItemCommand.wolfbane(ctx));
+		register(GiveItemCommand.silverSword(ctx));
+		register(GiveItemCommand.loreBook(ctx));
+		register(GiveItemCommand.silverArmor(ctx));
+		register(GiveItemCommand.werewolfTracker(ctx));
+		register(new TrackCommand(ctx));
+		register(new ClanCommand(ctx));
+		register(new HomeCommand(ctx));
+		register(new CallCommand(ctx));
+		register(new SetHomeCommand(ctx));
 		// Not in the help listing
-		register(new HelpCommand(plugin, this));
-		register(new ReloadCommand(plugin));
-		register(new SaveCommand(plugin));
-		register(new ListCommand(plugin));
-		register(GiveItemCommand.vampireTracker(plugin));
-		register(new PluginToggleCommand(plugin, true));
-		register(new PluginToggleCommand(plugin, false));
+		register(new HelpCommand(ctx, this));
+		register(new ReloadCommand(ctx));
+		register(new SaveCommand(ctx));
+		register(new ListCommand(ctx));
+		register(GiveItemCommand.vampireTracker(ctx));
+		register(new PluginToggleCommand(ctx, true));
+		register(new PluginToggleCommand(ctx, false));
 	}
 
 	public void register(SubCommand subCommand)
@@ -133,7 +136,7 @@ public class WerewolfCommand implements TabExecutor
 			{
 				return false;
 			}
-			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LANGUAGESTRING.InvalidCommand, ChatColor.RED));
+			this.plugin.sendInfo(player, ctx.getLanguageManager().getLanguageString(LANGUAGESTRING.InvalidCommand, ChatColor.RED));
 			return true;
 		}
 
@@ -145,7 +148,7 @@ public class WerewolfCommand implements TabExecutor
 
 		if (!subCommand.isPermitted(player, args))
 		{
-			CommandUtil.sendNoPermission(this.plugin, player);
+			CommandUtil.sendNoPermission(ctx, player);
 			return true;
 		}
 

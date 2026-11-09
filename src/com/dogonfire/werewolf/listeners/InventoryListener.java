@@ -1,6 +1,7 @@
 package com.dogonfire.werewolf.listeners;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
@@ -20,17 +21,19 @@ public class InventoryListener implements Listener
 	// Not configurable; werewolves in wolf form never hold weapons
 	private static final boolean	KEEP_WEREWOLF_HANDS_FREE	= true;
 
-	private Werewolf	plugin	= null;
+	private final Werewolf	plugin;
+	private final WerewolfContext ctx;
 
-	public InventoryListener(Werewolf p)
+	public InventoryListener(WerewolfContext ctx)
 	{
-		this.plugin = p;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onInventoryClose(InventoryCloseEvent event)
 	{
-		if ((!Werewolf.pluginEnabled) || (!this.plugin.getSettings().general().dropArmorOnTransform()))
+		if ((!ctx.isWerewolvesEnabled()) || (!this.plugin.getSettings().general().dropArmorOnTransform()))
 		{
 			return;
 		}
@@ -41,7 +44,7 @@ public class InventoryListener implements Listener
 		}
 
 		Player player = (Player) event.getPlayer();
-		if (!Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
+		if (!ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 		{
 			return;
 		}
@@ -55,7 +58,7 @@ public class InventoryListener implements Listener
 	{
 		if (isForbiddenItem(player.getInventory().getItemInMainHand().getType()))
 		{
-			if (Werewolf.getWerewolfManager().hasToDropItems(player.getUniqueId()))
+			if (ctx.getWerewolfManager().hasToDropItems(player.getUniqueId()))
 			{
 				player.getWorld().dropItemNaturally(player.getLocation(), player.getInventory().getItemInMainHand());
 			}
@@ -80,7 +83,7 @@ public class InventoryListener implements Listener
 	{
 		if (isForbiddenItem(player.getInventory().getItemInOffHand().getType()))
 		{
-			if (Werewolf.getWerewolfManager().hasToDropItems(player.getUniqueId()))
+			if (ctx.getWerewolfManager().hasToDropItems(player.getUniqueId()))
 			{
 				player.getWorld().dropItemNaturally(player.getLocation(), player.getInventory().getItemInOffHand());
 			}
@@ -108,7 +111,7 @@ public class InventoryListener implements Listener
 		{
 			if (stack != null && !stack.getType().equals(Material.AIR) && stack.getAmount() != 0)
 			{
-				if (Werewolf.getWerewolfManager().hasToDropItems(player.getUniqueId()))
+				if (ctx.getWerewolfManager().hasToDropItems(player.getUniqueId()))
 				{
 					player.getWorld().dropItemNaturally(player.getLocation(), stack);
 				}
@@ -136,7 +139,7 @@ public class InventoryListener implements Listener
 		Player player = event.getPlayer();
 		Entity entity = player;
 		if (entity.getType() == EntityType.PLAYER && player != null) {
-			if (!Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
+			if (!ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 			{
 				return;
 			}
@@ -178,7 +181,7 @@ public class InventoryListener implements Listener
 		{
 			Player player = (Player) entity;
 
-			if (!Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
+			if (!ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 			{
 				return;
 			}
@@ -313,131 +316,4 @@ public class InventoryListener implements Listener
 				return false;
 		}
 	}
-
-	/* Doesn't work, and isn't needed as items are tested when the inventory is closed
-
-	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-	public void onInventoryClick(InventoryClickEvent event)
-	{
-		if (!Werewolf.getWerewolfManager().hasWerewolfSkin(event.getWhoClicked().getUniqueId()))
-		{
-			return;
-		}
-
-		if (event.getInventory().getType() != InventoryType.PLAYER)
-		{
-			return;
-		}
-
-		if (event.getSlotType() == InventoryType.SlotType.ARMOR || event.isShiftClick())
-		{
-			event.setCancelled(true);
-		}
-	}*/
-
-	/*
-	@EventHandler
-	public void onInventory(InventoryCloseEvent event)
-	{
-		if (!Werewolf.getWerewolfManager().isWolfForm(event.getPlayer().getUniqueId()))
-		{
-			return;
-		}
-
-		if (event.getView().getType() == InventoryType.CRAFTING)
-		{
-			preventArmor((Player) event.getPlayer());
-		}
-	}
-
-	private void preventArmor(Player player)
-	{
-		PlayerInventory pinv = player.getInventory();
-		ItemStack helmet = pinv.getHelmet();
-		ItemStack chestplate = pinv.getChestplate();
-		ItemStack leggings = pinv.getLeggings();
-		ItemStack boots = pinv.getBoots();
-
-		if (helmet != null)
-		{
-			if (pinv.firstEmpty() >= 0)
-			{
-				pinv.addItem(new ItemStack[] { helmet });
-			}
-			else
-			{
-				player.getWorld().dropItem(player.getLocation(), helmet);
-			}
-
-			pinv.setHelmet(new ItemStack(Material.AIR));
-		}
-
-		if (chestplate != null)
-		{
-			if (pinv.firstEmpty() >= 0)
-			{
-				pinv.addItem(new ItemStack[] { chestplate });
-			}
-			else
-			{
-				player.getWorld().dropItem(player.getLocation(), chestplate);
-			}
-			pinv.setChestplate(new ItemStack(Material.AIR));
-		}
-
-		if (leggings != null)
-		{
-			if (pinv.firstEmpty() >= 0)
-			{
-				pinv.addItem(new ItemStack[] { leggings });
-			}
-			else
-			{
-				player.getWorld().dropItem(player.getLocation(), leggings);
-			}
-			pinv.setLeggings(new ItemStack(Material.AIR));
-		}
-
-		if (boots != null)
-		{
-			if (pinv.firstEmpty() >= 0)
-			{
-				pinv.addItem(new ItemStack[] { boots });
-			}
-			else
-			{
-				player.getWorld().dropItem(player.getLocation(), boots);
-			}
-			pinv.setBoots(new ItemStack(Material.AIR));
-		}
-	}
-	*/
-
-	/*
-	 * @EventHandler public void onPrepareItemCraft(PrepareItemCraftEvent event)
-	 * { if (event.getView().getType() != InventoryType.WORKBENCH) {
-	 * this.plugin.logDebug("Not workbench. Was " +
-	 * event.getView().getType().name()); return; }
-	 *
-	 * this.plugin.logDebug("PrepareItemCraftEvent");
-	 *
-	 * CraftingInventory craftingInventory = event.getInventory(); if
-	 * (!craftingInventory.contains(Material.IRON_SWORD)) {
-	 * this.plugin.logDebug("Not sword"); return; }
-	 *
-	 * if (!craftingInventory.contains(Material.QUARTZ)) {
-	 * this.plugin.logDebug("Not quartz"); return; }
-	 *
-	 * ItemStack silverSword = new ItemStack(Material.IRON_SWORD);
-	 *
-	 * ItemMeta itemMeta = silverSword.getItemMeta();
-	 *
-	 * List<String> list = new ArrayList(); list.add(ChatColor.DARK_GREEN +
-	 * "Good for slaying Werewolves!"); itemMeta.setDisplayName(ChatColor.GOLD +
-	 * "Werewolf Slayer"); itemMeta.setLore(list);
-	 *
-	 * silverSword.setItemMeta(itemMeta);
-	 *
-	 * craftingInventory.setResult(silverSword); }
-	 */
 }

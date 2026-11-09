@@ -5,6 +5,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
@@ -12,29 +13,31 @@ import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 public class InfoScreen
 {
 	private final Werewolf plugin;
+	private final WerewolfContext ctx;
 
-	public InfoScreen(Werewolf plugin)
+	public InfoScreen(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	public void show(Player player)
 	{
-		LanguageManager lang = Werewolf.getLanguageManager();
+		LanguageManager lang = ctx.getLanguageManager();
 
 		if (player == null)
 		{
 			this.plugin.log("---------- " + this.plugin.getDescription().getFullName() + " ----------");
 
-			lang.setAmount("" + Werewolf.getWerewolfManager().getNumberOfWerewolves());
+			lang.setAmount("" + ctx.getWerewolfManager().getNumberOfWerewolves());
 			this.plugin.log(lang.getLanguageString(LANGUAGESTRING.WerewolfCommandNumberOfWerewolves, ChatColor.AQUA));
 
 			this.plugin.log("");
 
 			World world = this.plugin.getServer().getWorlds().get(0);
-			lang.setType(Werewolf.getMoonManager().getPhaseName(Werewolf.getMoonManager().getMoonPhase(world)));
+			lang.setType(ctx.getMoonManager().getPhaseName(ctx.getMoonManager().getMoonPhase(world)));
 			this.plugin.log(lang.getLanguageString(LANGUAGESTRING.WerewolfCommandMoonPhase, ChatColor.AQUA));
-			lang.setAmount(Werewolf.getMoonManager().getNextFullMoonText(world));
+			lang.setAmount(ctx.getMoonManager().getNextFullMoonText(world));
 			this.plugin.log(lang.getLanguageString(LANGUAGESTRING.WerewolfCommandNextFullMoon, ChatColor.AQUA));
 			return;
 		}
@@ -43,27 +46,27 @@ public class InfoScreen
 		player.sendMessage(ChatColor.AQUA + "By DogOnFire");
 		player.sendMessage("" + ChatColor.AQUA);
 
-		lang.setAmount("" + Werewolf.getWerewolfManager().getNumberOfWerewolves());
+		lang.setAmount("" + ctx.getWerewolfManager().getNumberOfWerewolves());
 		player.sendMessage(lang.getLanguageString(LANGUAGESTRING.WerewolfCommandNumberOfWerewolves, ChatColor.AQUA));
 		player.sendMessage("");
 
-		if (Werewolf.getWerewolfManager().isWerewolf(player))
+		if (ctx.getWerewolfManager().isWerewolf(player))
 		{
-			int numberOfTransformations = Werewolf.getWerewolfManager().getNumberOfTransformations(player.getUniqueId());
+			int numberOfTransformations = ctx.getWerewolfManager().getNumberOfTransformations(player.getUniqueId());
 
-			lang.setType(Werewolf.getClanManager().getClanName(player.getUniqueId()));
+			lang.setType(ctx.getClanManager().getClanName(player.getUniqueId()));
 			lang.setAmount("Level " + numberOfTransformations);
 			player.sendMessage(lang.getLanguageString(LANGUAGESTRING.WerewolfCommandIsWerewolf, ChatColor.WHITE));
-			if (this.plugin.getSettings().clans().enabled() && Werewolf.getClanManager().isAlpha(player.getUniqueId()))
+			if (this.plugin.getSettings().clans().enabled() && ctx.getClanManager().isAlpha(player.getUniqueId()))
 			{
-				String clanName = Werewolf.getClanManager().getClanName(Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId())) + "s";
+				String clanName = ctx.getClanManager().getClanName(ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId())) + "s";
 				lang.setType(clanName);
 				player.sendMessage(lang.getLanguageString(LANGUAGESTRING.WerewolfCommandIsWerewolfAlpha, ChatColor.WHITE));
 			}
 
 			player.sendMessage("");
 
-			lang.setPlayerName(Werewolf.getWerewolfManager().getWerewolfName(player.getUniqueId()));
+			lang.setPlayerName(ctx.getWerewolfManager().getWerewolfName(player.getUniqueId()));
 			player.sendMessage(lang.getLanguageString(LANGUAGESTRING.YourWerewolfName, ChatColor.AQUA));
 
 			player.sendMessage("");
@@ -71,7 +74,7 @@ public class InfoScreen
 			if (numberOfTransformations >= this.plugin.getSettings().maturity().intent())
 			{
 				lang.setType("/ww intent");
-				LANGUAGESTRING intentString = Werewolf.getWerewolfManager().hasIntent(player.getUniqueId()) ? LANGUAGESTRING.WerewolfCommandIntentOn : LANGUAGESTRING.WerewolfCommandIntentOff;
+				LANGUAGESTRING intentString = ctx.getWerewolfManager().hasIntent(player.getUniqueId()) ? LANGUAGESTRING.WerewolfCommandIntentOn : LANGUAGESTRING.WerewolfCommandIntentOff;
 				player.sendMessage(lang.getLanguageString(intentString, ChatColor.WHITE));
 			}
 
@@ -96,22 +99,22 @@ public class InfoScreen
 		}
 		player.sendMessage("");
 
-		lang.setType(Werewolf.getMoonManager().getPhaseName(Werewolf.getMoonManager().getMoonPhase(player.getWorld())));
+		lang.setType(ctx.getMoonManager().getPhaseName(ctx.getMoonManager().getMoonPhase(player.getWorld())));
 		player.sendMessage(lang.getLanguageString(LANGUAGESTRING.WerewolfCommandMoonPhase, ChatColor.AQUA));
-		lang.setAmount(Werewolf.getMoonManager().getNextFullMoonText(player.getWorld()));
+		lang.setAmount(ctx.getMoonManager().getNextFullMoonText(player.getWorld()));
 		player.sendMessage(lang.getLanguageString(LANGUAGESTRING.WerewolfCommandNextFullMoon, ChatColor.AQUA));
 
 		player.sendMessage("");
 
-		if (Werewolf.getHuntManager() != null && Werewolf.getHuntManager().getBounty() > 0)
+		if (ctx.getHuntManager() != null && ctx.getHuntManager().getBounty() > 0)
 		{
-			lang.setAmount("" + Werewolf.getHuntManager().getBounty());
+			lang.setAmount("" + ctx.getHuntManager().getBounty());
 			player.sendMessage(lang.getLanguageString(LANGUAGESTRING.CurrentBounty, ChatColor.AQUA));
 
 			player.sendMessage("");
 		}
 
-		if (this.plugin.getSettings().clans().enabled() && Werewolf.getWerewolfManager().isWerewolf(player))
+		if (this.plugin.getSettings().clans().enabled() && ctx.getWerewolfManager().isWerewolf(player))
 		{
 			lang.setType("/ww clan");
 			player.sendMessage(lang.getLanguageString(LANGUAGESTRING.HelpClan, ChatColor.AQUA));

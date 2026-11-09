@@ -7,7 +7,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 import com.dogonfire.werewolf.managers.ScentManager;
@@ -15,27 +15,27 @@ import com.dogonfire.werewolf.managers.ScentManager;
 /** /ww track: toggles following the scent trail of the player the werewolf last sniffed */
 public class TrackCommand extends SubCommand
 {
-	public TrackCommand(Werewolf plugin)
+	public TrackCommand(WerewolfContext ctx)
 	{
-		super(plugin, "track", "werewolf.track", true, "/ww track", LANGUAGESTRING.HelpTrack);
+		super(ctx, "track", "werewolf.track", true, "/ww track", LANGUAGESTRING.HelpTrack);
 	}
 
 	@Override
 	public List<HelpEntry> help(Player player)
 	{
-		return Werewolf.getWerewolfManager().isWerewolf(player) ? super.help(player) : List.of();
+		return ctx.getWerewolfManager().isWerewolf(player) ? super.help(player) : List.of();
 	}
 
 	@Override
 	public void execute(CommandSender sender, Player player, String[] args)
 	{
-		if (!Werewolf.getWerewolfManager().isWerewolf(player))
+		if (!ctx.getWerewolfManager().isWerewolf(player))
 		{
 			send(player, LANGUAGESTRING.WerewolfCommandIsNotWerewolf, ChatColor.RED);
 			return;
 		}
 
-		ScentManager scent = Werewolf.getScentManager();
+		ScentManager scent = ctx.getScentManager();
 		if (scent.isTracking(player.getUniqueId()))
 		{
 			scent.stopTracking(player);
@@ -44,12 +44,12 @@ public class TrackCommand extends SubCommand
 		}
 		if (!scent.canScentTrack(player.getUniqueId()))
 		{
-			int fullMoons = this.plugin.getSettings().maturity().scentTrack() - Werewolf.getWerewolfManager().getNumberOfTransformations(player.getUniqueId());
+			int fullMoons = this.plugin.getSettings().maturity().scentTrack() - ctx.getWerewolfManager().getNumberOfTransformations(player.getUniqueId());
 			lang().setAmount("" + fullMoons);
 			send(player, LANGUAGESTRING.MustExperienceMoreFullMoons, ChatColor.RED);
 			return;
 		}
-		if (!Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
+		if (!ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 		{
 			send(player, LANGUAGESTRING.ScentTrackNotInWolfForm, ChatColor.RED);
 			return;

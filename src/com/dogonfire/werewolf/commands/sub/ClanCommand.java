@@ -8,6 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.CommandUtil;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.managers.ClanManager;
@@ -17,9 +18,9 @@ import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 /** /ww clan: info about the werewolf's clan and the clan ranking */
 public class ClanCommand extends SubCommand
 {
-	public ClanCommand(Werewolf plugin)
+	public ClanCommand(WerewolfContext ctx)
 	{
-		super(plugin, "clan", "werewolf.clan", true, "/ww clan", LANGUAGESTRING.HelpClan);
+		super(ctx, "clan", "werewolf.clan", true, "/ww clan", LANGUAGESTRING.HelpClan);
 	}
 
 	@Override
@@ -36,16 +37,16 @@ public class ClanCommand extends SubCommand
 			send(player, ChatColor.RED + "Clans are not enabled.");
 			return;
 		}
-		if (!Werewolf.getWerewolfManager().isWerewolf(player))
+		if (!ctx.getWerewolfManager().isWerewolf(player))
 		{
 			send(player, LANGUAGESTRING.WerewolfCommandIsNotWerewolf, ChatColor.RED);
 			return;
 		}
 
-		ClanManager clans = Werewolf.getClanManager();
+		ClanManager clans = ctx.getClanManager();
 		String clanName = clans.getClanName(player.getUniqueId());
 		String alphaName = "None!";
-		ClanType playerClan = Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId());
+		ClanType playerClan = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
 		UUID alphaId = clans.getAlpha(playerClan);
 
 		if (alphaId != null)
@@ -73,7 +74,7 @@ public class ClanCommand extends SubCommand
 		for (ClanType clan : clanList)
 		{
 			ChatColor nameColor = clan.equals(playerClan) ? ChatColor.GOLD : ChatColor.WHITE;
-			send(player, "" + ChatColor.GOLD + n + ") " + nameColor + clans.getClanName(clan) + ChatColor.AQUA + "  -  " + Werewolf.getWerewolfManager().getWerewolfClanMembers(clan).size() + " members  -  "
+			send(player, "" + ChatColor.GOLD + n + ") " + nameColor + clans.getClanName(clan) + ChatColor.AQUA + "  -  " + ctx.getWerewolfManager().getWerewolfClanMembers(clan).size() + " members  -  "
 					+ String.format("%1$,.2f", clans.getClanPoint(clan)) + " clan points");
 			n++;
 		}
@@ -82,13 +83,13 @@ public class ClanCommand extends SubCommand
 
 		if (clans.isAlpha(playerClan, player.getUniqueId()))
 		{
-			if (CommandUtil.hasPermission(player, "werewolf.sethome"))
+			if (CommandUtil.hasPermission(ctx, player, "werewolf.sethome"))
 			{
 				lang().setType("/ww sethome");
 				player.sendMessage(text(LANGUAGESTRING.HelpSetHome, ChatColor.AQUA));
 			}
 		}
-		else if (CommandUtil.hasPermission(player, "werewolf.home"))
+		else if (CommandUtil.hasPermission(ctx, player, "werewolf.home"))
 		{
 			lang().setType("/ww home");
 			player.sendMessage(text(LANGUAGESTRING.HelpHome, ChatColor.AQUA));

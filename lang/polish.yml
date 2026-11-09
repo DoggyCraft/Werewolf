@@ -47,9 +47,9 @@ HelpInfectSelf:
 HelpInfectOther:
 - /werewolf infect <playername>&f - Infekuje gracza na wilkolacyzm
 HelpToggleSelf:
-- /werewolf toggle <playername>&f - Zamienia gracza w wilkolaka
-HelpToggleOther:
 - /werewolf toggle&f - Zamienia cie w wilkolaka
+HelpToggleOther:
+- /werewolf toggle <playername>&f - Zamienia gracza w wilkolaka
 HelpPotion:
 - /werewolf potion&f - Tworzy miksture infekcji w wilkolaka
 HelpCure:

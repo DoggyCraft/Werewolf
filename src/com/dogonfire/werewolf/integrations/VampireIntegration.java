@@ -11,8 +11,7 @@ import com.clanjhoo.vampire.VampireAPI;
 import com.clanjhoo.vampire.entity.VPlayer;
 import com.clanjhoo.vampire.event.InfectionChangeEvent;
 import com.clanjhoo.vampire.event.VampireTypeChangeEvent;
-import com.dogonfire.werewolf.Werewolf;
-import com.dogonfire.werewolf.WerewolfAPI;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
 import com.dogonfire.werewolf.managers.LanguageManager;
 
@@ -22,7 +21,13 @@ import com.dogonfire.werewolf.managers.LanguageManager;
  */
 public class VampireIntegration implements IntegrationListener
 {
+	private final WerewolfContext	ctx;
 	private final Random	random	= new Random();
+
+	public VampireIntegration(WerewolfContext ctx)
+	{
+		this.ctx = ctx;
+	}
 
 	/*
 	 * Werewolf blood rejects vampirism: any vampire infection of a werewolf (infected or full) is set back to zero.
@@ -32,13 +37,13 @@ public class VampireIntegration implements IntegrationListener
 	@EventHandler(priority = EventPriority.LOW)
 	public void onVampireInfection(InfectionChangeEvent event)
 	{
-		if (event.isCancelled() || !Werewolf.pluginEnabled || event.getInfection() <= 0)
+		if (event.isCancelled() || !ctx.isWerewolvesEnabled() || event.getInfection() <= 0)
 		{
 			return;
 		}
 
 		VPlayer vPlayer = event.getVPlayer();
-		if (vPlayer == null || vPlayer.getUuid() == null || !Werewolf.getWerewolfManager().isWerewolf(vPlayer.getUuid()))
+		if (vPlayer == null || vPlayer.getUuid() == null || !ctx.getWerewolfManager().isWerewolf(vPlayer.getUuid()))
 		{
 			return;
 		}
@@ -49,7 +54,7 @@ public class VampireIntegration implements IntegrationListener
 		Player player = vPlayer.getPlayer();
 		if (newInfection && player != null)
 		{
-			player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfResistsVampirism, ChatColor.LIGHT_PURPLE));
+			player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfResistsVampirism, ChatColor.LIGHT_PURPLE));
 		}
 	}
 
@@ -57,13 +62,13 @@ public class VampireIntegration implements IntegrationListener
 	@EventHandler(priority = EventPriority.LOW)
 	public void onVampireTypeChange(VampireTypeChangeEvent event)
 	{
-		if (event.isCancelled() || !Werewolf.pluginEnabled || !event.isVampire())
+		if (event.isCancelled() || !ctx.isWerewolvesEnabled() || !event.isVampire())
 		{
 			return;
 		}
 
 		VPlayer vPlayer = event.getVPlayer();
-		if (vPlayer != null && vPlayer.getUuid() != null && Werewolf.getWerewolfManager().isWerewolf(vPlayer.getUuid()))
+		if (vPlayer != null && vPlayer.getUuid() != null && ctx.getWerewolfManager().isWerewolf(vPlayer.getUuid()))
 		{
 			event.setCancelled(true);
 		}
@@ -82,14 +87,14 @@ public class VampireIntegration implements IntegrationListener
 	@EventHandler
 	public void onSilverArmorCleanse(InfectionChangeEvent event)
 	{
-		if (event.isCancelled() || !Werewolf.pluginEnabled)
+		if (event.isCancelled() || !ctx.isWerewolvesEnabled())
 		{
 			return;
 		}
 
 		VPlayer vPlayer = event.getVPlayer();
 		Player player = vPlayer != null ? vPlayer.getPlayer() : null;
-		if (player == null || vPlayer.isVampire() || !WerewolfAPI.isHuman(player))
+		if (player == null || vPlayer.isVampire() || !ctx.getWerewolfManager().isHuman(player))
 		{
 			return;
 		}
@@ -100,11 +105,11 @@ public class VampireIntegration implements IntegrationListener
 			return;
 		}
 
-		int purity = Werewolf.getItemManager().getSilverArmorPurity(player);
+		int purity = ctx.getItemManager().getSilverArmorPurity(player);
 		if (purity > 0 && this.random.nextInt(100) < purity)
 		{
 			event.setCancelled(true);
-			player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorCleansed, ChatColor.AQUA));
+			player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorCleansed, ChatColor.AQUA));
 		}
 	}
 

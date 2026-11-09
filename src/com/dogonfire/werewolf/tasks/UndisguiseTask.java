@@ -3,6 +3,8 @@ package com.dogonfire.werewolf.tasks;
 import java.util.UUID;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
+import com.dogonfire.werewolf.managers.WerewolfScoreboardManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.ScoreboardManager;
@@ -14,15 +16,17 @@ import org.bukkit.scoreboard.ScoreboardManager;
  */
 public class UndisguiseTask implements Runnable
 {
-	public Werewolf	plugin;
-	public UUID	playerId;
+	private final Werewolf	plugin;
+	private final WerewolfContext ctx;
+	private final UUID	playerId;
 	private boolean	makeVisible;
 	private boolean	forever;
 	private String	originalGroup;
 
-	public UndisguiseTask(Werewolf instance, UUID playerId, boolean visible, boolean forever, String originalGroup)
+	public UndisguiseTask(WerewolfContext ctx, UUID playerId, boolean visible, boolean forever, String originalGroup)
 	{
-		this.plugin = instance;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 		this.playerId = playerId;
 		this.makeVisible = visible;
 		this.forever = forever;
@@ -32,7 +36,7 @@ public class UndisguiseTask implements Runnable
 	public void run()
 	{
 		// Infected again and already back in wolf form since the cure: leave the new wolf form alone
-		if (this.forever && Werewolf.getWerewolfManager().hasWerewolfSkin(this.playerId))
+		if (this.forever && ctx.getWerewolfManager().hasWerewolfSkin(this.playerId))
 		{
 			return;
 		}
@@ -42,53 +46,52 @@ public class UndisguiseTask implements Runnable
 
 		if (player != null)
 		{
-			Werewolf.getWolfFormManager().removeWolfForm(player, Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()));
+			ctx.getWolfFormManager().removeWolfForm(player, ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()));
 
 			player.setPlayerListName(player.getDisplayName());
 
 			// Before trying to undisguise, check if Disguises are enabled...
-			if (this.makeVisible && plugin.disguisesEnabled)
+			if (this.makeVisible && ctx.isDisguisesEnabled())
 			{
-				Werewolf.getSkinManager().unsetWerewolfSkin(player);
+				ctx.getSkinManager().unsetWerewolfSkin(player);
 			}
-			if (this.plugin.healthBarEnabled)
+			if (ctx.isHealthBarEnabled())
 			{
 				manager = Bukkit.getScoreboardManager();
 				player.setScoreboard(manager.getMainScoreboard());
 			}
 
-			if(plugin.getSettings().general().scoreboardsEnabled())
+			WerewolfScoreboardManager scoreboards = ctx.getWerewolfScoreboardManager();
+			if (scoreboards != null)
 			{
-				Werewolf.getWerewolfScoreboardManager().removePlayerHuntingScoreboard(player);
+				scoreboards.removePlayerHuntingScoreboard(player);
 			}
 		}
 
-		Werewolf.getWerewolfManager().popPlayerData(this.playerId);
+		ctx.getWerewolfManager().popPlayerData(this.playerId);
 
 		if (this.plugin.getSettings().general().werewolfGroupEnabled() && player != null)
 		{
-			String groupName = this.forever ? this.originalGroup : Werewolf.getWerewolfManager().getOriginalPermissionGroup(playerId);
+			String groupName = this.forever ? this.originalGroup : ctx.getWerewolfManager().getOriginalPermissionGroup(playerId);
 			if ((groupName != null) && (!groupName.equals(this.plugin.getSettings().general().werewolfGroupName())))
 			{
 				this.plugin.logDebug("Putting " + player.getName() + " into group " + groupName);
 
 				String playerName = plugin.getServer().getOfflinePlayer(playerId).getName();
 
-				Werewolf.getPermissionsManager().setGroup(playerName, groupName);
+				ctx.getPermissionsManager().setGroup(playerName, groupName);
 			}
 		}
 
 		if (!this.forever && player != null)
 		{
 			// Does nothing if the player was cured meanwhile
-			Werewolf.getWerewolfManager().setHumanForm(this.playerId, player.getName());
+			ctx.getWerewolfManager().setHumanForm(this.playerId, player.getName());
 		}
-
-		Werewolf.getWerewolfManager().clearNumberOfPackWolvesForPlayer(this.playerId);
 
 		if(player!=null)
 		{
-			Werewolf.getStatisticsManager().clearStatistics(player.getUniqueId());
+			ctx.getStatisticsManager().clearStatistics(player.getUniqueId());
 		}
 	}
 }

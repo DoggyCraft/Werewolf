@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.storage.TrophyRepository;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -24,18 +25,18 @@ import com.dogonfire.werewolf.managers.ClanManager.ClanType;
 
 public class TrophyManager implements Listener
 {
-	private Werewolf plugin				= null;
+	private final Werewolf plugin;
+	private final WerewolfContext ctx;
 	private final TrophyRepository	trophies;
 
-	public TrophyManager(Werewolf plugin, TrophyRepository trophies)
+	public TrophyManager(WerewolfContext ctx, TrophyRepository trophies)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 		this.trophies = trophies;
 	}
 
-	// UUID's will render the skulls blank, so we use PlayerNames, for now.
-	// Otherwise we might have to use the cached textured from MySkin, or just request from MojangAPI,
-	// and cache them here...?
+	// UUIDs render the skulls blank, so the head is made from the skin account's name
 	@SuppressWarnings("deprecation") 
 	public ItemStack getTrophyFromWerewolfPlayer(UUID killerId, UUID werewolfId)
 	{
@@ -47,16 +48,16 @@ public class TrophyManager implements Listener
 		String pattern = "dd MMMM yyyy";
 		DateFormat formatter = new SimpleDateFormat(pattern);
 
-		ClanType clan = Werewolf.getWerewolfManager().getWerewolfClan(werewolfId);
+		ClanType clan = ctx.getWerewolfManager().getWerewolfClan(werewolfId);
 		OfflinePlayer skullPlayer = null;
 
-		if (Werewolf.getClanManager().isAlpha(werewolfId))
+		if (ctx.getClanManager().isAlpha(werewolfId))
 		{
-			skullPlayer = plugin.getServer().getOfflinePlayer(Werewolf.getClanManager().getWerewolfAccountForAlpha(clan));
+			skullPlayer = plugin.getServer().getOfflinePlayer(ctx.getClanManager().getWerewolfAccountForAlpha(clan));
 		}
 		else
 		{
-			skullPlayer = plugin.getServer().getOfflinePlayer(Werewolf.getClanManager().getWerewolfAccountForClan(clan));
+			skullPlayer = plugin.getServer().getOfflinePlayer(ctx.getClanManager().getWerewolfAccountForClan(clan));
 		}
 		
 		skullMeta.setOwningPlayer(skullPlayer);
@@ -65,55 +66,25 @@ public class TrophyManager implements Listener
 		String werewolfName = "Werewolf";
 		if (plugin.getSettings().names().enabled())
 		{
-			werewolfName = Werewolf.getWerewolfManager().getWerewolfName(werewolfId) + "'s";
+			werewolfName = ctx.getWerewolfManager().getWerewolfName(werewolfId) + "'s";
 		}
 
 		skullMeta.setDisplayName(ChatColor.GOLD + werewolfName + " Head");
 
 		String killerName = plugin.getServer().getPlayer(killerId).getName();
 		
-		Werewolf.getLanguageManager().setPlayerName(killerName);
-		Werewolf.getLanguageManager().setAmount(formatter.format(thisDate));
-		String lorePage = Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrophyDescription, ChatColor.GRAY);
+		ctx.getLanguageManager().setPlayerName(killerName);
+		ctx.getLanguageManager().setAmount(formatter.format(thisDate));
+		String lorePage = ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrophyDescription, ChatColor.GRAY);
 
 		List<String> lorePages = new ArrayList<String>();
 		lorePages.add(lorePage);
 		skullMeta.setLore(lorePages);
-		Werewolf.getItemManager().tagWerewolfTrophy(skullMeta);
+		ctx.getItemManager().tagWerewolfTrophy(skullMeta);
 
 		skullTrophy.setItemMeta(skullMeta);
 
 		return skullTrophy;
-		/*
-		ItemMeta headMeta = skullTrophy.getItemMeta();
-		GameProfile profile = new GameProfile(UUID.randomUUID(), null);
-		byte[] encodedData = Base64.encodeBase64(String.format("{textures:{SKIN:{url:\"%s\"}}}", skinURL).getBytes());
-		
-		profile.getProperties().put("textures", new Property("textures", new String(encodedData)));
-		
-		Field profileField = null;
-		try 
-		{
-			profileField = headMeta.getClass().getDeclaredField("profile");
-		} 
-		catch (NoSuchFieldException | SecurityException e) 
-		{
-			e.printStackTrace();
-		}
-		
-		profileField.setAccessible(true);
-		
-		try 
-		{
-			profileField.set(headMeta, profile);
-		} 
-		catch (IllegalArgumentException | IllegalAccessException e) 
-		{
-			e.printStackTrace();
-		}
-		
-		skullTrophy.setItemMeta(headMeta);
-		*/
 	}
 
 	private int hashVector(Location location)
@@ -124,7 +95,7 @@ public class TrophyManager implements Listener
 	/** Werewolf trophies are tagged; older ones (and dropped ones, which lose the tag) are known by their gold "... Head" name */
 	private boolean isTrophy(ItemStack skull)
 	{
-		if (Werewolf.getItemManager().isWerewolfTrophy(skull))
+		if (ctx.getItemManager().isWerewolfTrophy(skull))
 		{
 			return true;
 		}
@@ -159,7 +130,7 @@ public class TrophyManager implements Listener
 		skullMeta.setDisplayName(ChatColor.GOLD + "Werewolf Head");
 
 		skullMeta.setLore(new ArrayList<String>(description));
-		Werewolf.getItemManager().tagWerewolfTrophy(skullMeta);
+		ctx.getItemManager().tagWerewolfTrophy(skullMeta);
 
 		this.trophies.remove(String.valueOf(hashVector(location)));
 

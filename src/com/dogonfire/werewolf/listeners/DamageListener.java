@@ -2,7 +2,8 @@ package com.dogonfire.werewolf.listeners;
 
 import java.util.Random;
 
-import com.dogonfire.werewolf.WerewolfAPI;
+import com.dogonfire.werewolf.managers.HuntManager;
+import com.dogonfire.werewolf.managers.WerewolfScoreboardManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Effect;
 import org.bukkit.EntityEffect;
@@ -26,52 +27,25 @@ import com.dogonfire.werewolf.managers.ClanManager;
 import com.dogonfire.werewolf.config.Settings;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
 import com.dogonfire.werewolf.disguises.IWerewolfDisguiseFactory.WerewolfDisguise;
 
 public class DamageListener implements Listener
 {
-	private Werewolf plugin;
+	private final Werewolf plugin;
+	private final WerewolfContext ctx;
 
-	public DamageListener(Werewolf plugin)
+	public DamageListener(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
-	}
-
-	@EventHandler
-	public void onEntityDamage1(EntityDamageEvent event)
-	{
-		if (!Werewolf.pluginEnabled)
-		{
-			return;
-		}
-
-		if (!event.isCancelled() && (event.getEntity() instanceof Player))
-		{
-			Player player = (Player) event.getEntity();
-
-			// Before trying to use Disguises, check if Disguises is
-			// enabled...
-			if (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()) && plugin.disguisesEnabled)
-			{
-				WerewolfDisguise skin = Werewolf.getSkinManager().getSkin(player);
-
-				if (skin != null)
-				{
-					Werewolf.getWerewolfManager().setPouncing(player.getUniqueId());
-				}
-				else
-				{
-					this.plugin.logDebug("onEntityDamage: Skin is null for " + player.getName());
-				}
-			}
-		}
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	@EventHandler(ignoreCancelled = true)
 	public void onEntityDamage2(EntityDamageEvent event)
 	{
-		if (!Werewolf.pluginEnabled)
+		if (!ctx.isWerewolvesEnabled())
 		{
 			return;
 		}
@@ -80,13 +54,13 @@ public class DamageListener implements Listener
 		{
 			Player werewolfPlayer = (Player) event.getEntity();
 
-			if (Werewolf.getWerewolfManager().hasWerewolfSkin(werewolfPlayer.getUniqueId()))
+			if (ctx.getWerewolfManager().hasWerewolfSkin(werewolfPlayer.getUniqueId()))
 			{
 				double damage = event.getDamage();
-				Settings.Stats stats = Werewolf.getWolfFormManager().getStats(werewolfPlayer.getUniqueId());
+				Settings.Stats stats = ctx.getWolfFormManager().getStats(werewolfPlayer.getUniqueId());
 
 				// Gold weapons cut through a werewolf's natural defence until it is mature enough to be immune
-				boolean goldHit = isGoldWeaponHit(event) && !Werewolf.getWerewolfManager().isGoldImmune(werewolfPlayer.getUniqueId());
+				boolean goldHit = isGoldWeaponHit(event) && !ctx.getWerewolfManager().isGoldImmune(werewolfPlayer.getUniqueId());
 				boolean silverHit = isSilverSwordHit(event);
 				boolean bypassDefense = goldHit || (silverHit && this.plugin.getSettings().items().silverSwordBypassesDefense());
 
@@ -131,13 +105,13 @@ public class DamageListener implements Listener
 
 				try
 				{
-					WerewolfDisguise skin = Werewolf.getSkinManager().getSkin(werewolfPlayer);
+					WerewolfDisguise skin = ctx.getSkinManager().getSkin(werewolfPlayer);
 
 					if (skin != null)
 					{
 						werewolfPlayer.playEffect(EntityEffect.HURT);
 
-						Werewolf.getWerewolfManager().growl(werewolfPlayer);
+						ctx.getWerewolfManager().growl(werewolfPlayer);
 					}
 				}
 				catch (NullPointerException e)
@@ -145,7 +119,7 @@ public class DamageListener implements Listener
 					// well, looks like there is no Lib's Disguises there
 					werewolfPlayer.playEffect(EntityEffect.HURT);
 
-					Werewolf.getWerewolfManager().growl(werewolfPlayer);
+					ctx.getWerewolfManager().growl(werewolfPlayer);
 				}
 			}
 		}
@@ -159,9 +133,9 @@ public class DamageListener implements Listener
 
 				this.plugin.logDebug(player.getName() + " is doing damage to " + damageEvent.getEntityType().name());
 
-				if (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
+				if (ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 				{
-					Settings.Stats stats = Werewolf.getWolfFormManager().getStats(player.getUniqueId());
+					Settings.Stats stats = ctx.getWolfFormManager().getStats(player.getUniqueId());
 					double damage;
 
 					if (player.getInventory().getItemInMainHand().getType().equals(Material.AIR))
@@ -193,7 +167,7 @@ public class DamageListener implements Listener
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onBite(EntityDamageByEntityEvent event)
 	{
-		if (!Werewolf.pluginEnabled || !(event.getEntity() instanceof Player))
+		if (!ctx.isWerewolvesEnabled() || !(event.getEntity() instanceof Player))
 		{
 			return;
 		}
@@ -204,19 +178,19 @@ public class DamageListener implements Listener
 		{
 			Player player = (Player) event.getDamager();
 
-			if (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()) && !WerewolfAPI.isVampire(victim))
+			if (ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()) && !ctx.getWerewolfManager().isVampire(victim))
 			{
-				if (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.infectother") && Werewolf.getPermissionsManager().hasPermission(victim, "werewolf.becomeinfected") && !Werewolf.getWerewolfManager().isWerewolf(victim))
+				if (ctx.getPermissionsManager().hasPermission(player, "werewolf.infectother") && ctx.getPermissionsManager().hasPermission(victim, "werewolf.becomeinfected") && !ctx.getWerewolfManager().isWerewolf(victim))
 				{
 					this.plugin.logDebug(player.getName() + " is doing risk damage to " + victim.getName());
 
-					if (Math.random() < Werewolf.getWerewolfManager().getBiteInfectionRisk(player.getUniqueId()) && Werewolf.getWerewolfManager().makeWerewolf(victim, false, Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId()), WerewolfInfectionEvent.Source.WEREWOLF_BITE))
+					if (Math.random() < ctx.getWerewolfManager().getBiteInfectionRisk(player.getUniqueId()) && ctx.getWerewolfManager().makeWerewolf(victim, false, ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId()), WerewolfInfectionEvent.Source.WEREWOLF_BITE))
 					{
-						Werewolf.getLanguageManager().setPlayerName(player.getName());
-						victim.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteVictim, ChatColor.LIGHT_PURPLE));
+						ctx.getLanguageManager().setPlayerName(player.getName());
+						victim.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteVictim, ChatColor.LIGHT_PURPLE));
 
-						Werewolf.getLanguageManager().setPlayerName(victim.getName());
-						player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteAttacker, ChatColor.LIGHT_PURPLE));
+						ctx.getLanguageManager().setPlayerName(victim.getName());
+						player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteAttacker, ChatColor.LIGHT_PURPLE));
 
 						victim.getLocation().getWorld().playEffect(player.getLocation(), Effect.SMOKE, 100);
 						victim.getLocation().getWorld().playEffect(player.getLocation().add(new Vector(0, 1, 0)), Effect.SMOKE, 100);
@@ -228,17 +202,17 @@ public class DamageListener implements Listener
 			}
 		}
 
-		if (!Werewolf.getWerewolfManager().hasWerewolfSkin(victim.getUniqueId()) && (Werewolf.getPermissionsManager().hasPermission(victim, "werewolf.becomeinfected") || victim.isOp())
-				&& (!Werewolf.getWerewolfManager().isWerewolf(victim) && (event.getDamager() instanceof Wolf) && Math.random() < this.plugin.getSettings().infection().wildWolfBiteRisk()))
+		if (!ctx.getWerewolfManager().hasWerewolfSkin(victim.getUniqueId()) && (ctx.getPermissionsManager().hasPermission(victim, "werewolf.becomeinfected") || victim.isOp())
+				&& (!ctx.getWerewolfManager().isWerewolf(victim) && (event.getDamager() instanceof Wolf) && Math.random() < this.plugin.getSettings().infection().wildWolfBiteRisk()))
 		{
 			Tameable tameable = (Tameable) event.getDamager();
 
 			if (!tameable.isTamed())
 			{
 				Random random = new Random();
-				if (Werewolf.getWerewolfManager().makeWerewolf(victim, false, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)], WerewolfInfectionEvent.Source.WILD_WOLF_BITE))
+				if (ctx.getWerewolfManager().makeWerewolf(victim, false, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)], WerewolfInfectionEvent.Source.WILD_WOLF_BITE))
 				{
-					victim.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteVictim, ChatColor.LIGHT_PURPLE));
+					victim.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteVictim, ChatColor.LIGHT_PURPLE));
 
 					plugin.log(victim.getName() + " contracted the werewolf infection from a wild wolf!");
 				}
@@ -284,7 +258,7 @@ public class DamageListener implements Listener
 			return false;
 		}
 
-		return Werewolf.getItemManager().isSilverSword(((LivingEntity) damager).getEquipment().getItemInMainHand());
+		return ctx.getItemManager().isSilverSword(((LivingEntity) damager).getEquipment().getItemInMainHand());
 	}
 
 	/** Silver armor takes a % off attacks by werewolves (in either form) and vampires */
@@ -306,17 +280,17 @@ public class DamageListener implements Listener
 			attacker = (Player) ((Projectile) event.getDamager()).getShooter();
 		}
 
-		if (attacker == null || attacker.equals(victim) || !WerewolfAPI.isHuman(victim))
+		if (attacker == null || attacker.equals(victim) || !ctx.getWerewolfManager().isHuman(victim))
 		{
 			return;
 		}
 
-		if (!Werewolf.getWerewolfManager().isWerewolf(attacker) && !WerewolfAPI.isVampire(attacker))
+		if (!ctx.getWerewolfManager().isWerewolf(attacker) && !ctx.getWerewolfManager().isVampire(attacker))
 		{
 			return;
 		}
 
-		int defense = Werewolf.getItemManager().getSilverArmorDefense(victim);
+		int defense = ctx.getItemManager().getSilverArmorDefense(victim);
 		if (defense > 0)
 		{
 			event.setDamage(event.getDamage() * (1.0D - defense / 100.0D));
@@ -337,7 +311,7 @@ public class DamageListener implements Listener
 
 		Player killer = event.getEntity().getKiller();
 
-		if (Werewolf.getWerewolfManager().hasWerewolfSkin(killer.getUniqueId()))
+		if (ctx.getWerewolfManager().hasWerewolfSkin(killer.getUniqueId()))
 		{
 			int health = 0;
 			switch (event.getEntity().getType())
@@ -428,8 +402,8 @@ public class DamageListener implements Listener
 
 			if (health > 0 && killer.getHealth() < killer.getAttribute(Attribute.MAX_HEALTH).getValue())
 			{
-				Werewolf.getLanguageManager().setAmount("" + health);
-				killer.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.KilledMob, ChatColor.LIGHT_PURPLE));
+				ctx.getLanguageManager().setAmount("" + health);
+				killer.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.KilledMob, ChatColor.LIGHT_PURPLE));
 
 				if (killer.getHealth() + health > killer.getAttribute(Attribute.MAX_HEALTH).getValue())
 				{
@@ -443,26 +417,25 @@ public class DamageListener implements Listener
 
 			if (this.plugin.getSettings().clans().enabled())
 			{
-				ClanManager.ClanType clan = Werewolf.getWerewolfManager().getWerewolfClan(killer.getUniqueId());
-				Werewolf.getClanManager().handleMobKill(killer, clan, event.getEntity().getType());
+				ClanManager.ClanType clan = ctx.getWerewolfManager().getWerewolfClan(killer.getUniqueId());
+				ctx.getClanManager().handleMobKill(killer, clan, event.getEntity().getType());
 			}
 
-			if (event.getEntity() instanceof Player)
+			WerewolfScoreboardManager scoreboards = ctx.getWerewolfScoreboardManager();
+			if (scoreboards != null)
 			{
-				 if(WerewolfAPI.isVampire((Player)event.getEntity()))
-				 {
-					 Werewolf.getWerewolfScoreboardManager().setVampireKillsForPlayer(killer,
-							 Werewolf.getStatisticsManager().increaseVampireKills(killer.getUniqueId()));
-				 }
-				 else
-				 {
-					 Werewolf.getWerewolfScoreboardManager().setHumanKillsForPlayer(killer,
-							 Werewolf.getStatisticsManager().increaseHumanKills(killer.getUniqueId()));
-				 }
-			}
-			else
-			{
-				Werewolf.getWerewolfScoreboardManager().setMobKillsForPlayer(killer, Werewolf.getStatisticsManager().increaseMobKills(killer.getUniqueId()));
+				if (!(event.getEntity() instanceof Player))
+				{
+					scoreboards.setMobKillsForPlayer(killer, ctx.getStatisticsManager().increaseMobKills(killer.getUniqueId()));
+				}
+				else if (ctx.getWerewolfManager().isVampire((Player) event.getEntity()))
+				{
+					scoreboards.setVampireKillsForPlayer(killer, ctx.getStatisticsManager().increaseVampireKills(killer.getUniqueId()));
+				}
+				else
+				{
+					scoreboards.setHumanKillsForPlayer(killer, ctx.getStatisticsManager().increaseHumanKills(killer.getUniqueId()));
+				}
 			}
 		}
 
@@ -473,14 +446,15 @@ public class DamageListener implements Listener
 
 		Player werewolf = (Player) event.getEntity();
 
-		if (!Werewolf.getWerewolfManager().hasWerewolfSkin(werewolf.getUniqueId()))
+		if (!ctx.getWerewolfManager().hasWerewolfSkin(werewolf.getUniqueId()))
 		{
 			return;
 		}
 
-		if (this.plugin.vaultEnabled && !Werewolf.getWerewolfManager().hasWerewolfSkin(killer.getUniqueId()))
+		HuntManager huntManager = ctx.getHuntManager();
+		if (huntManager != null && !ctx.getWerewolfManager().hasWerewolfSkin(killer.getUniqueId()))
 		{
-			Werewolf.getHuntManager().handleKill(killer.getUniqueId(), killer.getName());
+			huntManager.handleKill(killer.getUniqueId(), killer.getName());
 		}
 	}
 }

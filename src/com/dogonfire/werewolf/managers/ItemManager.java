@@ -7,12 +7,13 @@ import java.util.Objects;
 
 import com.dogonfire.werewolf.items.Recipes;
 import com.dogonfire.werewolf.Werewolf;
-import com.dogonfire.werewolf.WerewolfAPI;
+import com.dogonfire.werewolf.WerewolfContext;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -94,12 +95,15 @@ public class ItemManager
 		}
 	}
 
-	private Werewolf plugin;
+	private final Werewolf plugin;
+	private final WerewolfContext ctx;
 	private NamespacedKey namespacedKey;
+	private final List<NamespacedKey> recipeKeys = new ArrayList<NamespacedKey>();
 
-	public ItemManager(Werewolf plugin)
+	public ItemManager(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 		this.namespacedKey = new NamespacedKey(plugin, "ww-item");
 	}
 
@@ -129,29 +133,30 @@ public class ItemManager
 		return isWerewolfItem(item, "WerewolfTrophy");
 	}
 
-	public void setupRecipes()
+	/** Adds the recipes switched on by the Items.Craftable* settings; undone by {@link #removeRecipes()} */
+	public void addRecipes()
 	{
 		if(plugin.getSettings().items().craftableInfectionPotion())
 		{			
-			Bukkit.addRecipe(Recipes.infectionPotion(plugin));
+			addRecipe(Recipes.infectionPotion(plugin, this));
 			plugin.logDebug("Craftable infection potions are enabled");
 		}
 		
 		if(plugin.getSettings().items().craftableCurePotion())
 		{
-			Bukkit.addRecipe(Recipes.curePotion(plugin));
+			addRecipe(Recipes.curePotion(plugin, this));
 			plugin.logDebug("Craftable cure potions are enabled");
 		}
 
 		if(plugin.getSettings().items().craftableWolfbanePotion())
 		{
-			Bukkit.addRecipe(Recipes.wolfbanePotion(plugin));
+			addRecipe(Recipes.wolfbanePotion(plugin, this));
 			plugin.logDebug("Craftable wolfbane potions are enabled");
 		}
 
 		if(plugin.getSettings().items().craftableSilverSword())
 		{
-			Bukkit.addRecipe(Recipes.silverSwordRecipe(plugin));
+			addRecipe(Recipes.silverSwordRecipe(plugin, this));
 			plugin.logDebug("Craftable silver swords are enabled");
 		}
 
@@ -159,28 +164,46 @@ public class ItemManager
 		{
 			for (ArmorPiece piece : ArmorPiece.values())
 			{
-				Bukkit.addRecipe(Recipes.silverArmorRecipe(plugin, piece));
+				addRecipe(Recipes.silverArmorRecipe(plugin, this, piece));
 			}
 			plugin.logDebug("Craftable silver armors are enabled");
 		}
 
 		if(plugin.getSettings().items().craftableWerewolfTracker())
 		{
-			Bukkit.addRecipe(Recipes.werewolfTracker(plugin));
+			addRecipe(Recipes.werewolfTracker(plugin, this));
 			plugin.logDebug("Craftable werewolf trackers are enabled");
 		}
 
-		if(plugin.getSettings().items().craftableVampireTracker() && plugin.vampireEnabled)
+		if(plugin.getSettings().items().craftableVampireTracker() && ctx.isVampireEnabled())
 		{
-			Bukkit.addRecipe(Recipes.vampireTracker(plugin));
+			addRecipe(Recipes.vampireTracker(plugin, this));
 			plugin.logDebug("Craftable vampire trackers are enabled");
 		}
 
 		if(plugin.getSettings().items().craftableLoreBook())
 		{
-			Bukkit.addRecipe(Recipes.loreBook(plugin));
+			addRecipe(Recipes.loreBook(plugin, this));
 			plugin.logDebug("Craftable lore books are enabled");
 		}
+	}
+
+	private void addRecipe(Recipe recipe)
+	{
+		if (Bukkit.addRecipe(recipe) && recipe instanceof Keyed keyed)
+		{
+			this.recipeKeys.add(keyed.getKey());
+		}
+	}
+
+	/** Removes the recipes added by {@link #addRecipes()} */
+	public void removeRecipes()
+	{
+		for (NamespacedKey key : this.recipeKeys)
+		{
+			Bukkit.removeRecipe(key);
+		}
+		this.recipeKeys.clear();
 	}
 
 	public ItemStack newInfectionPotion()
@@ -189,15 +212,14 @@ public class ItemManager
 
 		PotionMeta potionMeta = (PotionMeta) potion.getItemMeta();
 
-		potionMeta.setDisplayName(ChatColor.GOLD + Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.InfectionPotionTitle, ChatColor.GOLD));
+		potionMeta.setDisplayName(ChatColor.GOLD + ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.InfectionPotionTitle, ChatColor.GOLD));
 
 	    List<String> pages = new ArrayList<String>();
 	    
-	    pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.InfectionPotionDescription1, ChatColor.GRAY));
-	    pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.InfectionPotionDescription2, ChatColor.GRAY));
+	    pages.add(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.InfectionPotionDescription1, ChatColor.GRAY));
+	    pages.add(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.InfectionPotionDescription2, ChatColor.GRAY));
 	    
 	    potionMeta.setLore(pages);
-	    //potionMeta.setMainEffect(PotionEffectType.NAUSEA);
 	    potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.NAUSEA, 300, 0), true);
 
 		// Add NBT data
@@ -214,15 +236,14 @@ public class ItemManager
 
 		PotionMeta potionMeta = (PotionMeta) potion.getItemMeta();
 
-		potionMeta.setDisplayName(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.CurePotionTitle, ChatColor.GOLD));
+		potionMeta.setDisplayName(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.CurePotionTitle, ChatColor.GOLD));
 
 	    List<String> pages = new ArrayList<String>();
 	    
-	    pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.CurePotionDescription1, ChatColor.GRAY));
-	    pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.CurePotionDescription2, ChatColor.GRAY));
+	    pages.add(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.CurePotionDescription1, ChatColor.GRAY));
+	    pages.add(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.CurePotionDescription2, ChatColor.GRAY));
 	    
 	    potionMeta.setLore(pages);
-	    //potionMeta.setMainEffect(PotionEffectType.NAUSEA);
 	    potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.NAUSEA, 300, 0), true);
 
 		// Add NBT data
@@ -236,30 +257,19 @@ public class ItemManager
 	public ItemStack newWolfbanePotion()
 	{
 		ItemStack potion = new ItemStack(Material.SPLASH_POTION);
-		//Potion potion = new Potion(PotionType.POISON, 2);
-		//potion.setSplash(true);
-		
-		//ItemStack itemStack = potion.toItemStack(1);
-
-		//PotionMeta potionMeta = (PotionMeta) itemStack.getItemMeta();
 		PotionMeta potionMeta = (PotionMeta) potion.getItemMeta();
 
-		potionMeta.setDisplayName(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WolfbanePotionTitle, ChatColor.GOLD));
+		potionMeta.setDisplayName(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WolfbanePotionTitle, ChatColor.GOLD));
 
 	    List<String> pages = new ArrayList<String>();
 
-	    Werewolf.getLanguageManager().setAmount(String.valueOf(plugin.getSettings().items().wolfbaneUntransformChance()));
-	    pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WolfbanePotionDescription1, ChatColor.LIGHT_PURPLE));
-	    pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WolfbanePotionDescription2, ChatColor.GRAY));
+	    ctx.getLanguageManager().setAmount(String.valueOf(plugin.getSettings().items().wolfbaneUntransformChance()));
+	    pages.add(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WolfbanePotionDescription1, ChatColor.LIGHT_PURPLE));
+	    pages.add(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WolfbanePotionDescription2, ChatColor.GRAY));
 	    
 	    potionMeta.setLore(pages);
 	    potionMeta.setBasePotionType(PotionType.POISON);
-	    //potionMeta.setMainEffect(PotionEffectType.NAUSEA);
 	    potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.NAUSEA, 300, 0), true);
-
-	    //itemStack.setItemMeta(potionMeta);
-		
-		//return itemStack;
 
 		// Add NBT data
 		potionMeta.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, "WolfbanePotion");
@@ -275,13 +285,13 @@ public class ItemManager
 
 		ItemMeta itemMeta = weapon.getItemMeta();
 
-		itemMeta.setDisplayName(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverSwordTitle, ChatColor.GOLD));
+		itemMeta.setDisplayName(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverSwordTitle, ChatColor.GOLD));
 
 		List<String> pages = new ArrayList<String>();
 
-	    Werewolf.getLanguageManager().setAmount(String.valueOf(plugin.getSettings().items().silverSwordMultiplier()));
-	    pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverSwordDescription1, ChatColor.LIGHT_PURPLE));
-	    pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverSwordDescription2, ChatColor.GRAY));
+	    ctx.getLanguageManager().setAmount(String.valueOf(plugin.getSettings().items().silverSwordMultiplier()));
+	    pages.add(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverSwordDescription1, ChatColor.LIGHT_PURPLE));
+	    pages.add(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverSwordDescription2, ChatColor.GRAY));
 
 		itemMeta.setLore(pages);
 
@@ -306,15 +316,15 @@ public class ItemManager
 
 		ItemMeta itemMeta = armor.getItemMeta();
 
-		itemMeta.setDisplayName(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorTitle, ChatColor.GOLD));
+		itemMeta.setDisplayName(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorTitle, ChatColor.GOLD));
 
 		List<String> pages = new ArrayList<String>();
 
-		Werewolf.getLanguageManager().setAmount(String.valueOf(plugin.getSettings().items().silverArmorPurity().get(piece)));
-		pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorPurity, ChatColor.LIGHT_PURPLE));
-		Werewolf.getLanguageManager().setAmount(String.valueOf(plugin.getSettings().items().silverArmorDefense().get(piece)));
-		pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorDefense, ChatColor.LIGHT_PURPLE));
-		pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorHumansOnly, ChatColor.GRAY));
+		ctx.getLanguageManager().setAmount(String.valueOf(plugin.getSettings().items().silverArmorPurity().get(piece)));
+		pages.add(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorPurity, ChatColor.LIGHT_PURPLE));
+		ctx.getLanguageManager().setAmount(String.valueOf(plugin.getSettings().items().silverArmorDefense().get(piece)));
+		pages.add(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorDefense, ChatColor.LIGHT_PURPLE));
+		pages.add(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorHumansOnly, ChatColor.GRAY));
 
 		itemMeta.setLore(pages);
 
@@ -342,12 +352,12 @@ public class ItemManager
 
 		ItemMeta itemMeta = tracker.getItemMeta();
 
-		itemMeta.setDisplayName(Werewolf.getLanguageManager().getLanguageString(title, ChatColor.GOLD));
+		itemMeta.setDisplayName(ctx.getLanguageManager().getLanguageString(title, ChatColor.GOLD));
 
 		List<String> pages = new ArrayList<String>();
-		pages.add(Werewolf.getLanguageManager().getLanguageString(description, ChatColor.LIGHT_PURPLE));
-		pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerClearDescription, ChatColor.GRAY));
-		pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerHumansOnly, ChatColor.GRAY));
+		pages.add(ctx.getLanguageManager().getLanguageString(description, ChatColor.LIGHT_PURPLE));
+		pages.add(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerClearDescription, ChatColor.GRAY));
+		pages.add(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TrackerHumansOnly, ChatColor.GRAY));
 
 		itemMeta.setLore(pages);
 
@@ -401,7 +411,7 @@ public class ItemManager
 			bookPages.add("§lCrafting the Cure\n§r\nIn a workbench, place the following ingredients:");			
 			
 			int n = 1;
-			for(ItemStack ingredient : Recipes.curePotion(plugin).getIngredientList())
+			for(ItemStack ingredient : Recipes.curePotion(plugin, this).getIngredientList())
 			{
 				bookPages.add("\n§r\n " + n + ") " + ingredient.getType().name()); 
 				n++;
@@ -414,7 +424,7 @@ public class ItemManager
 			bookPages.add("§lCrafting the Infection\n§r\nIn a workbench, place the following ingredients:");			
 			
 			int n = 1;
-			for(ItemStack ingredient : Recipes.infectionPotion(plugin).getIngredientList())
+			for(ItemStack ingredient : Recipes.infectionPotion(plugin, this).getIngredientList())
 			{
 				bookPages.add("\n§r\n " + n + ") " + ingredient.getType().name()); 
 				n++;
@@ -427,7 +437,7 @@ public class ItemManager
 			bookPages.add("§lCrafting the Wolfbane\n§r\nIn a workbench, place the following ingredients:");			
 			
 			int n = 1;
-			for(ItemStack ingredient : Recipes.wolfbanePotion(plugin).getIngredientList())
+			for(ItemStack ingredient : Recipes.wolfbanePotion(plugin, this).getIngredientList())
 			{
 				bookPages.add("\n§r\n " + n + ") " + ingredient.getType().name()); 
 				n++;
@@ -441,7 +451,7 @@ public class ItemManager
 			bookPages.add("§lCrafting the Silver Sword\n§r\nIn a workbench, place the following ingredients:");			
 			
 			int n = 1;
-			for(ItemStack ingredient : Recipes.silverSwordRecipe(plugin).getIngredientMap().values())
+			for(ItemStack ingredient : Recipes.silverSwordRecipe(plugin, this).getIngredientMap().values())
 			{
 				if(ingredient!=null)
 				{
@@ -464,7 +474,7 @@ public class ItemManager
 			bookPages.add("§lThe Silver Armor\n§r\nAny iron armor piece can be turned into silver armor in a workbench, surrounded by the following ingredients:");
 
 			int n = 1;
-			for(ItemStack ingredient : Recipes.silverArmorRecipe(plugin).getIngredientMap().values())
+			for(ItemStack ingredient : Recipes.silverArmorRecipe(plugin, this).getIngredientMap().values())
 			{
 				if(ingredient!=null)
 				{
@@ -480,7 +490,7 @@ public class ItemManager
 		}
 
 		BookMeta bookMeta = (BookMeta) book.getItemMeta();
-		bookMeta.setTitle(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.LoreBookTitle, ChatColor.GOLD));//ChatColor.GOLD + "The Big Book of Werewolves");
+		bookMeta.setTitle(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.LoreBookTitle, ChatColor.GOLD));//ChatColor.GOLD + "The Big Book of Werewolves");
 		bookMeta.setAuthor("DogOnFire");
 		bookMeta.setPages(bookPages);
 		book.setItemMeta(bookMeta);
@@ -488,7 +498,7 @@ public class ItemManager
 		// Add title
 		ItemMeta itemMeta = book.getItemMeta();
 
-		itemMeta.setDisplayName(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.LoreBookTitle, ChatColor.GOLD));
+		itemMeta.setDisplayName(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.LoreBookTitle, ChatColor.GOLD));
 
 		// Add description
 		List<String> pages = new ArrayList<String>();
@@ -590,7 +600,7 @@ public class ItemManager
 	 */
 	public boolean removeForbiddenSilverArmor(Player player)
 	{
-		if (WerewolfAPI.isHuman(player))
+		if (ctx.getWerewolfManager().isHuman(player))
 		{
 			return false;
 		}
@@ -615,7 +625,7 @@ public class ItemManager
 
 		if (removed)
 		{
-			player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorCannotWear, ChatColor.RED));
+			player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorCannotWear, ChatColor.RED));
 		}
 		return removed;
 	}
@@ -630,7 +640,7 @@ public class ItemManager
 	{
 		for (Player player : plugin.getServer().getOnlinePlayers())
 		{
-			boolean werewolf = Werewolf.getWerewolfManager().isWerewolf(player);
+			boolean werewolf = ctx.getWerewolfManager().isWerewolf(player);
 			if (isWearingSilverArmor(player))
 			{
 				removeForbiddenSilverArmor(player);
@@ -642,7 +652,7 @@ public class ItemManager
 			}
 
 			player.damage(plugin.getSettings().items().silverSwordPenalty());
-			player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverBurnsWerewolf, ChatColor.RED)));
+			player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverBurnsWerewolf, ChatColor.RED)));
 		}
 	}
 }

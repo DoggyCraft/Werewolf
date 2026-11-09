@@ -47,9 +47,9 @@ HelpInfectSelf:
 HelpInfectOther:
 - /werewolf infect <playername>&f - Infiziere einen Spieler mit dem Werwolfvirus
 HelpToggleSelf:
-- /werewolf toggle <playername>&f - Wechselt den Werwolfstatus für einen Spieler
-HelpToggleOther:
 - /werewolf toggle&f - Wechselt den Werwolfstatus für Dich selbst
+HelpToggleOther:
+- /werewolf toggle <playername>&f - Wechselt den Werwolfstatus für einen Spieler
 HelpPotion:
 - /werewolf potion&f - erschafft einen Werwolftrank
 HelpCure:

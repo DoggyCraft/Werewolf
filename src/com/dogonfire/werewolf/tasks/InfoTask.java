@@ -7,19 +7,22 @@ import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 
 public class InfoTask implements Runnable
 {
-	private Werewolf plugin;
+	private final Werewolf plugin;
+	private final WerewolfContext ctx;
 	private UUID playerId = null;
 	private String name = null;
 	private LanguageManager.LANGUAGESTRING message = null;
 	private int amount = 0;
 	private ChatColor color;
 
-	public InfoTask(Werewolf instance, ChatColor color, UUID playerId, LanguageManager.LANGUAGESTRING m, int amount, String name)
+	public InfoTask(WerewolfContext ctx, ChatColor color, UUID playerId, LanguageManager.LANGUAGESTRING m, int amount, String name)
 	{
-		this.plugin = instance;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 		this.playerId = playerId;
 		this.message = m;
 		this.name = name;
@@ -36,11 +39,11 @@ public class InfoTask implements Runnable
 			return;
 		}
 		
-		Werewolf.getLanguageManager().setPlayerName(this.name);
+		ctx.getLanguageManager().setPlayerName(this.name);
 				
-		Werewolf.getLanguageManager().setAmount("" + this.amount);
+		ctx.getLanguageManager().setAmount("" + this.amount);
 
-		String questionMessage = Werewolf.getLanguageManager().getLanguageString(this.message, this.color);
+		String questionMessage = ctx.getLanguageManager().getLanguageString(this.message, this.color);
 
 		player.sendMessage(
 

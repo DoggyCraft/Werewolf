@@ -1,155 +1,113 @@
 package com.dogonfire.werewolf.managers;
 
-import com.dogonfire.werewolf.Werewolf;
-import net.milkbowl.vault.chat.Chat;
-import net.milkbowl.vault.permission.Permission;
-
 import java.util.List;
 import java.util.Map;
 
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionDefault;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
+import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
+
+import net.milkbowl.vault.permission.Permission;
+
+/**
+ * Permission checks and permission groups. With Vault they go through Vault's permission provider, which is looked up on
+ * use because the permissions plugin may enable after us; without one, checks fall back to the plugin.yml defaults.
+ */
 public class PermissionsManager
 {
-	private String		pluginName		= "null";
-	private Werewolf plugin;
-	private Permission	vaultPermission	= null;
-	private static Chat	vaultChat		= null;
+	private final Werewolf			plugin;
+	private final WerewolfContext	ctx;
 
-	public PermissionsManager(Werewolf p)
+	public PermissionsManager(WerewolfContext ctx)
 	{
-		this.plugin = p;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
+	}
 
-		if (p.vaultEnabled)
+	private Permission vaultPermission()
+	{
+		if (!this.ctx.isVaultEnabled())
 		{
-			RegisteredServiceProvider<Permission> permissionProvider = plugin.getServer().getServicesManager().getRegistration(Permission.class);
-			vaultPermission = permissionProvider.getProvider();
-
-			RegisteredServiceProvider<Chat> chatProvider = plugin.getServer().getServicesManager().getRegistration(Chat.class);
-			try {
-				vaultChat = chatProvider.getProvider();
-			}
-			catch (NullPointerException e) {
-				this.plugin.log("No chatprovider found, Vault cannot get prefixes.");
-			}
-
+			return null;
 		}
-	}
 
-	public void load()
-	{
-		// Nothing
-	}
-
-	public Plugin getPlugin()
-	{
-		return this.plugin;
-	}
-
-	public String getPermissionPluginName()
-	{
-		return this.pluginName;
+		RegisteredServiceProvider<Permission> provider = this.plugin.getServer().getServicesManager().getRegistration(Permission.class);
+		return provider != null ? provider.getProvider() : null;
 	}
 
 	public boolean hasPermission(Player player, String node)
 	{
 		this.plugin.logDebug("Checking for perm.. Player: " + player.getName() + " - Node: " + node);
-		if (this.plugin.vaultEnabled)
+		Permission vaultPermission = vaultPermission();
+		if (vaultPermission != null)
 		{
 			this.plugin.logDebug("Vault is enabled, checking there...");
 			return vaultPermission.has(player, node);
 		}
-		else
+
+		// We check the permissions the other way, using the defaults given through plugin.yml
+		this.plugin.logDebug("No vault. Checking the old way..");
+		List<org.bukkit.permissions.Permission> permissions = this.plugin.getDescription().getPermissions();
+
+		for (org.bukkit.permissions.Permission permission : permissions)
 		{
-			// We check the permissions the other way, using the defaults given
-			// through plugin.yml
-			this.plugin.logDebug("No vault. Checking the old way..");
-			List<org.bukkit.permissions.Permission> permissions = this.plugin.getDescription().getPermissions();
+			Map<String, Boolean> permissionChildren = permission.getChildren();
 
-			for (org.bukkit.permissions.Permission permission : permissions)
+			if ((permissionChildren.containsKey(node) && permissionChildren.get(node).booleanValue() == true) && permission.getName().contains(node))
 			{
-				//this.plugin.logDebug("Current permission: " + permission.getName());
-				Map<String, Boolean> permissionChildren = permission.getChildren();
-
-				if ((permissionChildren.containsKey(node) && permissionChildren.get(node).booleanValue() == true) && permission.getName().contains(node))
+				this.plugin.logDebug("Heyy, it was the correct perm finally... Perm: " + permission.getName() + " - Node: " + node);
+				this.plugin.logDebug("Current permissionDefault: " + permission.getDefault().toString());
+				if (permission.getDefault() == PermissionDefault.TRUE)
 				{
-					this.plugin.logDebug("Heyy, it was the correct perm finally... Perm: " + permission.getName() + " - Node: " + node);
-					this.plugin.logDebug("Current permissionDefault: " + permission.getDefault().toString());
-					if (permission.getDefault() == PermissionDefault.TRUE)
+					this.plugin.logDebug("It was default true! Returning true!");
+					return true;
+				}
+				else if (permission.getDefault() == PermissionDefault.OP)
+				{
+					this.plugin.logDebug("It was for operators!");
+					if (player.isOp())
 					{
-						this.plugin.logDebug("It was default true! Returning true!");
+						this.plugin.logDebug("Player is an operator! Returning true!");
 						return true;
 					}
-					else if (permission.getDefault() == PermissionDefault.OP)
-					{
-						this.plugin.logDebug("It was for operators!");
-						if (player.isOp())
-						{
-							this.plugin.logDebug("Player is an operator! Returning true!");
-							return true;
-						}
-						this.plugin.logDebug("Player is not an operator!");
-					}
-					else if (permission.getDefault() == PermissionDefault.NOT_OP)
-					{
-						this.plugin.logDebug("It was for non-operators!");
-						if (!player.isOp())
-						{
-							this.plugin.logDebug("Player is not an operator! Returning true!");
-							return true;
-						}
-						this.plugin.logDebug("Player is an operator!");
-					}
-					break;
+					this.plugin.logDebug("Player is not an operator!");
 				}
+				else if (permission.getDefault() == PermissionDefault.NOT_OP)
+				{
+					this.plugin.logDebug("It was for non-operators!");
+					if (!player.isOp())
+					{
+						this.plugin.logDebug("Player is not an operator! Returning true!");
+						return true;
+					}
+					this.plugin.logDebug("Player is an operator!");
+				}
+				break;
 			}
 		}
 		this.plugin.logDebug("Returning false!");
 		return false;
 	}
 
-	public boolean isGroup(String groupName)
-	{
-		if (this.plugin.vaultEnabled)
-		{
-			for (String str : vaultPermission.getGroups())
-			{
-				if (str.contains(groupName))
-					return true;
-			}
-		}
-		return false;
-	}
-
 	public String getGroup(String playerName)
 	{
-		if (this.plugin.vaultEnabled)
+		Permission vaultPermission = vaultPermission();
+		if (vaultPermission != null)
 		{
-			return vaultPermission.getPrimaryGroup(plugin.getServer().getPlayer(playerName));
-		}
-		return "";
-	}
-
-	public String getPrefix(String playerName)
-	{
-		if (this.plugin.vaultEnabled)
-		{
-			if (vaultChat != null) {
-				Player player = plugin.getServer().getPlayer(playerName);
-				return vaultChat.getPlayerPrefix(player);
-			}
+			return vaultPermission.getPrimaryGroup(this.plugin.getServer().getPlayer(playerName));
 		}
 		return "";
 	}
 
 	public void setGroup(String playerName, String groupName)
 	{
-		if (this.plugin.vaultEnabled)
+		Permission vaultPermission = vaultPermission();
+		if (vaultPermission != null)
 		{
-			Player player = plugin.getServer().getPlayer(playerName);
+			Player player = this.plugin.getServer().getPlayer(playerName);
 			vaultPermission.playerAddGroup(player, groupName);
 		}
 	}

@@ -13,7 +13,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.managers.ClanManager.ClanType;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
@@ -27,9 +27,9 @@ public final class CommandUtil
 	}
 
 	/** The console and ops always pass; a null node means no permission is needed */
-	public static boolean hasPermission(Player player, String node)
+	public static boolean hasPermission(WerewolfContext ctx, Player player, String node)
 	{
-		return node == null || player == null || player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, node);
+		return node == null || player == null || player.isOp() || ctx.getPermissionsManager().hasPermission(player, node);
 	}
 
 	public static String senderName(Player player)
@@ -37,15 +37,15 @@ public final class CommandUtil
 		return player == null ? CONSOLE : player.getName();
 	}
 
-	public static void sendNoPermission(Werewolf plugin, Player player)
+	public static void sendNoPermission(WerewolfContext ctx, Player player)
 	{
-		plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LANGUAGESTRING.NoPermissionForCommand, ChatColor.RED));
+		ctx.getPlugin().sendInfo(player, ctx.getLanguageManager().getLanguageString(LANGUAGESTRING.NoPermissionForCommand, ChatColor.RED));
 	}
 
-	public static void sendUsage(Werewolf plugin, Player player, String usage, LANGUAGESTRING help)
+	public static void sendUsage(WerewolfContext ctx, Player player, String usage, LANGUAGESTRING help)
 	{
-		Werewolf.getLanguageManager().setType(usage);
-		plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(help, ChatColor.RED));
+		ctx.getLanguageManager().setType(usage);
+		ctx.getPlugin().sendInfo(player, ctx.getLanguageManager().getLanguageString(help, ChatColor.RED));
 	}
 
 	public static boolean hasEmptyHand(Player player)
@@ -61,12 +61,12 @@ public final class CommandUtil
 	}
 
 	/** Matches a clan by enum name or display name, ignoring case, colours and spaces */
-	public static ClanType parseClan(String name)
+	public static ClanType parseClan(WerewolfContext ctx, String name)
 	{
 		String wanted = ChatColor.stripColor(name).replace(" ", "");
 		for (ClanType clan : ClanType.values())
 		{
-			String clanName = Werewolf.getClanManager().getClanName(clan);
+			String clanName = ctx.getClanManager().getClanName(clan);
 			if (clan.name().equalsIgnoreCase(wanted) || (clanName != null && ChatColor.stripColor(clanName).replace(" ", "").equalsIgnoreCase(wanted)))
 			{
 				return clan;
@@ -76,24 +76,24 @@ public final class CommandUtil
 	}
 
 	/** Clan names as {@link #parseClan} accepts them, for messages and tab completion */
-	public static List<String> clanNames()
+	public static List<String> clanNames(WerewolfContext ctx)
 	{
 		List<String> names = new ArrayList<String>();
 		for (ClanType clan : ClanType.values())
 		{
-			String clanName = Werewolf.getClanManager().getClanName(clan);
+			String clanName = ctx.getClanManager().getClanName(clan);
 			names.add(clanName != null ? ChatColor.stripColor(clanName).replace(" ", "") : clan.name());
 		}
 		return names;
 	}
 
 	/** Names of all werewolves, including offline ones */
-	public static Set<String> werewolfNames(Werewolf plugin)
+	public static Set<String> werewolfNames(WerewolfContext ctx)
 	{
-		Set<String> names = new HashSet<String>(Werewolf.getWerewolfManager().getWerewolfPlayerNames());
-		for (Player online : plugin.getServer().getOnlinePlayers())
+		Set<String> names = new HashSet<String>(ctx.getWerewolfManager().getWerewolfPlayerNames());
+		for (Player online : ctx.getPlugin().getServer().getOnlinePlayers())
 		{
-			if (Werewolf.getWerewolfManager().isWerewolf(online))
+			if (ctx.getWerewolfManager().isWerewolf(online))
 			{
 				names.add(online.getName());
 			}
@@ -105,21 +105,21 @@ public final class CommandUtil
 	 * Finds a player by name, online or not: online players, then werewolves.yml, then players the server has seen.
 	 * Unknown names give null rather than a made-up offline player.
 	 */
-	public static UUID findPlayerId(Werewolf plugin, String name)
+	public static UUID findPlayerId(WerewolfContext ctx, String name)
 	{
-		Player online = plugin.getServer().getPlayerExact(name);
+		Player online = ctx.getPlugin().getServer().getPlayerExact(name);
 		if (online != null)
 		{
 			return online.getUniqueId();
 		}
 
-		UUID werewolfId = Werewolf.getWerewolfManager().findWerewolfByName(name);
+		UUID werewolfId = ctx.getWerewolfManager().findWerewolfByName(name);
 		if (werewolfId != null)
 		{
 			return werewolfId;
 		}
 
-		for (OfflinePlayer offline : plugin.getServer().getOfflinePlayers())
+		for (OfflinePlayer offline : ctx.getPlugin().getServer().getOfflinePlayers())
 		{
 			if (name.equalsIgnoreCase(offline.getName()))
 			{
@@ -127,25 +127,25 @@ public final class CommandUtil
 			}
 		}
 
-		online = plugin.getServer().getPlayer(name);
+		online = ctx.getPlugin().getServer().getPlayer(name);
 		return online != null ? online.getUniqueId() : null;
 	}
 
 	/** Looks up a werewolf by name for an admin command, telling the sender if there is none */
-	public static UUID findWerewolf(Werewolf plugin, Player player, String name)
+	public static UUID findWerewolf(WerewolfContext ctx, Player player, String name)
 	{
-		UUID playerId = findPlayerId(plugin, name);
+		UUID playerId = findPlayerId(ctx, name);
 		if (playerId == null)
 		{
-			Werewolf.getLanguageManager().setPlayerName(name);
-			plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LANGUAGESTRING.AdminUnknownPlayer, ChatColor.RED));
+			ctx.getLanguageManager().setPlayerName(name);
+			ctx.getPlugin().sendInfo(player, ctx.getLanguageManager().getLanguageString(LANGUAGESTRING.AdminUnknownPlayer, ChatColor.RED));
 			return null;
 		}
 
-		if (!Werewolf.getWerewolfManager().isWerewolf(playerId))
+		if (!ctx.getWerewolfManager().isWerewolf(playerId))
 		{
-			Werewolf.getLanguageManager().setPlayerName(name);
-			plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LANGUAGESTRING.AdminNotAWerewolf, ChatColor.RED));
+			ctx.getLanguageManager().setPlayerName(name);
+			ctx.getPlugin().sendInfo(player, ctx.getLanguageManager().getLanguageString(LANGUAGESTRING.AdminNotAWerewolf, ChatColor.RED));
 			return null;
 		}
 

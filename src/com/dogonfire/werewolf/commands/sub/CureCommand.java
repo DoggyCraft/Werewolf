@@ -9,7 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
-import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.CommandUtil;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.events.WerewolfCureEvent;
@@ -18,9 +18,9 @@ import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 /** /ww cure <player>: cures a werewolf, online or offline. Unlike /ww toggle it never turns anyone into a werewolf */
 public class CureCommand extends SubCommand
 {
-	public CureCommand(Werewolf plugin)
+	public CureCommand(WerewolfContext ctx)
 	{
-		super(plugin, "cure", "werewolf.cureother", false, "/ww cure <playername>", LANGUAGESTRING.HelpCureOther);
+		super(ctx, "cure", "werewolf.cureother", false, "/ww cure <playername>", LANGUAGESTRING.HelpCureOther);
 	}
 
 	@Override
@@ -34,20 +34,20 @@ public class CureCommand extends SubCommand
 	{
 		if (args.length < 2)
 		{
-			CommandUtil.sendUsage(this.plugin, player, "/ww cure <player>", LANGUAGESTRING.HelpCureOther);
+			CommandUtil.sendUsage(ctx, player, "/ww cure <player>", LANGUAGESTRING.HelpCureOther);
 			return;
 		}
 
-		UUID playerId = CommandUtil.findWerewolf(this.plugin, player, args[1]);
+		UUID playerId = CommandUtil.findWerewolf(ctx, player, args[1]);
 		if (playerId == null)
 		{
 			return;
 		}
 
-		String name = Werewolf.getWerewolfManager().getPlayerName(playerId);
+		String name = ctx.getWerewolfManager().getPlayerName(playerId);
 		lang().setPlayerName(name);
 
-		if (!Werewolf.getWerewolfManager().unmakeWerewolf(playerId, WerewolfCureEvent.Cause.COMMAND))
+		if (!ctx.getWerewolfManager().unmakeWerewolf(playerId, WerewolfCureEvent.Cause.COMMAND))
 		{
 			send(player, LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED);
 			return;
@@ -71,7 +71,7 @@ public class CureCommand extends SubCommand
 		List<String> result = new ArrayList<String>();
 		if (args.length == 2)
 		{
-			StringUtil.copyPartialMatches(args[1], CommandUtil.werewolfNames(this.plugin), result);
+			StringUtil.copyPartialMatches(args[1], CommandUtil.werewolfNames(ctx), result);
 		}
 		return result;
 	}

@@ -32,7 +32,6 @@ permissions:
             werewolf.sethome: true
             werewolf.home: true
             werewolf.alpha.call: true
-            werewolf.acceptcall: true
             werewolf.sign.infection.use: true
             werewolf.sign.cure.use: true
             werewolf.sign.wolfbane.use: true
@@ -42,7 +41,6 @@ permissions:
             werewolf.potion.infection.drink: true
             werewolf.howl: true
             werewolf.growl: true
-            werewolf.cure: true
             werewolf.becomeinfected: true
             werewolf.infectother: true
             werewolf.bounty: true
@@ -106,9 +104,6 @@ permissions:
     werewolf.alpha.call:
         description: Allows the player to call clan members when he is the clan alpha 
         default: true
-    werewolf.accept:
-        description: Allows the player to accept calls from the clan alpha 
-        default: true
     werewolf.potion.infection.create:
         description: Allows the player to create a Werewolf infection potion 
         default: false           
@@ -136,9 +131,6 @@ permissions:
     werewolf.transform:
         description: Instantly transforms player into Werewolf form 
         default: true           
-    werewolf.seer:
-        description: Allows the Player to see a Werewolf players original skin 
-        default: false           
     werewolf.listener:
         description: Allows the Player to understand Werewolf chat 
         default: false                

@@ -7,8 +7,10 @@ import java.util.UUID;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
 import org.bukkit.World;
+import com.dogonfire.werewolf.tasks.CentralMessageTask;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.WerewolfContext;
 
 /**
  * Moon phase and night timing for each world. The phase follows vanilla: it is the world's day number
@@ -62,12 +64,14 @@ public class MoonManager
 	}
 
 	private final Werewolf				plugin;
+	private final WerewolfContext ctx;
 	private final HashMap<UUID, Long>	lastFullMoonAnnouncementTimes	= new HashMap<UUID, Long>();
 	private final HashMap<UUID, Long>	lastWorldUpdates				= new HashMap<UUID, Long>();
 
-	public MoonManager(Werewolf plugin)
+	public MoonManager(WerewolfContext ctx)
 	{
-		this.plugin = plugin;
+		this.ctx = ctx;
+		this.plugin = ctx.getPlugin();
 	}
 
 	public long getDay(World world)
@@ -158,21 +162,21 @@ public class MoonManager
 		switch (getDaysToNextFullMoon(world))
 		{
 			case 0:
-				return Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.Today, ChatColor.GOLD);
+				return ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.Today, ChatColor.GOLD);
 			case 1:
-				return Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.Tomorrow, ChatColor.GOLD);
+				return ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.Tomorrow, ChatColor.GOLD);
 			case 2:
-				return Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In2Days, ChatColor.GOLD);
+				return ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In2Days, ChatColor.GOLD);
 			case 3:
-				return Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In3Days, ChatColor.GOLD);
+				return ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In3Days, ChatColor.GOLD);
 			case 4:
-				return Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In4Days, ChatColor.GOLD);
+				return ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In4Days, ChatColor.GOLD);
 			case 5:
-				return Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In5Days, ChatColor.GOLD);
+				return ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In5Days, ChatColor.GOLD);
 			case 6:
-				return Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In6Days, ChatColor.GOLD);
+				return ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In6Days, ChatColor.GOLD);
 			default:
-				return Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In7Days, ChatColor.GOLD);
+				return ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In7Days, ChatColor.GOLD);
 		}
 	}
 
@@ -201,24 +205,29 @@ public class MoonManager
 				continue;
 			}
 
-			Set<UUID> werewolfPlayers = Werewolf.getWerewolfManager().getOnlineWerewolves(world);
+			Set<UUID> werewolfPlayers = ctx.getWerewolfManager().getOnlineWerewolves(world);
 			int numberOfTurningWerewolves = werewolfPlayers.size();
 
 			this.plugin.logDebug("Number Of Turning Werewolves is " + numberOfTurningWerewolves);
 
 			if (numberOfTurningWerewolves > 0)
 			{
-				Werewolf.getLanguageManager().setAmount("" + numberOfTurningWerewolves);
-				Werewolf.getLanguageManager().setPlayerName(world.getName());
+				ctx.getLanguageManager().setAmount("" + numberOfTurningWerewolves);
+				ctx.getLanguageManager().setPlayerName(world.getName());
 
-				String fullMoonText = ChatColor.BOLD + Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.FullMoonIsRising, ChatColor.GOLD);
-				String numberOfWerewolvesText = ChatColor.BOLD + Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.FullMoonNumberOfWerewolves, ChatColor.GOLD);
+				String fullMoonText = ChatColor.BOLD + ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.FullMoonIsRising, ChatColor.GOLD);
+				String numberOfWerewolvesText = ChatColor.BOLD + ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.FullMoonNumberOfWerewolves, ChatColor.GOLD);
 
-				plugin.announcementMessage(world, fullMoonText, Sound.AMBIENT_CAVE, 20);
-				plugin.announcementMessage(world, numberOfWerewolvesText, Sound.AMBIENT_CAVE, 140);
+				announce(world, fullMoonText, Sound.AMBIENT_CAVE, 20);
+				announce(world, numberOfWerewolvesText, Sound.AMBIENT_CAVE, 140);
 
 				this.lastFullMoonAnnouncementTimes.put(world.getUID(), System.currentTimeMillis());
 			}
 		}
+	}
+
+	private void announce(World world, String messageText, Sound sound, long delay)
+	{
+		this.plugin.getServer().getScheduler().runTaskLater(this.plugin, new CentralMessageTask(world, messageText, sound), delay);
 	}
 }

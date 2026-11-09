@@ -143,7 +143,8 @@ public class HuntManager
 			return;
 		}
 		
-		if(!Werewolf.getHuntManager().isHunting(killerId))
+		// Hunt mode (/ww hunt) or a tracker locked onto a target both count as hunting
+		if(!Werewolf.getHuntManager().isHunting(killerId) && !Werewolf.getTrackerManager().hasTarget(killerId))
 		{
 			return;
 		}

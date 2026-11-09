@@ -39,6 +39,8 @@ import org.bukkit.util.Vector;
 
 public class PlayerListener implements Listener
 {
+	public static final String	IMMUNE_WOLFBANE	= "werewolf.immunewolfbane";
+
 	private Werewolf	plugin	= null;
 	private Random		random	= new Random();
 
@@ -298,6 +300,23 @@ public class PlayerListener implements Listener
 			if (livingEntity instanceof Player)
 			{
 				Player player = (Player) livingEntity;
+
+				if (player.hasPermission(IMMUNE_WOLFBANE) || !Werewolf.getWerewolfManager().isWerewolf(player))
+				{
+					continue;
+				}
+
+				// In human form, wolfbane holds the beast back: the /ww transform cooldown starts over
+				if (Werewolf.getWerewolfManager().isFullWerewolf(player.getUniqueId()) && !Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
+				{
+					Werewolf.getWerewolfManager().restartTransformCooldown(player.getUniqueId());
+					if (plugin.transformCooldownSeconds > 0)
+					{
+						Werewolf.getLanguageManager().setAmount("" + plugin.transformCooldownSeconds);
+						player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WolfbaneHumanForm, ChatColor.LIGHT_PURPLE));
+					}
+					continue;
+				}
 
 				if (Werewolf.getWerewolfManager().isWolfForm(player.getUniqueId()) && random.nextInt(100) < plugin.wolfbaneUntransformChance)
 				{

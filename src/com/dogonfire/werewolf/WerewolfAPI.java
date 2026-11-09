@@ -48,6 +48,21 @@ public class WerewolfAPI
 		return Werewolf.getItemManager().isSilverSword(item);
 	}
 
+	public static ItemStack newWerewolfTracker()
+	{
+		return Werewolf.getItemManager().newWerewolfTracker();
+	}
+
+	public static boolean isWerewolfSilverArmor(ItemStack item)
+	{
+		return Werewolf.getItemManager().isSilverArmor(item);
+	}
+
+	public static boolean isWerewolfTracker(ItemStack item)
+	{
+		return Werewolf.getItemManager().isWerewolfTracker(item);
+	}
+
 	public static boolean isWerewolfLoreBook(ItemStack item)
 	{
 		return Werewolf.getItemManager().isLoreBook(item);
@@ -81,7 +96,15 @@ public class WerewolfAPI
 	{
 		if (Werewolf.instance().vampireEnabled)
 		{
-			return VampireAPI.isVampire(player);
+			try
+			{
+				return VampireAPI.isVampire(player);
+			}
+			catch (AssertionError e)
+			{
+				// VampireRevamp hasn't loaded this player's data yet
+				return false;
+			}
 		}
 		return false;
 	}
@@ -92,7 +115,7 @@ public class WerewolfAPI
 		{
 			Player player = Bukkit.getPlayer(playerId);
 			// VampireAPI only works on online players
-			return player != null && VampireAPI.isVampire(player);
+			return player != null && isVampire(player);
 		}
 		return false;
 	}

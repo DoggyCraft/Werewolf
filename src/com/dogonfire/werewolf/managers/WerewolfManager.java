@@ -583,6 +583,12 @@ public class WerewolfManager
 		return msLeft <= 0 ? 0 : (msLeft + 999L) / 1000L;
 	}
 
+	/** Starts the /ww transform cooldown over from now, as if the werewolf had just changed form (wolfbane) */
+	public void restartTransformCooldown(UUID playerId)
+	{
+		this.lastFormChanges.put(playerId, System.currentTimeMillis());
+	}
+
 	public void setLastHowl(UUID playerId)
 	{
 		this.lastHowls.put(playerId, System.currentTimeMillis());

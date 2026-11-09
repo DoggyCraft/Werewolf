@@ -7,6 +7,8 @@ import com.dogonfire.werewolf.disguises.WerewolfDisguiseAPI;
 import com.dogonfire.werewolf.events.WerewolfTransformEvent;
 import com.dogonfire.werewolf.listeners.ChatListener;
 import com.dogonfire.werewolf.listeners.DamageListener;
+import com.dogonfire.werewolf.listeners.HuntingGearListener;
+import com.dogonfire.werewolf.listeners.VampireHuntingListener;
 import com.dogonfire.werewolf.listeners.InteractListener;
 import com.dogonfire.werewolf.listeners.InventoryListener;
 import com.dogonfire.werewolf.listeners.PlayerListener;
@@ -137,6 +139,8 @@ public class Werewolf extends JavaPlugin
 	private static ItemManager itemManager								= null;
 	private static MoonManager					moonManager								= null;
 	private static WolfFormManager				wolfFormManager							= null;
+	private static TrackerManager				trackerManager							= null;
+	private static ScentManager					scentManager							= null;
 
 	public String								potionName								= "Witherfang";
 	public String								werewolfBiteName						= "Bloodmoon";
@@ -174,6 +178,30 @@ public class Werewolf extends JavaPlugin
 	public boolean								craftableSilverSwordEnabled				= true;
 	public boolean								craftableSilverArmorEnabled				= true;
 	public boolean								craftableLoreBookEnabled				= true;
+	public boolean								craftableWerewolfTrackerEnabled			= true;
+	public boolean								craftableVampireTrackerEnabled			= true;
+	public EnumMap<ItemManager.ArmorPiece, Integer>	silverArmorPurity					= new EnumMap<ItemManager.ArmorPiece, Integer>(ItemManager.ArmorPiece.class);
+	public EnumMap<ItemManager.ArmorPiece, Integer>	silverArmorDefense					= new EnumMap<ItemManager.ArmorPiece, Integer>(ItemManager.ArmorPiece.class);
+	public double								silverSwordPenalty						= 2.0D;
+	public boolean								silverSwordBypassesDefense				= true;
+	public boolean								huntingEnabled							= true;
+	public boolean								trackerUseEitherHand					= true;
+	public boolean								trackWerewolfWolfForm					= true;
+	public boolean								trackWerewolfHumanForm					= false;
+	public boolean								trackWerewolfDaytime					= false;
+	public boolean								trackWerewolfNighttime					= true;
+	public boolean								trackVampireDaytime						= false;
+	public boolean								trackVampireNighttime					= true;
+	public int									transformsForScentTrack					= 5;
+	public int									scentChance								= 10;
+	public int									scentRange								= 8;
+	public double								scentYOffset							= 0.0D;
+	public int									scentParticleAmount						= 10;
+	public int									scentDistanceFar						= 500;
+	public int									scentDistanceClose						= 200;
+	public int									scentDistanceVeryClose					= 50;
+	public int									scentSlownessAmplifier					= 2;
+	public int									sniffCooldownSeconds					= 5;
 
 
 	public static Werewolf instance()
@@ -204,6 +232,16 @@ public class Werewolf extends JavaPlugin
 	public static WolfFormManager getWolfFormManager()
 	{
 		return wolfFormManager;
+	}
+
+	public static TrackerManager getTrackerManager()
+	{
+		return trackerManager;
+	}
+
+	public static ScentManager getScentManager()
+	{
+		return scentManager;
 	}
 
 	public static SignManager getSignManager()
@@ -320,6 +358,15 @@ public class Werewolf extends JavaPlugin
 			CompassTrackerTask.stop();
 		}
 
+		if (scentManager != null)
+		{
+			scentManager.stopAll();
+		}
+		if (trackerManager != null)
+		{
+			trackerManager.clearAll();
+		}
+
 		for (Player player : getServer().getOnlinePlayers())
 		{
 			if (getWerewolfManager().isWerewolf(player) && getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
@@ -342,7 +389,8 @@ public class Werewolf extends JavaPlugin
 		InventoryListener inventoryListener = null;
 		ChatListener chatListener = null;
 		WerewolfRestrictionListener restrictionListener = null;
-		
+		HuntingGearListener huntingGearListener = null;
+
 		plugin = this;
 		instance = this;
 		server = getServer();
@@ -359,12 +407,15 @@ public class Werewolf extends JavaPlugin
 		// potionManager = new PotionManager(this);
 		languageManager = new LanguageManager(this);
 		statisticsManager = new StatisticsManager();
-		itemManager = new ItemManager(this);		
+		itemManager = new ItemManager(this);
+		trackerManager = new TrackerManager(this);
+		scentManager = new ScentManager(this);
 		damageListener = new DamageListener(this);
 		playerListener = new PlayerListener(this);
 		interactListener = new InteractListener(this);
 		chatListener = new ChatListener(this);
 		restrictionListener = new WerewolfRestrictionListener(this);
+		huntingGearListener = new HuntingGearListener(this);
 		skinManager = new SkinManager(this);
 
 		// If ! prevent armor
@@ -431,6 +482,12 @@ public class Werewolf extends JavaPlugin
 		getServer().getPluginManager().registerEvents(damageListener, this);
 		getServer().getPluginManager().registerEvents(chatListener, this);
 		getServer().getPluginManager().registerEvents(restrictionListener, this);
+		getServer().getPluginManager().registerEvents(huntingGearListener, this);
+		if (this.vampireEnabled)
+		{
+			// Only loaded with VampireRevamp present, as it references its classes
+			getServer().getPluginManager().registerEvents(new VampireHuntingListener(), this);
+		}
 		if (this.dropArmorOnTransform)
 		{
 			getServer().getPluginManager().registerEvents(inventoryListener, this);
@@ -474,6 +531,21 @@ public class Werewolf extends JavaPlugin
 				Werewolf.getWerewolfManager().update();
 			}
 		}, 20L, 100L);
+
+		// Tracker compasses, scent trails and the silver sword penalty, once a second
+		getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable()
+		{
+			public void run()
+			{
+				if (!Werewolf.pluginEnabled)
+				{
+					return;
+				}
+				Werewolf.getTrackerManager().update();
+				Werewolf.getScentManager().update();
+				Werewolf.getItemManager().update();
+			}
+		}, 20L, 20L);
 
 		if (this.useClans)
 		{
@@ -649,6 +721,7 @@ public class Werewolf extends JavaPlugin
 		this.transformsForNoDropItems = config.getInt("Maturity.NoDropItems", 3);
 
 		this.transformsForControlledTransformation = config.getInt("Maturity.ControlledTransformation", 7);
+		this.transformsForScentTrack = config.getInt("Maturity.ScentTrack", 5);
 		this.transformsForGoldImmunity = config.getInt("Maturity.GoldImmunity", 10);
 		this.levelForIntent = config.getInt("Maturity.Intent", 2);
 		this.werewolfIntentInfectionRisk = config.getDouble("Infection.WerewolfBiteIntentRisk", 0.25D);
@@ -661,6 +734,25 @@ public class Werewolf extends JavaPlugin
 		this.transformCooldownSeconds = config.getInt("Cooldowns.Transform", 600);
 		this.howlCooldownSeconds = config.getInt("Cooldowns.Howl", 60);
 		this.growlCooldownSeconds = config.getInt("Cooldowns.Growl", 30);
+		this.sniffCooldownSeconds = config.getInt("Cooldowns.Sniff", 5);
+
+		this.scentChance = config.getInt("Scent.Chance", 10);
+		this.scentRange = config.getInt("Scent.Range", 8);
+		this.scentYOffset = config.getDouble("Scent.YOffset", 0.0D);
+		this.scentParticleAmount = config.getInt("Scent.ParticleAmount", 10);
+		this.scentDistanceFar = config.getInt("Scent.Distances.Far", 500);
+		this.scentDistanceClose = config.getInt("Scent.Distances.Close", 200);
+		this.scentDistanceVeryClose = config.getInt("Scent.Distances.VeryClose", 50);
+		this.scentSlownessAmplifier = config.getInt("Scent.SlownessAmplifier", 2);
+
+		this.huntingEnabled = config.getBoolean("Hunting.Enabled", true);
+		this.trackerUseEitherHand = config.getBoolean("Hunting.Trackers.UseEitherHand", true);
+		this.trackWerewolfWolfForm = config.getBoolean("Hunting.Target.Werewolf.WolfForm", true);
+		this.trackWerewolfHumanForm = config.getBoolean("Hunting.Target.Werewolf.HumanForm", false);
+		this.trackWerewolfDaytime = config.getBoolean("Hunting.Target.Werewolf.Daytime", false);
+		this.trackWerewolfNighttime = config.getBoolean("Hunting.Target.Werewolf.Nighttime", true);
+		this.trackVampireDaytime = config.getBoolean("Hunting.Target.Vampire.Daytime", false);
+		this.trackVampireNighttime = config.getBoolean("Hunting.Target.Vampire.Nighttime", true);
 
 		for (MoonManager.MoonPhase phase : MoonManager.MoonPhase.values())
 		{
@@ -724,6 +816,16 @@ public class Werewolf extends JavaPlugin
 		this.craftableInfectionPotionEnabled = config.getBoolean("Items.CraftableInfectionPotionEnabled", true);
 		this.craftableCurePotionEnabled = config.getBoolean("Items.CraftableCurePotionEnabled", true);
 		this.craftableWolfbanePotionEnabled = config.getBoolean("Items.CraftableWolfbanePotionEnabled", true);
+		this.craftableWerewolfTrackerEnabled = config.getBoolean("Items.CraftableWerewolfTracker", true);
+		this.craftableVampireTrackerEnabled = config.getBoolean("Items.CraftableVampireTracker", true);
+		this.silverSwordPenalty = config.getDouble("Items.SilverSwordPenalty", 2.0D);
+		this.silverSwordBypassesDefense = config.getBoolean("Items.SilverSwordBypassesDefense", true);
+		for (ItemManager.ArmorPiece piece : ItemManager.ArmorPiece.values())
+		{
+			String path = "Items.SilverArmor." + piece.getConfigName() + ".";
+			this.silverArmorPurity.put(piece, config.getInt(path + "Purity", piece.getDefaultPurity()));
+			this.silverArmorDefense.put(piece, config.getInt(path + "Defense", piece.getDefaultDefense()));
+		}
 
 		if (wolfFormManager != null)
 		{
@@ -856,6 +958,7 @@ public class Werewolf extends JavaPlugin
 		config.set("Maturity.ControlledTransformation", Integer.valueOf(this.transformsForControlledTransformation));
 		config.set("Maturity.GoldImmunity", Integer.valueOf(this.transformsForGoldImmunity));
 		config.set("Maturity.Intent", Integer.valueOf(this.levelForIntent));
+		config.set("Maturity.ScentTrack", Integer.valueOf(this.transformsForScentTrack));
 
 		config.set("Transformation.Limit", Boolean.valueOf(this.transformationLimitEnabled));
 		config.set("Transformation.Equation", this.transformationLimitEquation);
@@ -865,6 +968,25 @@ public class Werewolf extends JavaPlugin
 		config.set("Cooldowns.Transform", Integer.valueOf(this.transformCooldownSeconds));
 		config.set("Cooldowns.Howl", Integer.valueOf(this.howlCooldownSeconds));
 		config.set("Cooldowns.Growl", Integer.valueOf(this.growlCooldownSeconds));
+		config.set("Cooldowns.Sniff", Integer.valueOf(this.sniffCooldownSeconds));
+
+		config.set("Scent.Chance", Integer.valueOf(this.scentChance));
+		config.set("Scent.Range", Integer.valueOf(this.scentRange));
+		config.set("Scent.YOffset", Double.valueOf(this.scentYOffset));
+		config.set("Scent.ParticleAmount", Integer.valueOf(this.scentParticleAmount));
+		config.set("Scent.Distances.Far", Integer.valueOf(this.scentDistanceFar));
+		config.set("Scent.Distances.Close", Integer.valueOf(this.scentDistanceClose));
+		config.set("Scent.Distances.VeryClose", Integer.valueOf(this.scentDistanceVeryClose));
+		config.set("Scent.SlownessAmplifier", Integer.valueOf(this.scentSlownessAmplifier));
+
+		config.set("Hunting.Enabled", Boolean.valueOf(this.huntingEnabled));
+		config.set("Hunting.Trackers.UseEitherHand", Boolean.valueOf(this.trackerUseEitherHand));
+		config.set("Hunting.Target.Werewolf.WolfForm", Boolean.valueOf(this.trackWerewolfWolfForm));
+		config.set("Hunting.Target.Werewolf.HumanForm", Boolean.valueOf(this.trackWerewolfHumanForm));
+		config.set("Hunting.Target.Werewolf.Daytime", Boolean.valueOf(this.trackWerewolfDaytime));
+		config.set("Hunting.Target.Werewolf.Nighttime", Boolean.valueOf(this.trackWerewolfNighttime));
+		config.set("Hunting.Target.Vampire.Daytime", Boolean.valueOf(this.trackVampireDaytime));
+		config.set("Hunting.Target.Vampire.Nighttime", Boolean.valueOf(this.trackVampireNighttime));
 
 		for (MoonManager.MoonPhase phase : MoonManager.MoonPhase.values())
 		{
@@ -971,6 +1093,16 @@ public class Werewolf extends JavaPlugin
 		config.set("Items.CraftableInfectionPotionEnabled", Boolean.valueOf(this.craftableInfectionPotionEnabled));
 		config.set("Items.CraftableCurePotionEnabled", Boolean.valueOf(this.craftableCurePotionEnabled));
 		config.set("Items.CraftableWolfbanePotionEnabled", Boolean.valueOf(this.craftableWolfbanePotionEnabled));
+		config.set("Items.CraftableWerewolfTracker", Boolean.valueOf(this.craftableWerewolfTrackerEnabled));
+		config.set("Items.CraftableVampireTracker", Boolean.valueOf(this.craftableVampireTrackerEnabled));
+		config.set("Items.SilverSwordPenalty", Double.valueOf(this.silverSwordPenalty));
+		config.set("Items.SilverSwordBypassesDefense", Boolean.valueOf(this.silverSwordBypassesDefense));
+		for (ItemManager.ArmorPiece piece : ItemManager.ArmorPiece.values())
+		{
+			String path = "Items.SilverArmor." + piece.getConfigName() + ".";
+			config.set(path + "Purity", Integer.valueOf(this.silverArmorPurity.getOrDefault(piece, piece.getDefaultPurity())));
+			config.set(path + "Defense", Integer.valueOf(this.silverArmorDefense.getOrDefault(piece, piece.getDefaultDefense())));
+		}
 		/*
 		 * DamageManager.SilverSwordMultiplier =
 		 * config.getInt("Items.SilverSwordMultiplier", 2);

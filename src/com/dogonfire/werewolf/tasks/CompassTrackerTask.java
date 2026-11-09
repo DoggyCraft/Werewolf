@@ -93,11 +93,9 @@ public class CompassTrackerTask implements Runnable
 				if (watched == null)
 				{
 					watcher.setCompassTarget(watcher.getLocation());
-					return;
+					continue;
 				}
 				watcher.setCompassTarget(watched.getLocation());
-
-				watcher.saveData();
 			}
 		}
 	}

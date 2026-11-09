@@ -11,6 +11,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Wolf;
 import org.bukkit.event.EventHandler;
@@ -21,6 +22,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.util.Vector;
 
 import com.dogonfire.werewolf.managers.ClanManager;
+import com.dogonfire.werewolf.managers.DamageManager;
 import com.dogonfire.werewolf.managers.WolfFormManager;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.Werewolf;
@@ -85,6 +87,8 @@ public class DamageListener implements Listener
 
 				// Gold weapons cut through a werewolf's natural defence until it is mature enough to be immune
 				boolean goldHit = isGoldWeaponHit(event) && !Werewolf.getWerewolfManager().isGoldImmune(werewolfPlayer.getUniqueId());
+				boolean silverHit = isSilverSwordHit(event);
+				boolean bypassDefense = goldHit || (silverHit && this.plugin.silverSwordBypassesDefense);
 
 				switch (event.getCause())
 				{
@@ -102,7 +106,7 @@ public class DamageListener implements Listener
                     case THORNS:
                     case FREEZE:
 						// Per-clan natural defence (alphas have their own, lower value)
-						if (!goldHit)
+						if (!bypassDefense)
 						{
 							damage *= stats.defense;
 						}
@@ -110,6 +114,11 @@ public class DamageListener implements Listener
 
 					default:
 						break;
+				}
+
+				if (silverHit)
+				{
+					damage *= DamageManager.SilverSwordMultiplier;
 				}
 
 				event.setDamage(damage);
@@ -195,6 +204,8 @@ public class DamageListener implements Listener
 				}
 			}
 
+			applySilverArmor(damageEvent);
+
 			if (event.getEntity() != null && (event.getEntity() instanceof Player))
 			{
 				Player player = (Player) event.getEntity();
@@ -244,6 +255,59 @@ public class DamageListener implements Listener
 				return true;
 			default:
 				return false;
+		}
+	}
+
+	/** A wolf form werewolf hit by a silver sword: takes the silver multiplier and (by default) loses its natural defence */
+	private boolean isSilverSwordHit(EntityDamageEvent event)
+	{
+		if (!(event instanceof EntityDamageByEntityEvent) || (event.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK && event.getCause() != EntityDamageEvent.DamageCause.ENTITY_SWEEP_ATTACK))
+		{
+			return false;
+		}
+
+		Entity damager = ((EntityDamageByEntityEvent) event).getDamager();
+		if (!(damager instanceof LivingEntity) || ((LivingEntity) damager).getEquipment() == null)
+		{
+			return false;
+		}
+
+		return Werewolf.getItemManager().isSilverSword(((LivingEntity) damager).getEquipment().getItemInMainHand());
+	}
+
+	/** Silver armor takes a % off attacks by werewolves (in either form) and vampires */
+	private void applySilverArmor(EntityDamageByEntityEvent event)
+	{
+		if (!(event.getEntity() instanceof Player))
+		{
+			return;
+		}
+
+		Player victim = (Player) event.getEntity();
+		Player attacker = null;
+		if (event.getDamager() instanceof Player)
+		{
+			attacker = (Player) event.getDamager();
+		}
+		else if (event.getDamager() instanceof Projectile && ((Projectile) event.getDamager()).getShooter() instanceof Player)
+		{
+			attacker = (Player) ((Projectile) event.getDamager()).getShooter();
+		}
+
+		if (attacker == null || attacker.equals(victim) || !WerewolfAPI.isHuman(victim))
+		{
+			return;
+		}
+
+		if (!Werewolf.getWerewolfManager().isWerewolf(attacker) && !WerewolfAPI.isVampire(attacker))
+		{
+			return;
+		}
+
+		int defense = Werewolf.getItemManager().getSilverArmorDefense(victim);
+		if (defense > 0)
+		{
+			event.setDamage(event.getDamage() * (1.0D - defense / 100.0D));
 		}
 	}
 

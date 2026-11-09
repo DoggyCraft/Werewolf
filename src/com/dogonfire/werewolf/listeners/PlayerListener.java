@@ -7,6 +7,8 @@ import com.dogonfire.werewolf.managers.ClanManager;
 import com.dogonfire.werewolf.managers.DamageManager;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.events.WerewolfCureEvent;
+import com.dogonfire.werewolf.events.WerewolfTransformEvent;
 import com.dogonfire.werewolf.tasks.CheckTransformationTask;
 import com.dogonfire.werewolf.tasks.PotionEffectTask;
 import org.bukkit.ChatColor;
@@ -52,7 +54,7 @@ public class PlayerListener implements Listener
 		{
 			return;
 		}
-		Werewolf.getWerewolfManager().unsetWerewolfSkin(event.getPlayer().getUniqueId(), true);
+		Werewolf.getWerewolfManager().unsetWerewolfSkin(event.getPlayer().getUniqueId(), true, WerewolfTransformEvent.Reason.FORCED);
 		
 		if (Werewolf.getWerewolfManager().isWerewolf(event.getPlayer().getUniqueId())) {
 			// We want to be sure potion effects are cleared...
@@ -74,7 +76,7 @@ public class PlayerListener implements Listener
 	@EventHandler
 	public void onPlayerWorldChange(PlayerChangedWorldEvent event)
 	{
-		Werewolf.getWerewolfManager().unsetWerewolfSkin(event.getPlayer().getUniqueId(), true);
+		Werewolf.getWerewolfManager().unsetWerewolfSkin(event.getPlayer().getUniqueId(), true, WerewolfTransformEvent.Reason.FORCED);
 	}
 
 	@EventHandler
@@ -260,10 +262,9 @@ public class PlayerListener implements Listener
 			ClanManager.ClanType killerClan = Werewolf.getWerewolfManager().getWerewolfClan(event.getEntity().getKiller().getUniqueId());
 			ClanManager.ClanType victimClan = Werewolf.getWerewolfManager().getWerewolfClan(event.getEntity().getUniqueId());
 			
-			if (killerClan.equals(victimClan) && Werewolf.getClanManager().isAlpha(victimClan, event.getEntity().getUniqueId()))
+			if (killerClan.equals(victimClan) && Werewolf.getClanManager().isAlpha(victimClan, event.getEntity().getUniqueId())
+					&& Werewolf.getClanManager().assignAlphaInClan(killerClan, event.getEntity().getKiller().getUniqueId()))
 			{
-				Werewolf.getClanManager().assignAlphaInClan(killerClan, event.getEntity().getKiller().getUniqueId());
-
 				Werewolf.getLanguageManager().setPlayerName(killerName);
 				Werewolf.getWerewolfManager().sendMessageToClan(killerClan, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NewClanAlpha, ChatColor.WHITE));
 				
@@ -280,11 +281,11 @@ public class PlayerListener implements Listener
 		{
 			if (this.plugin.cureWerewolfWhenSlain)
 			{
-				Werewolf.getWerewolfManager().unmakeWerewolf(event.getEntity().getUniqueId());
+				Werewolf.getWerewolfManager().unmakeWerewolf(event.getEntity().getUniqueId(), WerewolfCureEvent.Cause.SLAIN);
 			}
 			else
 			{
-				Werewolf.getWerewolfManager().unsetWerewolfSkin(event.getEntity().getUniqueId(), false);
+				Werewolf.getWerewolfManager().unsetWerewolfSkin(event.getEntity().getUniqueId(), false, WerewolfTransformEvent.Reason.FORCED);
 
 				Werewolf.getWerewolfManager().setInfectedThisNight(event.getEntity().getUniqueId(), event.getEntity().getName(), true);
 			}
@@ -315,7 +316,7 @@ public class PlayerListener implements Listener
 					player.spawnParticle(Particle.DUST, player.getLocation().add(new Vector(0, 1, 0)), 100, dustOptions);
 					player.spawnParticle(Particle.DUST, player.getLocation().add(new Vector(0, 2, 0)), 100, dustOptions);
 
-					plugin.untransform(player);
+					plugin.untransform(player, WerewolfTransformEvent.Reason.WOLFBANE);
 				}
 			}
 		}

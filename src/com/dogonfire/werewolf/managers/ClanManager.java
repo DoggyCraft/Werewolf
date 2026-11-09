@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.events.NewAlphaEvent;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -447,18 +448,41 @@ public class ClanManager
 		return false;
 	}
 
-	public void assignAlphaInClan(ClanType clan, UUID playerId)
+	public boolean assignAlphaInClan(ClanType clan, UUID playerId)
 	{
-		if(playerId==null)
-		{	
-			this.clansConfig.set(clan.name() + ".Alpha", null);			
+		if (playerId == null)
+		{
+			this.clansConfig.set(clan.name() + ".Alpha", null);
 		}
 		else
 		{
+			String oldAlpha = this.clansConfig.getString(clan.name() + ".Alpha");
+			UUID oldAlphaId = null;
+			try
+			{
+				oldAlphaId = oldAlpha == null ? null : UUID.fromString(oldAlpha);
+			}
+			catch (IllegalArgumentException ignored)
+			{
+			}
+
+			if (playerId.equals(oldAlphaId))
+			{
+				return true;
+			}
+
+			NewAlphaEvent event = new NewAlphaEvent(clan, oldAlphaId, playerId);
+			plugin.getServer().getPluginManager().callEvent(event);
+			if (event.isCancelled())
+			{
+				return false;
+			}
+
 			this.clansConfig.set(clan.name() + ".Alpha", playerId.toString());			
 		}		
 
 		saveTimed();
+		return true;
 	}
 
 	public boolean hasRecentCall(ClanType clan)

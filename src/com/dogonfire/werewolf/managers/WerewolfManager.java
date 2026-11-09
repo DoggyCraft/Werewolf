@@ -26,6 +26,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import com.dogonfire.werewolf.events.WerewolfCureEvent;
+import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
+import com.dogonfire.werewolf.events.WerewolfTransformEvent;
 import com.dogonfire.werewolf.managers.ClanManager.ClanType;
 import com.dogonfire.werewolf.tasks.CheckTransformationTask;
 /*
@@ -286,8 +289,16 @@ public class WerewolfManager
 		}
 	}
 
-	public boolean makeWerewolf(Player player, boolean turnNow, ClanManager.ClanType clan)
+	public boolean makeWerewolf(Player player, boolean turnNow, ClanManager.ClanType clan, WerewolfInfectionEvent.Source source)
 	{
+		WerewolfInfectionEvent event = new WerewolfInfectionEvent(player, clan, source, turnNow);
+		plugin.getServer().getPluginManager().callEvent(event);
+		if (event.isCancelled())
+		{
+			return false;
+		}
+		clan = event.getClan();
+
 		if (turnNow)
 		{
 			setHumanForm(player.getUniqueId(), player.getName());
@@ -298,7 +309,7 @@ public class WerewolfManager
 
 			setWerewolfName(player.getUniqueId());
 
-			setWerewolfSkin(player);
+			setWerewolfSkin(player, WerewolfTransformEvent.Reason.INFECTION);
 
 			setWolfForm(player.getUniqueId(), player.getName());
 
@@ -321,8 +332,15 @@ public class WerewolfManager
 		return true;
 	}
 
-	public void unmakeWerewolf(UUID playerId)
+	public boolean unmakeWerewolf(UUID playerId, WerewolfCureEvent.Cause cause)
 	{
+		WerewolfCureEvent event = new WerewolfCureEvent(playerId, cause);
+		plugin.getServer().getPluginManager().callEvent(event);
+		if (event.isCancelled())
+		{
+			return false;
+		}
+
 		Player player = this.plugin.getServer().getPlayer(playerId);
 
 		if (player != null)
@@ -339,9 +357,10 @@ public class WerewolfManager
 		}
 
 		this.plugin.log(plugin.getServer().getOfflinePlayer(playerId).getName() + " was unmade from being a werewolf");
+		return true;
 	}
 
-	public void setWerewolfSkin(Player player)
+	public void setWerewolfSkin(Player player, WerewolfTransformEvent.Reason reason)
 	{
 		if (!Werewolf.pluginEnabled)
 		{
@@ -363,10 +382,17 @@ public class WerewolfManager
 			return;
 		}
 
+		WerewolfTransformEvent event = new WerewolfTransformEvent(player, getWerewolfClan(player.getUniqueId()), true, reason);
+		plugin.getServer().getPluginManager().callEvent(event);
+		if (event.isCancelled())
+		{
+			return;
+		}
+
 		this.plugin.disguiseWerewolf(player);
 	}
 
-	public void unsetWerewolfSkin(UUID playerId, boolean makeVisible)
+	public void unsetWerewolfSkin(UUID playerId, boolean makeVisible, WerewolfTransformEvent.Reason reason)
 	{
 		String playerName = plugin.getServer().getOfflinePlayer(playerId).getName();
 
@@ -382,6 +408,17 @@ public class WerewolfManager
 		{
 			this.plugin.logDebug("unsetWerewolfSkin(): " + playerName + " does not have a werewolf skin");
 			return;
+		}
+
+		Player onlinePlayer = this.plugin.getServer().getPlayer(playerId);
+		if (onlinePlayer != null)
+		{
+			WerewolfTransformEvent event = new WerewolfTransformEvent(onlinePlayer, getWerewolfClan(playerId), false, reason);
+			plugin.getServer().getPluginManager().callEvent(event);
+			if (event.isCancelled())
+			{
+				return;
+			}
 		}
 
 		if (isFullWerewolf(playerId))
@@ -1053,8 +1090,10 @@ public class WerewolfManager
 			if (!hasRecentTransformAutoCure(werewolfPlayerId))
 			{
 				String werewolfPlayerName = plugin.getServer().getOfflinePlayer(werewolfPlayerId).getName();
-				unmakeWerewolf(werewolfPlayerId);
-				this.plugin.log(werewolfPlayerName + " has not transformed for " + this.plugin.autoCureDays + " days. Removing his werewolf infection.");
+				if (unmakeWerewolf(werewolfPlayerId, WerewolfCureEvent.Cause.AUTO_CURE))
+				{
+					this.plugin.log(werewolfPlayerName + " has not transformed for " + this.plugin.autoCureDays + " days. Removing their werewolf infection.");
+				}
 			}
 		}
 
@@ -1063,31 +1102,39 @@ public class WerewolfManager
 			return;
 		}
 
-		Player player = (Player) this.plugin.getServer().getOnlinePlayers().toArray()[this.random.nextInt(this.plugin.getServer().getOnlinePlayers().size())];
+		Set<Player> changedForm = new HashSet<Player>();
 
-		if (isWerewolf(player))
+		for (Player player : new ArrayList<Player>(this.plugin.getServer().getOnlinePlayers()))
 		{
+			if (!isWerewolf(player))
+			{
+				continue;
+			}
+
 			if (WerewolfAPI.isVampire(player))
 			{
-				this.plugin.log(player.getName() + " is a Vampire! Removing his Werewolf infection...");
-				Werewolf.getWerewolfManager().unmakeWerewolf(player.getUniqueId());
-				return;
+				this.plugin.log(player.getName() + " is a Vampire! Removing their Werewolf infection...");
+				unmakeWerewolf(player.getUniqueId(), WerewolfCureEvent.Cause.VAMPIRISM);
+				changedForm.add(player);
 			}
+			else if (canTransform(player))
+			{
+				this.plugin.transform(player, WerewolfTransformEvent.Reason.MOON);
+				changedForm.add(player);
+			}
+			else if (canUntransform(player))
+			{
+				this.plugin.untransform(player, WerewolfTransformEvent.Reason.MOON);
+				changedForm.add(player);
+			}
+		}
 
-			if (Werewolf.getWerewolfManager().canTransform(player))
-			{
-				this.plugin.transform(player);
-				return;
-			}
-			else if (Werewolf.getWerewolfManager().canUntransform(player))
-			{
-				this.plugin.untransform(player);
-				return;
-			}
-			else if (this.plugin.werewolfUrges)
-			{
-				sendWerewolfUrges(player);
-			}
+		// Urges are rare flavour messages, so only one random player gets a chance per update
+		Player player = (Player) this.plugin.getServer().getOnlinePlayers().toArray()[this.random.nextInt(this.plugin.getServer().getOnlinePlayers().size())];
+
+		if (this.plugin.werewolfUrges && !changedForm.contains(player) && isWerewolf(player))
+		{
+			sendWerewolfUrges(player);
 		}
 
 		/*

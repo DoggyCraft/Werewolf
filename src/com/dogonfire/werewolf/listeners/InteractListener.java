@@ -3,6 +3,8 @@ package com.dogonfire.werewolf.listeners;
 import com.dogonfire.werewolf.managers.ClanManager;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.events.WerewolfCureEvent;
+import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
 
 
 import org.bukkit.ChatColor;
@@ -121,8 +123,10 @@ public class InteractListener implements Listener
 		{
 			if (Math.random() < this.plugin.cureChance)
 			{
-				Werewolf.getWerewolfManager().unmakeWerewolf(player.getUniqueId());
-				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkCureSuccess, ChatColor.LIGHT_PURPLE));
+				if (Werewolf.getWerewolfManager().unmakeWerewolf(player.getUniqueId(), WerewolfCureEvent.Cause.CURE_POTION))
+				{
+					player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkCureSuccess, ChatColor.LIGHT_PURPLE));
+				}
 			}
 			else
 			{
@@ -196,7 +200,7 @@ public class InteractListener implements Listener
 			{
 				public void run()
 				{
-					Werewolf.getWerewolfManager().makeWerewolf(targetPlayer, true, ClanManager.ClanType.Potion);
+					Werewolf.getWerewolfManager().makeWerewolf(targetPlayer, true, ClanManager.ClanType.Potion, WerewolfInfectionEvent.Source.POTION);
 				}
 			}, 140L);
 		}

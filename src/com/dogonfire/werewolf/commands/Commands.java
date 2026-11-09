@@ -9,6 +9,9 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.events.WerewolfCureEvent;
+import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
+import com.dogonfire.werewolf.events.WerewolfTransformEvent;
 import com.dogonfire.werewolf.managers.ClanManager;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import java.util.Objects;
@@ -473,7 +476,7 @@ public class Commands implements TabExecutor
 		}
 		if (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 		{
-			this.plugin.untransform(player);
+			this.plugin.untransform(player, WerewolfTransformEvent.Reason.CONTROLLED);
 		}
 		else
 		{
@@ -482,7 +485,7 @@ public class Commands implements TabExecutor
 				this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.CannotTransformSoSoon, ChatColor.RED));
 				return false;
 			}
-			this.plugin.transform(player);
+			this.plugin.transform(player, WerewolfTransformEvent.Reason.CONTROLLED);
 		}
 		return true;
 	}
@@ -673,7 +676,7 @@ public class Commands implements TabExecutor
 		{
 			Random random = new Random();
 
-			Werewolf.getWerewolfManager().makeWerewolf(player, true, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)]);
+			Werewolf.getWerewolfManager().makeWerewolf(player, true, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)], WerewolfInfectionEvent.Source.COMMAND);
 
 			Werewolf.getWerewolfManager().setInfectedThisNight(player.getUniqueId(), player.getName(), false);
 
@@ -681,7 +684,7 @@ public class Commands implements TabExecutor
 		}
 		else
 		{
-			Werewolf.getWerewolfManager().unmakeWerewolf(player.getUniqueId());
+			Werewolf.getWerewolfManager().unmakeWerewolf(player.getUniqueId(), WerewolfCureEvent.Cause.COMMAND);
 			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NotAWerewolfAnymore, ChatColor.AQUA));
 		}
 
@@ -709,7 +712,7 @@ public class Commands implements TabExecutor
 				if (!Werewolf.getWerewolfManager().isWerewolf(newWerewolf))
 				{
 					Random random = new Random();
-					Werewolf.getWerewolfManager().makeWerewolf(newWerewolf, true, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)]);
+					Werewolf.getWerewolfManager().makeWerewolf(newWerewolf, true, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)], WerewolfInfectionEvent.Source.COMMAND);
 					Werewolf.getWerewolfManager().setInfectedThisNight(newWerewolf.getUniqueId(), newWerewolf.getName(), false);
 					if (player != null)
 					{
@@ -728,7 +731,7 @@ public class Commands implements TabExecutor
 				}
 				else
 				{
-					Werewolf.getWerewolfManager().unmakeWerewolf(newWerewolf.getUniqueId());
+					Werewolf.getWerewolfManager().unmakeWerewolf(newWerewolf.getUniqueId(), WerewolfCureEvent.Cause.COMMAND);
 					if (player != null)
 					{
 						player.sendMessage(ChatColor.AQUA + newWerewolf.getName() + " is no longer a werewolf ...");
@@ -778,7 +781,7 @@ public class Commands implements TabExecutor
 				if (!Werewolf.getWerewolfManager().isWerewolf(newInfection))
 				{
 					Random random = new Random();
-					Werewolf.getWerewolfManager().makeWerewolf(newInfection, false, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)]);
+					Werewolf.getWerewolfManager().makeWerewolf(newInfection, false, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)], WerewolfInfectionEvent.Source.COMMAND);
 
 					this.plugin.sendInfo(player, ChatColor.GREEN + newInfection.getName() + " now has the werewolf infection!");
 					if (player == null)
@@ -823,7 +826,7 @@ public class Commands implements TabExecutor
 			if (!Werewolf.getWerewolfManager().isWerewolf(player))
 			{
 				Random random = new Random();
-				if (Werewolf.getWerewolfManager().makeWerewolf(player, false, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)]))
+				if (Werewolf.getWerewolfManager().makeWerewolf(player, false, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)], WerewolfInfectionEvent.Source.COMMAND))
 				{
 					player.sendMessage(ChatColor.AQUA + "You now have the werewolf infection!");
 				}
@@ -1508,7 +1511,7 @@ public class Commands implements TabExecutor
 						{
 							for (Player werewolf : world.getPlayers())
 							{
-								Werewolf.getWerewolfManager().setWerewolfSkin(werewolf);
+								Werewolf.getWerewolfManager().setWerewolfSkin(werewolf, WerewolfTransformEvent.Reason.COMMAND);
 							}
 						}
 					}
@@ -1535,7 +1538,7 @@ public class Commands implements TabExecutor
 
 						for (Player werewolfPlayer : world.getPlayers())
 						{
-							Werewolf.getWerewolfManager().unsetWerewolfSkin(werewolfPlayer.getUniqueId(), true);
+							Werewolf.getWerewolfManager().unsetWerewolfSkin(werewolfPlayer.getUniqueId(), true, WerewolfTransformEvent.Reason.COMMAND);
 						}
 					}
 				}

@@ -23,6 +23,7 @@ import com.dogonfire.werewolf.listeners.PlayerListener;
 import com.dogonfire.werewolf.listeners.WerewolfRestrictionListener;
 import com.dogonfire.werewolf.managers.*;
 import com.dogonfire.werewolf.tasks.CentralMessageTask;
+import com.dogonfire.werewolf.storage.Storage;
 import com.dogonfire.werewolf.tasks.DisguiseTask;
 import com.dogonfire.werewolf.tasks.UndisguiseTask;
 import com.dogonfire.werewolf.utils.PacketUtils;
@@ -37,7 +38,6 @@ import net.milkbowl.vault.economy.Economy;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Effect;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -69,6 +69,7 @@ public class Werewolf extends JavaPlugin
 	private static WerewolfManager				werewolfManager							= null;
 	private static HuntManager huntManager								= null;
 	private static TrophyManager				trophyManager							= null;
+	private static Storage						storage									= null;
 	private static SkinManager					skinManager								= null;
 	private static PermissionsManager			permissionsManager						= null;
 	private static WerewolfScoreboardManager	werewolfScoreboardManager				= null;
@@ -178,6 +179,11 @@ public class Werewolf extends JavaPlugin
 		return huntManager;
 	}
 
+	public static Storage getStorage()
+	{
+		return storage;
+	}
+
 	public static TrophyManager getTrophyManager()
 	{
 		return trophyManager;
@@ -203,18 +209,19 @@ public class Werewolf extends JavaPlugin
 		server.getScheduler().runTaskLater(plugin, new DisguiseTask(plugin, p), 1L);
 	}
 
-	public void undisguiseWerewolf(UUID playerId, boolean makeVisible, boolean forever)
+	/** Back to human form (the werewolf's data is kept) */
+	public void undisguiseWerewolf(UUID playerId, boolean makeVisible)
 	{
-		OfflinePlayer player = getServer().getOfflinePlayer(playerId);
+		server.getScheduler().runTaskLater(plugin, new UndisguiseTask(plugin, playerId, makeVisible, false, null), 8L);
+	}
 
-		if (player != null)
-		{
-			server.getScheduler().runTaskLater(plugin, new UndisguiseTask(plugin, playerId, makeVisible, forever), 8L);
-		}
-		else
-		{
-			server.getScheduler().runTaskLater(plugin, new UndisguiseTask(plugin, playerId, makeVisible, forever), 8L);
-		}
+	/**
+	 * The visual part of a cure: the caller has already removed the player's data. {@code originalGroup} is the
+	 * permission group to put them back in, read before the data was removed.
+	 */
+	public void undisguiseCuredWerewolf(UUID playerId, String originalGroup)
+	{
+		server.getScheduler().runTaskLater(plugin, new UndisguiseTask(plugin, playerId, true, true, originalGroup), 8L);
 	}
 
 	public void sendInfo(Player player, String message)
@@ -276,14 +283,11 @@ public class Werewolf extends JavaPlugin
 			}
 		}
 
-		// Both only save every few minutes on their own (saveTimed)
-		if (werewolfManager != null)
+		// Writes every changed data file and waits for the writes
+		if (storage != null)
 		{
-			werewolfManager.save();
-		}
-		if (clanManager != null)
-		{
-			clanManager.save();
+			storage.close();
+			storage = null;
 		}
 
 		pluginEnabled = false;
@@ -303,6 +307,11 @@ public class Werewolf extends JavaPlugin
 		plugin = this;
 		instance = this;
 		server = getServer();
+
+		// All data files are read into memory now; managers get their repository from here
+		storage = new Storage(getDataFolder(), getLogger());
+		storage.load();
+
 		loadSettings();
 
 		this.commands = new Commands(this);
@@ -311,8 +320,8 @@ public class Werewolf extends JavaPlugin
 
 		moonManager = new MoonManager(this);
 		wolfFormManager = new WolfFormManager(this);
-		werewolfManager = new WerewolfManager(this);
-		clanManager = new ClanManager(this);
+		werewolfManager = new WerewolfManager(this, storage.werewolves());
+		clanManager = new ClanManager(this, storage.clans());
 		// potionManager = new PotionManager(this);
 		languageManager = new LanguageManager(this);
 		statisticsManager = new StatisticsManager();
@@ -337,7 +346,7 @@ public class Werewolf extends JavaPlugin
 		if (pm.getPlugin("Vault") != null && pm.getPlugin("Vault").isEnabled())
 		{
 			this.vaultEnabled = true;
-			huntManager = new HuntManager(this);
+			huntManager = new HuntManager(this, storage.hunters());
 
 			log("Vault detected. Bounties and sign economy are enabled!");
 
@@ -416,7 +425,6 @@ public class Werewolf extends JavaPlugin
 		}
 
 		permissionsManager.load();
-		werewolfManager.load();
 		clanManager.load();
 		languageManager.load();
 
@@ -434,11 +442,6 @@ public class Werewolf extends JavaPlugin
 
 		itemManager.setupRecipes();
 
-		if (this.vaultEnabled)
-		{
-			huntManager.load();
-		}
-
 		if (this.settings.general().scoreboardsEnabled())
 		{
 			Werewolf.werewolfScoreboardManager = new WerewolfScoreboardManager();
@@ -451,6 +454,9 @@ public class Werewolf extends JavaPlugin
 				Werewolf.getWerewolfManager().update();
 			}
 		}, 20L, 100L);
+
+		// Writes changed data files every 3 minutes (and on /ww save and disable)
+		getServer().getScheduler().scheduleSyncRepeatingTask(this, () -> storage.flush(), 3600L, 3600L);
 
 		// Tracker compasses, scent trails and the silver sword penalty, once a second
 		getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable()
@@ -541,7 +547,7 @@ public class Werewolf extends JavaPlugin
 		reloadConfig();
 		loadSettings();
 
-		getWerewolfManager().load();
+		storage.reload();
 		getClanManager().load();
 		getLanguageManager().load();
 	}
@@ -558,7 +564,8 @@ public class Werewolf extends JavaPlugin
 
 		if (this.settings.general().trophiesEnabled() && trophyManager == null)
 		{
-			trophyManager = new TrophyManager(this);
+			trophyManager = new TrophyManager(this, storage.trophies());
+			getServer().getPluginManager().registerEvents(trophyManager, this);
 		}
 
 		if (this.settings.signs().enabled() && signManager == null)

@@ -1,6 +1,5 @@
 package com.dogonfire.werewolf.managers;
 
-import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,9 +13,9 @@ import java.util.UUID;
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.config.Settings;
 import com.dogonfire.werewolf.events.NewAlphaEvent;
+import com.dogonfire.werewolf.storage.ClanRecord;
+import com.dogonfire.werewolf.storage.ClanRepository;
 import org.bukkit.Location;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
@@ -30,16 +29,13 @@ public class ClanManager
 		WildBite, WerewolfBite, Potion;
 	}
 
-	private long						lastSaveTime		= 0L;
-	
 	private HashMap<ClanType, String>	werewolfAccount		= new HashMap<ClanType, String>();
 	private HashMap<ClanType, UUID>		werewolfAccountId	= new HashMap<ClanType, UUID>();
 
 	private HashMap<ClanType, String>	werewolfTextures	= new HashMap<ClanType, String>();
 	private HashMap<ClanType, String>	werewolfTextureSignatures	= new HashMap<ClanType, String>();
 
-	private FileConfiguration			clansConfig			= null;
-	private File						clansConfigFile		= null;
+	private final ClanRepository		clans;
 	private HashMap<ClanType, Double>	totalClanPoints		= new HashMap<ClanType, Double>();
 	private HashMap<String, Double>		playerClanPoints	= new HashMap<String, Double>();
 	private HashMap<ClanType, String>	clanNames			= new HashMap<ClanType, String>();
@@ -48,9 +44,10 @@ public class ClanManager
 	private UUID 						alphaAccountId		= null;
 	private String 						alphaAccount		= "";
 
-	public ClanManager(Werewolf plugin)
+	public ClanManager(Werewolf plugin, ClanRepository clans)
 	{
 		this.plugin = plugin;
+		this.clans = clans;
 	}
 
 	//Bloodmoon da508eccdbd946c5809547b91aa4ff5f
@@ -62,14 +59,6 @@ public class ClanManager
 	//UUID of player DogOnFire is 54f089fc-19e7-4a3e-9902-b90c5eb1cbed
 	public void load()
 	{
-		if (this.clansConfigFile == null)
-		{
-			this.clansConfigFile = new File(this.plugin.getDataFolder(), "clans.yml");
-		}
-		this.clansConfig = YamlConfiguration.loadConfiguration(this.clansConfigFile);
-
-		this.plugin.log("Loaded " + this.clansConfig.getKeys(false).size() + " clans.");
-		
 		Settings.Clans clans = plugin.getSettings().clans();
 		this.alphaAccount = clans.alphaSkin().accountName();
 		this.alphaAccountId = clans.alphaSkin().accountId();
@@ -90,34 +79,6 @@ public class ClanManager
 		}
 		
 		resetClanScores();
-	}
-
-	public void saveTimed()
-	{
-		if (System.currentTimeMillis() - this.lastSaveTime < 180000L)
-		{
-			return;
-		}
-		
-		save();
-	}
-
-	public void save()
-	{
-		this.lastSaveTime = System.currentTimeMillis();
-		if ((this.clansConfig == null) || (this.clansConfigFile == null))
-		{
-			return;
-		}
-		
-		try
-		{
-			this.clansConfig.save(this.clansConfigFile);
-		}
-		catch (Exception ex)
-		{
-			this.plugin.log("Could not save config to " + this.clansConfigFile + ": " + ex.getMessage());
-		}
 	}
 
 	public String getClanName(UUID playerId)
@@ -352,50 +313,25 @@ public class ClanManager
 
 	public void setHomeForClan(ClanType clan, Location location)
 	{
-		this.clansConfig.set(clan.name() + ".Home.X", Double.valueOf(location.getX()));
-		this.clansConfig.set(clan.name() + ".Home.Y", Double.valueOf(location.getY()));
-		this.clansConfig.set(clan.name() + ".Home.Z", Double.valueOf(location.getZ()));
-		this.clansConfig.set(clan.name() + ".Home.World", location.getWorld().getName());
-
-		saveTimed();
+		this.clans.get(clan).setHome(location.getWorld().getName(), location.getX(), location.getY(), location.getZ());
 	}
 
 	public Location getHomeForClan(ClanType clan)
 	{
-		Location location = new Location(null, 0.0D, 0.0D, 0.0D);
-
-		String worldName = this.clansConfig.getString(clan.name() + ".Home.World");
-		if (worldName == null)
+		ClanRecord record = this.clans.get(clan);
+		if (record.getHomeWorld() == null)
 		{
 			return null;
 		}
-		location.setWorld(this.plugin.getServer().getWorld(worldName));
 
-		location.setX(this.clansConfig.getDouble(clan.name() + ".Home.X"));
-		location.setY(this.clansConfig.getDouble(clan.name() + ".Home.Y"));
-		location.setZ(this.clansConfig.getDouble(clan.name() + ".Home.Z"));
-
-		return location;
+		return new Location(this.plugin.getServer().getWorld(record.getHomeWorld()), record.getHomeX(), record.getHomeY(), record.getHomeZ());
 	}
 	
 	
 	/** The clan's alpha as stored in clans.yml, or null. Can be stale for a moment until {@link #checkAlphas()} runs. */
 	public UUID getAlpha(ClanType clan)
 	{
-		String alphaId = this.clansConfig.getString(clan.name() + ".Alpha");
-		if (alphaId == null)
-		{
-			return null;
-		}
-
-		try
-		{
-			return UUID.fromString(alphaId);
-		}
-		catch (IllegalArgumentException ex)
-		{
-			return null;
-		}
+		return this.clans.get(clan).getAlpha();
 	}
 
 	private boolean isValidAlpha(ClanType clan, UUID alphaId)
@@ -421,7 +357,7 @@ public class ClanManager
 		{
 			assignAlphaInClan(clan, candidate);
 		}
-		else if (this.clansConfig.getString(clan.name() + ".Alpha") != null)
+		else if (alphaId != null)
 		{
 			assignAlphaInClan(clan, null);
 		}
@@ -430,7 +366,7 @@ public class ClanManager
 	/** Runs from the main loop: fills every empty (or stale) alpha slot */
 	public void checkAlphas()
 	{
-		if (!this.plugin.getSettings().clans().enabled() || this.clansConfig == null)
+		if (!this.plugin.getSettings().clans().enabled())
 		{
 			return;
 		}
@@ -469,40 +405,19 @@ public class ClanManager
 	{
 		for (ClanType clan : ClanType.values())
 		{
-			String alphaId = this.clansConfig.getString(clan.name() + ".Alpha");
-
-			try
+			if (isAlpha(clan, playerId))
 			{
-				if(UUID.fromString(alphaId).equals(playerId))
-				{
-					return true;
-				}
-			}
-			catch(Exception ex)
-			{
-				
-				
+				return true;
 			}
 		}
-		
+
 		return false;
 	}
 
 	public boolean isAlpha(ClanType clan, UUID playerId)
 	{
-		String alphaId = this.clansConfig.getString(clan.name() + ".Alpha");
-
-		try
-		{
-			return UUID.fromString(alphaId).equals(playerId);			
-		}
-		catch(Exception ex)
-		{
-			
-			
-		}
-				
-		return false;
+		UUID alphaId = getAlpha(clan);
+		return alphaId != null && alphaId.equals(playerId);
 	}
 
 	public boolean assignAlphaInClan(ClanType clan, UUID playerId)
@@ -511,20 +426,12 @@ public class ClanManager
 		{
 			// Clearing fires no NewAlphaEvent, so the old alpha's skin is refreshed here
 			UUID oldAlphaId = getAlpha(clan);
-			this.clansConfig.set(clan.name() + ".Alpha", null);
+			this.clans.get(clan).setAlpha(null);
 			Werewolf.getWerewolfManager().refreshWerewolfSkinLater(oldAlphaId);
 		}
 		else
 		{
-			String oldAlpha = this.clansConfig.getString(clan.name() + ".Alpha");
-			UUID oldAlphaId = null;
-			try
-			{
-				oldAlphaId = oldAlpha == null ? null : UUID.fromString(oldAlpha);
-			}
-			catch (IllegalArgumentException ignored)
-			{
-			}
+			UUID oldAlphaId = getAlpha(clan);
 
 			if (playerId.equals(oldAlphaId))
 			{
@@ -538,10 +445,9 @@ public class ClanManager
 				return false;
 			}
 
-			this.clansConfig.set(clan.name() + ".Alpha", playerId.toString());			
-		}		
+			this.clans.get(clan).setAlpha(playerId);
+		}
 
-		saveTimed();
 		return true;
 	}
 
@@ -551,7 +457,7 @@ public class ClanManager
 		Date thisDate = new Date();
 		Date transformDate = null;
 
-		String transformDateString = this.clansConfig.getString(clan.name() + ".LastCallTime");
+		String transformDateString = this.clans.get(clan).getLastCallTime();
 		try
 		{
 			transformDate = formatter.parse(transformDateString);
@@ -573,9 +479,7 @@ public class ClanManager
 		Date thisDate = new Date();
 		DateFormat formatter = new SimpleDateFormat(this.datePattern);
 
-		this.clansConfig.set(clan.name() + ".LastCallTime", formatter.format(thisDate));
-
-		saveTimed();
+		this.clans.get(clan).setLastCallTime(formatter.format(thisDate));
 	}
 
 	public class ClanMemberComparator implements Comparator<String>

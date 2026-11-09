@@ -175,14 +175,12 @@ public class Commands implements TabExecutor
 	{
 		if (player == null)
 		{
-			Werewolf.getClanManager().save();
-			Werewolf.getWerewolfManager().save();
+			Werewolf.getStorage().flush();
 			this.plugin.log(this.plugin.getDescription().getFullName() + ": Saved configuration(s).");
 		}
 		else if (player.isOp() || (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.save")))
 		{
-			Werewolf.getClanManager().save();
-			Werewolf.getWerewolfManager().save();
+			Werewolf.getStorage().flush();
 			player.sendMessage(ChatColor.YELLOW + this.plugin.getDescription().getFullName() + ": " + ChatColor.WHITE + "Saved configuration(s).");
 		}
 	}
@@ -1618,9 +1616,9 @@ public class Commands implements TabExecutor
 		Werewolf.getClanManager().setLastCall(playerClan);
 
 		Werewolf.getWerewolfManager().howl(player);
-		for (String playerName : Werewolf.getWerewolfManager().getWerewolfClanMembers(playerClan))
+		for (UUID memberId : Werewolf.getWerewolfManager().getWerewolfClanMembersRanked(playerClan))
 		{
-			Player clanPlayer = this.plugin.getServer().getPlayer(playerName);
+			Player clanPlayer = this.plugin.getServer().getPlayer(memberId);
 			if (clanPlayer != null)
 			{
 				Werewolf.getLanguageManager().setPlayerName(player.getName());

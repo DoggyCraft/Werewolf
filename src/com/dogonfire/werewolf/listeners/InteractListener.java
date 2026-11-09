@@ -27,48 +27,6 @@ public class InteractListener implements Listener
 		this.plugin = plugin;
 	}
 
-	private boolean checkForEatingFood(PlayerInteractEvent event)
-	{
-		Player player = event.getPlayer();
-		
-		Material type = player.getInventory().getItemInMainHand().getType();
-		switch (type)
-		{
-			case APPLE:
-			case BREAD:
-			case PUMPKIN:
-			case MELON:
-			case MUSHROOM_STEW:
-			case BEETROOT_SOUP:
-			case BEETROOT:
-			case BAKED_POTATO:
-			case PUMPKIN_PIE:
-			case POTATO:
-			case POISONOUS_POTATO:
-			case GOLDEN_APPLE:
-			case ENCHANTED_GOLDEN_APPLE:
-			case DRIED_KELP:
-			case CAKE:
-			case COOKIE:
-			case CARROT:
-			case MILK_BUCKET:
-			case GOLDEN_CARROT:
-			case SUSPICIOUS_STEW:
-			case CHORUS_FRUIT:
-			case MELON_SLICE:
-			case SWEET_BERRIES:
-			case GLOW_BERRIES:
-			case HONEY_BOTTLE:
-				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfTryEat, ChatColor.RED));
-				event.setCancelled(true);
-				return true;
-			default:
-				break;
-		}
-		
-		return false;
-	}
-	
 	private boolean checkForDefense(PlayerInteractEvent event)
 	{
 		Player player = event.getPlayer();
@@ -231,7 +189,6 @@ public class InteractListener implements Listener
 		Player player = event.getPlayer();
 		if (((event.getAction().equals(Action.RIGHT_CLICK_AIR)) || (event.getAction().equals(Action.RIGHT_CLICK_BLOCK))) && (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId())))
 		{
-			checkForEatingFood(event);
 			checkForDefense(event);
 		}
 	}

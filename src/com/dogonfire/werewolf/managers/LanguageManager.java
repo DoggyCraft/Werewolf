@@ -336,6 +336,10 @@ public class LanguageManager
 		InvalidMoonPhase,
 		MoonPhaseSet,
 		HelpIntent,
-		HelpSetPhase;
+		HelpSetPhase,
+		BlockedCommand,
+		BlockedCommandWolfForm,
+		BlockedCommandAlpha,
+		CannotTransformInGameMode;
 	}
 }

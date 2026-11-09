@@ -338,3 +338,11 @@ HelpIntent:
 - $Type - Toggle your intent to infect the players you bite
 HelpSetPhase:
 - $Type - Set the moon phase of a world
+BlockedCommand:
+- Werewolves cannot use this command!
+BlockedCommandWolfForm:
+- You cannot use this command in wolf form!
+BlockedCommandAlpha:
+- Alpha werewolves cannot use this command!
+CannotTransformInGameMode:
+- You cannot transform into a wolf in creative or spectator mode

@@ -21,7 +21,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.util.Vector;
 
 import com.dogonfire.werewolf.managers.ClanManager;
-import com.dogonfire.werewolf.managers.DamageManager;
+import com.dogonfire.werewolf.managers.WolfFormManager;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
@@ -81,6 +81,7 @@ public class DamageListener implements Listener
 			if (Werewolf.getWerewolfManager().hasWerewolfSkin(werewolfPlayer.getUniqueId()))
 			{
 				double damage = event.getDamage();
+				WolfFormManager.Stats stats = Werewolf.getWolfFormManager().getStats(werewolfPlayer.getUniqueId());
 
 				// Gold weapons cut through a werewolf's natural defence until it is mature enough to be immune
 				boolean goldHit = isGoldWeaponHit(event) && !Werewolf.getWerewolfManager().isGoldImmune(werewolfPlayer.getUniqueId());
@@ -100,19 +101,15 @@ public class DamageListener implements Listener
                     case PROJECTILE:
                     case THORNS:
                     case FREEZE:
+						// Per-clan natural defence (alphas have their own, lower value)
 						if (!goldHit)
 						{
-							damage *= DamageManager.SilverArmorMultiplier;
+							damage *= stats.defense;
 						}
 						break;
 
 					default:
 						break;
-				}
-
-				if (!goldHit && Werewolf.getClanManager().isAlpha(werewolfPlayer.getUniqueId()))
-				{
-					damage /= 2.0D;
 				}
 
 				event.setDamage(damage);
@@ -155,20 +152,16 @@ public class DamageListener implements Listener
 
 				if (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 				{
-					double damage = 0.0D;
+					WolfFormManager.Stats stats = Werewolf.getWolfFormManager().getStats(player.getUniqueId());
+					double damage;
 
 					if (player.getInventory().getItemInMainHand().getType().equals(Material.AIR))
 					{
-						damage = DamageManager.werewolfHandDamage;
+						damage = stats.fistDamage;
 					}
 					else
 					{
-						damage = DamageManager.werewolfItemDamage;
-					}
-
-					if (Werewolf.getClanManager().isAlpha(player.getUniqueId()))
-					{
-						damage *= 2.0D;
+						damage = stats.itemDamage;
 					}
 
 					event.setDamage(damage);

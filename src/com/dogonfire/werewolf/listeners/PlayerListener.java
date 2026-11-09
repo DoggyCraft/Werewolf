@@ -56,18 +56,10 @@ public class PlayerListener implements Listener
 		}
 		Werewolf.getWerewolfManager().unsetWerewolfSkin(event.getPlayer().getUniqueId(), true, WerewolfTransformEvent.Reason.FORCED);
 		
-		if (Werewolf.getWerewolfManager().isWerewolf(event.getPlayer().getUniqueId())) {
-			// We want to be sure potion effects are cleared...
-			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.NAUSEA);
-			// Walkspeed works sooo, but let's still remove it...
-			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.SPEED);
-			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.HUNGER);
-			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.NIGHT_VISION);
-			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.STRENGTH);
-			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.REGENERATION);
-			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.JUMP_BOOST);
-			
-			event.getPlayer().setWalkSpeed(0.2F);
+		if (Werewolf.getWerewolfManager().isWerewolf(event.getPlayer().getUniqueId()))
+		{
+			// Clear wolf form effects left over from quitting (or a crash) while in wolf form
+			Werewolf.getWolfFormManager().removeWolfForm(event.getPlayer(), true);
 		}
 
 		this.plugin.getServer().getScheduler().scheduleSyncDelayedTask(this.plugin, new CheckTransformationTask(plugin, event.getPlayer().getUniqueId()), 20L);

@@ -1242,6 +1242,11 @@ public class WerewolfManager
 				// Already in wolf form when the moon rose (e.g. after /ww transform): still counts for this night's level
 				grantFullMoonLevel(player);
 			}
+
+			if (!changedForm.contains(player) && hasWerewolfSkin(player.getUniqueId()))
+			{
+				Werewolf.getWolfFormManager().refreshWolfForm(player);
+			}
 		}
 
 		// Urges are rare flavour messages, so only one random player gets a chance per update

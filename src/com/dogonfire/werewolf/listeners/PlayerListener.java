@@ -3,7 +3,6 @@ package com.dogonfire.werewolf.listeners;
 import java.util.Collection;
 import java.util.Random;
 
-import com.dogonfire.werewolf.managers.ClanManager;
 import com.dogonfire.werewolf.managers.DamageManager;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.Werewolf;
@@ -251,26 +250,6 @@ public class PlayerListener implements Listener
 
 					default:
 					  break;
-				}
-			}
-		}
-
-		if (this.plugin.useClans && Werewolf.getWerewolfManager().isWerewolf(event.getEntity().getUniqueId()) && Werewolf.getWerewolfManager().isWerewolf(event.getEntity().getKiller().getUniqueId()))
-		{
-			ClanManager.ClanType killerClan = Werewolf.getWerewolfManager().getWerewolfClan(event.getEntity().getKiller().getUniqueId());
-			ClanManager.ClanType victimClan = Werewolf.getWerewolfManager().getWerewolfClan(event.getEntity().getUniqueId());
-			
-			if (killerClan.equals(victimClan) && Werewolf.getClanManager().isAlpha(victimClan, event.getEntity().getUniqueId())
-					&& Werewolf.getClanManager().assignAlphaInClan(killerClan, event.getEntity().getKiller().getUniqueId()))
-			{
-				Werewolf.getLanguageManager().setPlayerName(killerName);
-				Werewolf.getWerewolfManager().sendMessageToClan(killerClan, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NewClanAlpha, ChatColor.WHITE));
-				
-				// Apply the new alpha skin if player is in werewolf form
-				if (Werewolf.getWerewolfManager().hasWerewolfSkin(event.getEntity().getKiller().getUniqueId()))
-				{
-					Werewolf.getSkinManager().unsetWerewolfSkin(event.getEntity().getKiller());
-					Werewolf.getSkinManager().setWerewolfSkin(event.getEntity().getKiller(), event.getEntity().getKiller().getPlayerListName());
 				}
 			}
 		}

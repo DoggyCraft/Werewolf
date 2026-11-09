@@ -20,7 +20,7 @@ To become a Werewolf, you have to get bitten by a wolf or a Werewolf at night an
 *	A Werewolf can growl with /growl and howl with /howl
 *	Werewolves are pack creatures, live in clans led by an alpha, and lead wild wolves
 *	Werewolves are vulnerable to silver weapons and wolfbane
-*	Vampires (VampireRevamp) can't be infected with the Werewolf infection
+*	Werewolves and vampires (VampireRevamp) exclude each other: vampires can't catch the werewolf infection, and werewolf blood rejects vampirism
 *	The infection can be cured with the werewolf cure potion
 
 Installation

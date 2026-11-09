@@ -59,6 +59,8 @@ public class WerewolfManager
 	private HashMap<UUID, Long>		lastFormChanges					= new HashMap<UUID, Long>();
 	private HashMap<UUID, Long>		lastHowls						= new HashMap<UUID, Long>();
 	private HashMap<UUID, Long>		lastGrowls						= new HashMap<UUID, Long>();
+	// Cured, but their data is only removed when the UndisguiseTask runs; never alpha candidates meanwhile
+	private Set<UUID>				beingCured						= new HashSet<UUID>();
 
 	public WerewolfManager(Werewolf plugin)
 	{
@@ -282,8 +284,57 @@ public class WerewolfManager
 	{
 		for (UUID playerId : getWerewolvesInClan(clan))
 		{
-			plugin.sendInfo(plugin.getServer().getPlayer(playerId), message);
+			Player player = plugin.getServer().getPlayer(playerId);
+			if (player != null)
+			{
+				player.sendMessage(message);
+			}
 		}
+	}
+
+	/** The player's name as last seen by this plugin, for werewolves who may be offline */
+	public String getPlayerName(UUID playerId)
+	{
+		String name = this.werewolvesConfig.getString(playerId.toString() + ".PlayerName");
+		if (name == null)
+		{
+			name = plugin.getServer().getOfflinePlayer(playerId).getName();
+		}
+		return name != null ? name : playerId.toString();
+	}
+
+	/** Names of all werewolves in werewolves.yml, online or not */
+	public List<String> getWerewolfPlayerNames()
+	{
+		List<String> names = new ArrayList<String>();
+		for (String key : this.werewolvesConfig.getKeys(false))
+		{
+			String name = this.werewolvesConfig.getString(key + ".PlayerName");
+			if (name != null)
+			{
+				names.add(name);
+			}
+		}
+		return names;
+	}
+
+	/** Finds a werewolf (online or not) by the name stored in werewolves.yml, or null */
+	public UUID findWerewolfByName(String name)
+	{
+		for (String key : this.werewolvesConfig.getKeys(false))
+		{
+			if (name.equalsIgnoreCase(this.werewolvesConfig.getString(key + ".PlayerName")))
+			{
+				try
+				{
+					return UUID.fromString(key);
+				}
+				catch (IllegalArgumentException ignored)
+				{
+				}
+			}
+		}
+		return null;
 	}
 
 	public boolean makeWerewolf(Player player, boolean turnNow, ClanManager.ClanType clan, WerewolfInfectionEvent.Source source)
@@ -347,11 +398,8 @@ public class WerewolfManager
 
 		this.plugin.undisguiseWerewolf(playerId, true, true);
 
-		if (this.plugin.useClans)
-		{
-			ClanManager.ClanType clan = Werewolf.getWerewolfManager().getWerewolfClan(playerId);
-			Werewolf.getClanManager().assignAlphaInClan(clan, null);
-		}
+		this.beingCured.add(playerId);
+		Werewolf.getClanManager().removeAlpha(playerId);
 
 		this.plugin.log(plugin.getServer().getOfflinePlayer(playerId).getName() + " was unmade from being a werewolf");
 		return true;
@@ -403,6 +451,53 @@ public class WerewolfManager
 		}
 
 		this.plugin.disguiseWerewolf(player);
+	}
+
+	/**
+	 * Re-applies the skin and wolf form stats of a werewolf already in wolf form, e.g. after becoming or losing alpha.
+	 * Fires a {@link WerewolfTransformEvent} with {@link WerewolfTransformEvent.Reason#REFRESH}.
+	 */
+	public boolean refreshWerewolfSkin(Player player)
+	{
+		if (!Werewolf.pluginEnabled || !player.isOnline() || !hasWerewolfSkin(player.getUniqueId()))
+		{
+			return false;
+		}
+
+		WerewolfTransformEvent event = new WerewolfTransformEvent(player, getWerewolfClan(player.getUniqueId()), true, WerewolfTransformEvent.Reason.REFRESH);
+		plugin.getServer().getPluginManager().callEvent(event);
+		if (event.isCancelled())
+		{
+			return false;
+		}
+
+		if (this.plugin.disguisesEnabled)
+		{
+			Werewolf.getSkinManager().refreshWerewolfSkin(player, player.getPlayerListName());
+		}
+		Werewolf.getWolfFormManager().refreshWolfForm(player);
+		return true;
+	}
+
+	/** Refreshes the skin next tick if the player is online, alive and in wolf form (e.g. after an alpha change is stored) */
+	public void refreshWerewolfSkinLater(final UUID playerId)
+	{
+		if (playerId == null)
+		{
+			return;
+		}
+
+		this.plugin.getServer().getScheduler().runTask(this.plugin, new Runnable()
+		{
+			public void run()
+			{
+				Player player = plugin.getServer().getPlayer(playerId);
+				if (player != null && !player.isDead() && !beingCured.contains(playerId) && hasWerewolfSkin(playerId))
+				{
+					refreshWerewolfSkin(player);
+				}
+			}
+		});
 	}
 
 	public void unsetWerewolfSkin(UUID playerId, boolean makeVisible, WerewolfTransformEvent.Reason reason)
@@ -801,35 +896,37 @@ public class WerewolfManager
 
 	public UUID getAlphaCandidate(ClanManager.ClanType clan)
 	{
-		List<UUID> clanMembers = Werewolf.getWerewolfManager().getWerewolfClanMembersRanked(clan);// new
-																									// ArrayList<UUID>();
+		return getAlphaCandidate(clan, null);
+	}
 
-		/*
-		 * for (String playerIdString : playerList) { try { UUID playerId =
-		 * UUID.fromString(playerIdString);
-		 * 
-		 * String clanName = this.werewolvesConfig.getString(playerId.toString()
-		 * + ".Clan"); if (clanName != null && clanName.equals(clan.name())) {
-		 * clanMembers.add(playerId); } } catch(Exception ex) {
-		 * 
-		 * } }
-		 * 
-		 * Collections.sort(clanMembers, new TransformationsComparator());
-		 */
+	/**
+	 * The clan member best suited to be alpha: full werewolves before infected ones, then the highest level. Skips
+	 * {@code exclude} and players who are being cured.
+	 */
+	public UUID getAlphaCandidate(ClanManager.ClanType clan, UUID exclude)
+	{
+		UUID best = null;
+		boolean bestFull = false;
+		int bestLevel = -1;
 
-		if (clanMembers.size() == 0)
+		for (UUID playerId : getWerewolfClanMembersRanked(clan))
 		{
-			return null;
+			if (playerId.equals(exclude) || this.beingCured.contains(playerId))
+			{
+				continue;
+			}
+
+			boolean full = isFullWerewolf(playerId);
+			int level = getNumberOfTransformations(playerId);
+			if (best == null || (full && !bestFull) || (full == bestFull && level > bestLevel))
+			{
+				best = playerId;
+				bestFull = full;
+				bestLevel = level;
+			}
 		}
 
-		// if(clanMembers.size()<2)
-		// {
-		return clanMembers.get(0);
-		// }
-
-		// int n = random.nextInt(clanMembers.size() - 1);
-
-		// return clanMembers.get(n);
+		return best;
 	}
 
 	public class TransformationsComparator implements Comparator<UUID>
@@ -920,23 +1017,26 @@ public class WerewolfManager
 
 	public void setWerewolfClan(UUID playerId, ClanManager.ClanType clan)
 	{
-		if (Werewolf.getClanManager().getAlpha(clan) == null)
+		ClanManager.ClanType oldClan = null;
+		try
 		{
-			UUID alphaPlayerId = getAlphaCandidate(clan);
-
-			if (alphaPlayerId == null)
-			{
-				Werewolf.getClanManager().assignAlphaInClan(clan, playerId);
-			}
-			else
-			{
-				Werewolf.getClanManager().assignAlphaInClan(clan, alphaPlayerId);
-			}
+			String oldClanName = this.werewolvesConfig.getString(playerId.toString() + ".Clan");
+			oldClan = oldClanName == null ? null : ClanManager.ClanType.valueOf(oldClanName);
+		}
+		catch (IllegalArgumentException ignored)
+		{
 		}
 
 		this.werewolvesConfig.set(playerId.toString() + ".Clan", clan.name());
 
 		saveTimed();
+
+		// Leaving a clan as its alpha hands the old clan to its next best member; an empty clan gets this player
+		if (oldClan != null && oldClan != clan)
+		{
+			Werewolf.getClanManager().checkAlpha(oldClan);
+		}
+		Werewolf.getClanManager().checkAlpha(clan);
 	}
 
 	public void incrementNumberOfFullMoonTransformations(UUID playerId)
@@ -961,6 +1061,14 @@ public class WerewolfManager
 	public int getNumberOfTransformations(UUID playerId)
 	{
 		return this.werewolvesConfig.getInt(playerId.toString() + ".Transformations");
+	}
+
+	/** Sets a werewolf's level (admin commands); works for offline werewolves too */
+	public void setNumberOfTransformations(UUID playerId, int transformations)
+	{
+		this.werewolvesConfig.set(playerId.toString() + ".Transformations", Math.max(0, transformations));
+
+		saveTimed();
 	}
 
 	public boolean canControlledTransformation(UUID playerId)
@@ -1077,6 +1185,7 @@ public class WerewolfManager
 
 	public void setNotWerewolf(UUID playerId)
 	{
+		this.beingCured.remove(playerId);
 		this.werewolvesConfig.set(playerId.toString(), null);
 
 		saveTimed();
@@ -1194,6 +1303,8 @@ public class WerewolfManager
 
 		Werewolf.getMoonManager().update();
 
+		Werewolf.getClanManager().checkAlphas();
+
 		if (this.plugin.autoCureDays > 0 && this.random.nextInt(100) == 0 && Werewolf.getWerewolfManager().getAllWerewolves().size() > 0)
 		{
 			int r = this.random.nextInt(Werewolf.getWerewolfManager().getAllWerewolves().size());
@@ -1223,6 +1334,8 @@ public class WerewolfManager
 				continue;
 			}
 
+			// VampireIntegration stops werewolves becoming vampires (and the reverse), so this only catches hybrids made
+			// before that, or while one of the plugins was missing: the werewolf side goes
 			if (WerewolfAPI.isVampire(player))
 			{
 				this.plugin.log(player.getName() + " is a Vampire! Removing their Werewolf infection...");

@@ -8,11 +8,12 @@ import com.dogonfire.werewolf.events.WerewolfTransformEvent;
 import com.dogonfire.werewolf.integrations.ForcePvPIntegration;
 import com.dogonfire.werewolf.integrations.IntegrationListener;
 import com.dogonfire.werewolf.integrations.PvPManagerIntegration;
+import com.dogonfire.werewolf.integrations.VampireIntegration;
 import com.dogonfire.werewolf.integrations.WorldGuardIntegration;
 import com.dogonfire.werewolf.listeners.ChatListener;
 import com.dogonfire.werewolf.listeners.DamageListener;
 import com.dogonfire.werewolf.listeners.HuntingGearListener;
-import com.dogonfire.werewolf.listeners.VampireHuntingListener;
+import com.dogonfire.werewolf.listeners.AlphaListener;
 import com.dogonfire.werewolf.listeners.InteractListener;
 import com.dogonfire.werewolf.listeners.InventoryListener;
 import com.dogonfire.werewolf.listeners.PlayerListener;
@@ -415,6 +416,16 @@ public class Werewolf extends JavaPlugin
 
 		saveSettings();
 
+		// Both only save every few minutes on their own (saveTimed)
+		if (werewolfManager != null)
+		{
+			werewolfManager.save();
+		}
+		if (clanManager != null)
+		{
+			clanManager.save();
+		}
+
 		pluginEnabled = false;
 	}
 
@@ -499,6 +510,7 @@ public class Werewolf extends JavaPlugin
 			log("Vampire plugin detected. Enabling support for vampirism :-)");
 
 			this.vampireEnabled = true;
+			this.integrations.add(new VampireIntegration());
 		}
 
 		// Check for HealthBar
@@ -541,11 +553,7 @@ public class Werewolf extends JavaPlugin
 		getServer().getPluginManager().registerEvents(chatListener, this);
 		getServer().getPluginManager().registerEvents(restrictionListener, this);
 		getServer().getPluginManager().registerEvents(huntingGearListener, this);
-		if (this.vampireEnabled)
-		{
-			// Only loaded with VampireRevamp present, as it references its classes
-			getServer().getPluginManager().registerEvents(new VampireHuntingListener(), this);
-		}
+		getServer().getPluginManager().registerEvents(new AlphaListener(this), this);
 		if (this.dropArmorOnTransform)
 		{
 			getServer().getPluginManager().registerEvents(inventoryListener, this);

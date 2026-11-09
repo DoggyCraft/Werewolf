@@ -1,6 +1,5 @@
 package com.dogonfire.werewolf.managers;
 
-import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -20,8 +19,6 @@ import com.dogonfire.werewolf.WerewolfAPI;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
 import org.bukkit.World;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -30,6 +27,9 @@ import com.dogonfire.werewolf.events.WerewolfCureEvent;
 import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
 import com.dogonfire.werewolf.events.WerewolfTransformEvent;
 import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.storage.WerewolfRecord;
+import com.dogonfire.werewolf.storage.WerewolfRepository;
+import com.dogonfire.werewolf.storage.WolfState;
 /*
 import org.bukkit.block.Biome;
 import org.bukkit.entity.Wolf;
@@ -40,15 +40,9 @@ import org.bukkit.Location;
 public class WerewolfManager
 {
 	private Werewolf plugin;
+	private final WerewolfRepository	werewolves;
 
-	static enum WolfState {
-		None, Infected, HumanForm, WolfForm;
-	}
-
-	private FileConfiguration		werewolvesConfig				= null;
-	private File					werewolvesConfigFile			= null;
 	private Random					random							= new Random();
-	private long					lastSaveTime					= 0L;
 	private String					datePattern						= "HH:mm:ss dd-MM-yyyy";
 	private HashMap<UUID, String>	originalGroup					= new HashMap<UUID, String>();
 	private HashMap<UUID, String>	playerlistNames					= new HashMap<UUID, String>();
@@ -59,60 +53,16 @@ public class WerewolfManager
 	private HashMap<UUID, Long>		lastFormChanges					= new HashMap<UUID, Long>();
 	private HashMap<UUID, Long>		lastHowls						= new HashMap<UUID, Long>();
 	private HashMap<UUID, Long>		lastGrowls						= new HashMap<UUID, Long>();
-	// Cured, but their data is only removed when the UndisguiseTask runs; never alpha candidates meanwhile
-	private Set<UUID>				beingCured						= new HashSet<UUID>();
 
-	public WerewolfManager(Werewolf plugin)
+	public WerewolfManager(Werewolf plugin, WerewolfRepository werewolves)
 	{
 		this.plugin = plugin;
-	}
-
-	public void load()
-	{
-		if (this.werewolvesConfigFile == null)
-		{
-			this.werewolvesConfigFile = new File(this.plugin.getDataFolder(), "werewolves.yml");
-		}
-		this.werewolvesConfig = YamlConfiguration.loadConfiguration(this.werewolvesConfigFile);
-
-		this.plugin.log("Loaded " + this.werewolvesConfig.getKeys(false).size() + " werewolves.");
-	}
-
-	public void saveTimed()
-	{
-		if (System.currentTimeMillis() - this.lastSaveTime < 180000L)
-		{
-			return;
-		}
-
-		save();
-	}
-
-	public void save()
-	{
-		this.lastSaveTime = System.currentTimeMillis();
-		if ((this.werewolvesConfig == null) || (this.werewolvesConfigFile == null))
-		{
-			return;
-		}
-		try
-		{
-			this.werewolvesConfig.save(this.werewolvesConfigFile);
-		}
-		catch (Exception ex)
-		{
-			this.plugin.log("Could not save config to " + this.werewolvesConfigFile + ": " + ex.getMessage());
-		}
+		this.werewolves = werewolves;
 	}
 
 	public int getNumberOfWerewolves()
 	{
-		Set<String> werewolves = this.werewolvesConfig.getKeys(false);
-		if (werewolves == null)
-		{
-			return 0;
-		}
-		return this.werewolvesConfig.getKeys(false).size();
+		return this.werewolves.size();
 	}
 
 	public Player getNearestWerewolf(UUID playerId)
@@ -176,13 +126,17 @@ public class WerewolfManager
 
 	public String getOriginalPermissionGroup(UUID playerId)
 	{
-		return this.werewolvesConfig.getString(playerId.toString() + ".OriginalGroup");
+		WerewolfRecord record = this.werewolves.get(playerId);
+		return record != null ? record.getOriginalGroup() : null;
 	}
 
 	public void setOriginalPermissionGroup(UUID playerId, String groupName)
 	{
-		this.werewolvesConfig.set(playerId.toString() + ".OriginalGroup", groupName);
-		saveTimed();
+		WerewolfRecord record = this.werewolves.get(playerId);
+		if (record != null)
+		{
+			record.setOriginalGroup(groupName);
+		}
 	}
 
 	public Collection<UUID> getOnlineWerewolvesInWolfForm()
@@ -232,51 +186,19 @@ public class WerewolfManager
 		return werewolfPlayers;
 	}
 
+	/** Everyone in werewolves.yml */
 	public Set<UUID> getAllWerewolves()
 	{
-		Set<UUID> werewolfList = new HashSet<UUID>();
-
-		for (String playerIdString : this.werewolvesConfig.getKeys(false))
-		{
-			try
-			{
-				UUID playerId = UUID.fromString(playerIdString);
-
-				werewolfList.add(playerId);
-			}
-			catch (Exception ex)
-			{
-
-			}
-		}
-
-		return werewolfList;
+		return new HashSet<UUID>(this.werewolves.ids());
 	}
 
 	public Set<UUID> getWerewolvesInClan(ClanManager.ClanType clanType)
 	{
 		Set<UUID> werewolfList = new HashSet<UUID>();
-		UUID playerId;
-
-		for (String playerIdString : this.werewolvesConfig.getKeys(false))
+		for (WerewolfRecord record : this.werewolves.inClan(clanType))
 		{
-			try
-			{
-				playerId = UUID.fromString(playerIdString);
-			}
-			catch (Exception ex)
-			{
-				continue;
-			}
-
-			ClanType playerClanType = this.getWerewolfClan(playerId);
-
-			if (playerClanType.equals(clanType))
-			{
-				werewolfList.add(playerId);
-			}
+			werewolfList.add(record.getId());
 		}
-
 		return werewolfList;
 	}
 
@@ -295,7 +217,8 @@ public class WerewolfManager
 	/** The player's name as last seen by this plugin, for werewolves who may be offline */
 	public String getPlayerName(UUID playerId)
 	{
-		String name = this.werewolvesConfig.getString(playerId.toString() + ".PlayerName");
+		WerewolfRecord record = this.werewolves.get(playerId);
+		String name = record != null ? record.getPlayerName() : null;
 		if (name == null)
 		{
 			name = plugin.getServer().getOfflinePlayer(playerId).getName();
@@ -307,12 +230,11 @@ public class WerewolfManager
 	public List<String> getWerewolfPlayerNames()
 	{
 		List<String> names = new ArrayList<String>();
-		for (String key : this.werewolvesConfig.getKeys(false))
+		for (WerewolfRecord record : this.werewolves.all())
 		{
-			String name = this.werewolvesConfig.getString(key + ".PlayerName");
-			if (name != null)
+			if (record.getPlayerName() != null)
 			{
-				names.add(name);
+				names.add(record.getPlayerName());
 			}
 		}
 		return names;
@@ -321,20 +243,8 @@ public class WerewolfManager
 	/** Finds a werewolf (online or not) by the name stored in werewolves.yml, or null */
 	public UUID findWerewolfByName(String name)
 	{
-		for (String key : this.werewolvesConfig.getKeys(false))
-		{
-			if (name.equalsIgnoreCase(this.werewolvesConfig.getString(key + ".PlayerName")))
-			{
-				try
-				{
-					return UUID.fromString(key);
-				}
-				catch (IllegalArgumentException ignored)
-				{
-				}
-			}
-		}
-		return null;
+		WerewolfRecord record = this.werewolves.findByName(name);
+		return record != null ? record.getId() : null;
 	}
 
 	public boolean makeWerewolf(Player player, boolean turnNow, ClanManager.ClanType clan, WerewolfInfectionEvent.Source source)
@@ -346,6 +256,13 @@ public class WerewolfManager
 			return false;
 		}
 		clan = event.getClan();
+		if (clan == null)
+		{
+			clan = ClanType.values()[this.random.nextInt(ClanType.values().length)];
+		}
+
+		// The only place a werewolves.yml entry is created; every other setter only changes existing werewolves
+		this.werewolves.getOrCreate(player.getUniqueId()).setPlayerName(player.getName());
 
 		if (turnNow)
 		{
@@ -396,9 +313,14 @@ public class WerewolfManager
 			Werewolf.pu.addPotionEffectNoGraphic(player, new PotionEffect(PotionEffectType.NAUSEA, 100, 1));
 		}
 
-		this.plugin.undisguiseWerewolf(playerId, true, true);
+		// The data goes now, so a re-infection right after is kept; only the skin change waits for the UndisguiseTask
+		String originalGroup = getOriginalPermissionGroup(playerId);
+		setNotWerewolf(playerId);
+		popPlayerData(playerId);
+		this.controlledFormStarts.remove(playerId);
 
-		this.beingCured.add(playerId);
+		this.plugin.undisguiseCuredWerewolf(playerId, originalGroup);
+
 		Werewolf.getClanManager().removeAlpha(playerId);
 
 		this.plugin.log(plugin.getServer().getOfflinePlayer(playerId).getName() + " was unmade from being a werewolf");
@@ -492,7 +414,7 @@ public class WerewolfManager
 			public void run()
 			{
 				Player player = plugin.getServer().getPlayer(playerId);
-				if (player != null && !player.isDead() && !beingCured.contains(playerId) && hasWerewolfSkin(playerId))
+				if (player != null && !player.isDead() && hasWerewolfSkin(playerId))
 				{
 					refreshWerewolfSkin(player);
 				}
@@ -547,7 +469,7 @@ public class WerewolfManager
 
 		this.plugin.log(playerName + " turned into human form!");
 
-		this.plugin.undisguiseWerewolf(playerId, makeVisible, false);
+		this.plugin.undisguiseWerewolf(playerId, makeVisible);
 	}
 
 	public boolean canTransform(Player player)
@@ -628,16 +550,15 @@ public class WerewolfManager
 			return;
 		}
 
+		WerewolfRecord record = this.werewolves.get(player.getUniqueId());
 		String nightKey = Werewolf.getMoonManager().getNightKey(world);
-		String lastNightKey = this.werewolvesConfig.getString(player.getUniqueId().toString() + ".LastLevelNight");
-		if (nightKey.equals(lastNightKey))
+		if (record == null || nightKey.equals(record.getLastLevelNight()))
 		{
 			return;
 		}
 
-		this.werewolvesConfig.set(player.getUniqueId().toString() + ".LastLevelNight", nightKey);
+		record.setLastLevelNight(nightKey);
 		incrementNumberOfFullMoonTransformations(player.getUniqueId());
-		saveTimed();
 
 		Werewolf.getLanguageManager().setAmount("" + getNumberOfTransformations(player.getUniqueId()));
 		player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.FullMoonLevelGained, ChatColor.LIGHT_PURPLE));
@@ -699,13 +620,17 @@ public class WerewolfManager
 
 	public boolean hasIntent(UUID playerId)
 	{
-		return this.werewolvesConfig.getBoolean(playerId.toString() + ".Intent", false);
+		WerewolfRecord record = this.werewolves.get(playerId);
+		return record != null && record.hasIntent();
 	}
 
 	public void setIntent(UUID playerId, boolean intent)
 	{
-		this.werewolvesConfig.set(playerId.toString() + ".Intent", intent ? Boolean.TRUE : null);
-		saveTimed();
+		WerewolfRecord record = this.werewolves.get(playerId);
+		if (record != null)
+		{
+			record.setIntent(intent);
+		}
 	}
 
 	/** Chance that a bite from this werewolf infects; intent raises it once the werewolf is mature enough */
@@ -736,155 +661,67 @@ public class WerewolfManager
 			return true;
 		}
 
-		String wolfState = this.werewolvesConfig.getString(playerId.toString() + ".WolfState");
-		
-		return wolfState != null;
+		return getWolfState(playerId) != null;
+	}
+
+	/** The stored WolfState, or null for players who are not werewolves */
+	private WolfState getWolfState(UUID playerId)
+	{
+		WerewolfRecord record = this.werewolves.get(playerId);
+		return record != null ? record.getWolfState() : null;
 	}
 
 	public boolean isFullWerewolf(UUID playerId)
 	{
-		if (playerId == null)
-		{
-			return false;
-		}
-
-		String wolfType = this.werewolvesConfig.getString(playerId.toString() + ".WolfState");
-
-		if (wolfType == null)
-		{
-			return false;
-		}
-
-		WolfState wolfState = WolfState.None;
-
-		try
-		{
-			wolfState = WolfState.valueOf(wolfType);
-		}
-		catch (Exception ex)
-		{
-			setNotWerewolf(playerId);
-			return false;
-		}
-
+		WolfState wolfState = getWolfState(playerId);
 		return (wolfState == WolfState.WolfForm) || (wolfState == WolfState.HumanForm);
 	}
 
 	public boolean isInfectedWerewolf(UUID playerId)
 	{
-		String wolfType = this.werewolvesConfig.getString(playerId.toString() + ".WolfState");
-		if (wolfType == null)
-		{
-			return false;
-		}
-		WolfState wolfState = WolfState.None;
-		try
-		{
-			wolfState = WolfState.valueOf(wolfType);
-		}
-		catch (Exception ex)
-		{
-			setNotWerewolf(playerId);
-			return false;
-		}
-		return wolfState == WolfState.Infected;
+		return getWolfState(playerId) == WolfState.Infected;
 	}
 
 	public boolean isWolfForm(UUID playerId)
 	{
-		if (playerId == null)
-		{
-			return false;
-		}
-
-		String wolfType = this.werewolvesConfig.getString(playerId.toString() + ".WolfState");
-
-		WolfState wolfState = WolfState.None;
-
-		try
-		{
-			wolfState = WolfState.valueOf(wolfType);
-		}
-		catch (Exception ex)
-		{
-			setNotWerewolf(playerId);
-			return false;
-		}
-
-		return wolfState == WolfState.WolfForm;
+		return getWolfState(playerId) == WolfState.WolfForm;
 	}
 
 	public boolean isHumanForm(UUID playerId)
 	{
-		if (playerId == null)
-		{
-			return false;
-		}
-
-		String wolfType = this.werewolvesConfig.getString(playerId.toString() + ".WolfState");
-
-		if (wolfType == null)
-		{
-			return false;
-		}
-
-		WolfState wolfState = WolfState.None;
-
-		try
-		{
-			wolfState = WolfState.valueOf(wolfType);
-		}
-		catch (Exception ex)
-		{
-			setNotWerewolf(playerId);
-			return false;
-		}
-
-		return wolfState == WolfState.HumanForm;
+		return getWolfState(playerId) == WolfState.HumanForm;
 	}
 
+	/** The werewolf's name, given (and stored) the first time it is asked for; "" for players who are not werewolves */
 	public String getWerewolfName(UUID playerId)
 	{
-		if (playerId == null)
+		WerewolfRecord record = this.werewolves.get(playerId);
+		if (record == null)
 		{
 			return "";
 		}
 
-		String werewolfName = this.werewolvesConfig.getString(playerId.toString() + ".WerewolfName");
-
-		if (werewolfName == null || werewolfName.isEmpty())
+		if (record.getWerewolfName() == null || record.getWerewolfName().isEmpty())
 		{
-			setWerewolfName(playerId);
-			werewolfName = this.werewolvesConfig.getString(playerId.toString() + ".WerewolfName");
+			record.setWerewolfName(newWerewolfName());
 		}
 
-		return werewolfName;
+		return record.getWerewolfName();
 	}
 
+	/**
+	 * The werewolf's clan. Every werewolf has one (given in makeWerewolf, or at load for old data without one); players
+	 * who are not werewolves get WerewolfBite. Never changes any data.
+	 */
 	public ClanManager.ClanType getWerewolfClan(UUID playerId)
 	{
-		if (playerId == null)
+		WerewolfRecord record = this.werewolves.get(playerId);
+		if (record == null || record.getClan() == null)
 		{
-			return ClanManager.ClanType.Potion;
+			return ClanManager.ClanType.WerewolfBite;
 		}
 
-		String clanTypeString = this.werewolvesConfig.getString(playerId.toString() + ".Clan");
-
-		ClanManager.ClanType clanType = ClanManager.ClanType.WerewolfBite;
-
-		try
-		{
-			clanType = ClanManager.ClanType.valueOf(clanTypeString);
-		}
-		catch (Exception ex)
-		{
-			clanType = ClanManager.ClanType.values()[this.random.nextInt(ClanManager.ClanType.values().length)];
-			this.werewolvesConfig.set(playerId.toString() + ".Clan", clanType.name());
-
-			saveTimed();
-		}
-
-		return clanType;
+		return record.getClan();
 	}
 
 	public UUID getAlphaCandidate(ClanManager.ClanType clan)
@@ -892,10 +729,7 @@ public class WerewolfManager
 		return getAlphaCandidate(clan, null);
 	}
 
-	/**
-	 * The clan member best suited to be alpha: full werewolves before infected ones, then the highest level. Skips
-	 * {@code exclude} and players who are being cured.
-	 */
+	/** The clan member best suited to be alpha: full werewolves before infected ones, then the highest level. Skips {@code exclude}. */
 	public UUID getAlphaCandidate(ClanManager.ClanType clan, UUID exclude)
 	{
 		UUID best = null;
@@ -904,7 +738,7 @@ public class WerewolfManager
 
 		for (UUID playerId : getWerewolfClanMembersRanked(clan))
 		{
-			if (playerId.equals(exclude) || this.beingCured.contains(playerId))
+			if (playerId.equals(exclude))
 			{
 				continue;
 			}
@@ -930,56 +764,23 @@ public class WerewolfManager
 		}
 	}
 
+	/** UUIDs (as strings) of everyone in werewolves.yml in this clan */
 	public List<String> getWerewolfClanMembers(ClanManager.ClanType clan)
 	{
-		Set<String> playerList = this.werewolvesConfig.getKeys(false);
 		List<String> clanMembers = new ArrayList<String>();
-
-		for (String playerName : playerList)
+		for (WerewolfRecord record : this.werewolves.inClan(clan))
 		{
-			String clanString = this.werewolvesConfig.getString(playerName + ".Clan");
-			if (clanString != null)
-			{
-				ClanManager.ClanType clanType = null;
-
-				try
-				{
-					clanType = ClanManager.ClanType.valueOf(clanString);
-				}
-				catch (Exception localException)
-				{
-				}
-
-				if (clanType.equals(clan))
-				{
-					clanMembers.add(playerName);
-				}
-			}
+			clanMembers.add(record.getId().toString());
 		}
 		return clanMembers;
 	}
 
 	public List<UUID> getWerewolfClanMembersRanked(ClanManager.ClanType clan)
 	{
-		Set<String> playerList = this.werewolvesConfig.getKeys(false);
 		List<UUID> clanMembers = new ArrayList<UUID>();
-
-		for (String playerString : playerList)
+		for (WerewolfRecord record : this.werewolves.inClan(clan))
 		{
-			try
-			{
-				UUID playerId = UUID.fromString(playerString);
-				String clanName = this.werewolvesConfig.getString(playerId.toString() + ".Clan");
-
-				if ((clanName != null) && clanName.equals(clan.name()))
-				{
-					clanMembers.add(playerId);
-				}
-			}
-			catch (Exception ex)
-			{
-
-			}
+			clanMembers.add(record.getId());
 		}
 
 		Collections.sort(clanMembers, new TransformationsComparator());
@@ -989,40 +790,32 @@ public class WerewolfManager
 
 	public boolean isInfectedThisNight(UUID playerId)
 	{
-		return this.werewolvesConfig.getBoolean(playerId.toString() + ".InfectedThisNight");
+		WerewolfRecord record = this.werewolves.get(playerId);
+		return record != null && record.isInfectedThisNight();
 	}
 
 	public void setInfectedThisNight(UUID playerId, String playerName, boolean thisNight)
 	{
-		this.werewolvesConfig.set(playerId.toString() + ".PlayerName", playerName);
-
-		if (thisNight)
+		WerewolfRecord record = this.werewolves.get(playerId);
+		if (record == null)
 		{
-			this.werewolvesConfig.set(playerId.toString() + ".InfectedThisNight", thisNight);
-		}
-		else
-		{
-			this.werewolvesConfig.set(playerId.toString() + ".InfectedThisNight", thisNight);
+			return;
 		}
 
-		saveTimed();
+		record.setPlayerName(playerName);
+		record.setInfectedThisNight(thisNight);
 	}
 
 	public void setWerewolfClan(UUID playerId, ClanManager.ClanType clan)
 	{
-		ClanManager.ClanType oldClan = null;
-		try
+		WerewolfRecord record = this.werewolves.get(playerId);
+		if (record == null)
 		{
-			String oldClanName = this.werewolvesConfig.getString(playerId.toString() + ".Clan");
-			oldClan = oldClanName == null ? null : ClanManager.ClanType.valueOf(oldClanName);
-		}
-		catch (IllegalArgumentException ignored)
-		{
+			return;
 		}
 
-		this.werewolvesConfig.set(playerId.toString() + ".Clan", clan.name());
-
-		saveTimed();
+		ClanManager.ClanType oldClan = record.getClan();
+		record.setClan(clan);
 
 		// Leaving a clan as its alpha hands the old clan to its next best member; an empty clan gets this player
 		if (oldClan != null && oldClan != clan)
@@ -1034,34 +827,36 @@ public class WerewolfManager
 
 	public void incrementNumberOfFullMoonTransformations(UUID playerId)
 	{
-		int transforms = this.werewolvesConfig.getInt(playerId.toString() + ".Transformations");
-
-		transforms++;
-
-		this.werewolvesConfig.set(playerId.toString() + ".Transformations", transforms);
+		WerewolfRecord record = this.werewolves.get(playerId);
+		if (record != null)
+		{
+			record.setTransformations(record.getTransformations() + 1);
+		}
 	}
 
 	public void setLastTransformation(UUID playerId)
 	{
-		DateFormat formatter = new SimpleDateFormat(this.datePattern);
-		Date thisDate = new Date();
-
-		this.werewolvesConfig.set(playerId.toString() + ".LastTransform", formatter.format(thisDate));
-
-		saveTimed();
+		WerewolfRecord record = this.werewolves.get(playerId);
+		if (record != null)
+		{
+			record.setLastTransform(new SimpleDateFormat(this.datePattern).format(new Date()));
+		}
 	}
 
 	public int getNumberOfTransformations(UUID playerId)
 	{
-		return this.werewolvesConfig.getInt(playerId.toString() + ".Transformations");
+		WerewolfRecord record = this.werewolves.get(playerId);
+		return record != null ? record.getTransformations() : 0;
 	}
 
 	/** Sets a werewolf's level (admin commands); works for offline werewolves too */
 	public void setNumberOfTransformations(UUID playerId, int transformations)
 	{
-		this.werewolvesConfig.set(playerId.toString() + ".Transformations", Math.max(0, transformations));
-
-		saveTimed();
+		WerewolfRecord record = this.werewolves.get(playerId);
+		if (record != null)
+		{
+			record.setTransformations(Math.max(0, transformations));
+		}
 	}
 
 	public boolean canControlledTransformation(UUID playerId)
@@ -1080,7 +875,8 @@ public class WerewolfManager
 		Date thisDate = new Date();
 		Date transformDate = null;
 
-		String transformDateString = this.werewolvesConfig.getString(playerId.toString() + ".LastTransform");
+		WerewolfRecord record = this.werewolves.get(playerId);
+		String transformDateString = record != null ? record.getLastTransform() : null;
 		try
 		{
 			transformDate = formatter.parse(transformDateString);
@@ -1142,46 +938,48 @@ public class WerewolfManager
 
 	public void setWerewolfName(UUID playerId)
 	{
-		this.werewolvesConfig.set(playerId.toString() + ".WerewolfName", newWerewolfName());
-
-		saveTimed();
+		WerewolfRecord record = this.werewolves.get(playerId);
+		if (record != null)
+		{
+			record.setWerewolfName(newWerewolfName());
+		}
 	}
 
 	public void setHumanForm(UUID playerId, String playerName)
 	{
-		this.werewolvesConfig.set(playerId.toString() + ".PlayerName", playerName);
-		this.werewolvesConfig.set(playerId.toString() + ".WolfState", WolfState.HumanForm.name());
-
-		saveTimed();
+		setWolfState(playerId, playerName, WolfState.HumanForm);
 	}
 
 	public void setWolfForm(UUID playerId, String playerName)
 	{
-		this.werewolvesConfig.set(playerId.toString() + ".PlayerName", playerName);
-		this.werewolvesConfig.set(playerId.toString() + ".WolfState", WolfState.WolfForm.name());
-
-		saveTimed();
+		setWolfState(playerId, playerName, WolfState.WolfForm);
 	}
 
 	public void setInfectedWerewolf(UUID playerId, String playerName)
 	{
-		Date thisDate = new Date();
-		String pattern = "HH:mm dd-MM-yyyy";
-		DateFormat formatter = new SimpleDateFormat(pattern);
-
-		this.werewolvesConfig.set(playerId.toString() + ".PlayerName", playerName);
-		this.werewolvesConfig.set(playerId.toString() + ".WolfState", WolfState.Infected.name());
-		this.werewolvesConfig.set(playerId.toString() + ".InfectedDate", formatter.format(thisDate));
-
-		saveTimed();
+		WerewolfRecord record = setWolfState(playerId, playerName, WolfState.Infected);
+		if (record != null)
+		{
+			record.setInfectedDate(new SimpleDateFormat("HH:mm dd-MM-yyyy").format(new Date()));
+		}
 	}
 
+	// Only for players in werewolves.yml, so a late task can't turn someone who was just cured back into a werewolf
+	private WerewolfRecord setWolfState(UUID playerId, String playerName, WolfState wolfState)
+	{
+		WerewolfRecord record = this.werewolves.get(playerId);
+		if (record != null)
+		{
+			record.setPlayerName(playerName);
+			record.setWolfState(wolfState);
+		}
+		return record;
+	}
+
+	/** Removes the player from werewolves.yml */
 	public void setNotWerewolf(UUID playerId)
 	{
-		this.beingCured.remove(playerId);
-		this.werewolvesConfig.set(playerId.toString(), null);
-
-		saveTimed();
+		this.werewolves.remove(playerId);
 	}
 
 	public void howl(Player player)

@@ -118,6 +118,17 @@ public class ItemManager
 		return dataContainer.has(namespacedKey, PersistentDataType.STRING) && Objects.equals(dataContainer.get(namespacedKey, PersistentDataType.STRING), itemName);
 	}
 	
+	/** Marks a werewolf head trophy, so placing it remembers its lore (TrophyManager) */
+	public void tagWerewolfTrophy(ItemMeta itemMeta)
+	{
+		itemMeta.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, "WerewolfTrophy");
+	}
+
+	public boolean isWerewolfTrophy(ItemStack item)
+	{
+		return isWerewolfItem(item, "WerewolfTrophy");
+	}
+
 	public void setupRecipes()
 	{
 		if(plugin.getSettings().items().craftableInfectionPotion())

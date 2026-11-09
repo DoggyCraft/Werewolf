@@ -114,6 +114,12 @@ public class DisguiseTask implements Runnable
 			return;
 		}
 
+		// Cured in the tick since the transformation was started
+		if (!Werewolf.getWerewolfManager().isWerewolf(this.player))
+		{
+			return;
+		}
+
 		/*
 		 * if (Werewolf.getWerewolfManager().hasWerewolfSkin(this.player.
 		 * getUniqueId())) { return; }

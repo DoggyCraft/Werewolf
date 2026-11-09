@@ -1,6 +1,5 @@
 package com.dogonfire.werewolf.managers;
 
-import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -12,49 +11,22 @@ import java.util.UUID;
 
 import com.dogonfire.werewolf.tasks.CompassTrackerTask;
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.storage.HunterRecord;
+import com.dogonfire.werewolf.storage.HunterRepository;
 import org.bukkit.ChatColor;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 public class HuntManager
 {
 	private Werewolf plugin;
 	private int					totalBounty			= 0;
-	private FileConfiguration	huntersConfig		= null;
-	private File				huntersConfigFile	= null;
+	private final HunterRepository	hunters;
 	private Random				random				= new Random();
 
-	public HuntManager(Werewolf p)
+	public HuntManager(Werewolf p, HunterRepository hunters)
 	{
 		this.plugin = p;
-	}
-
-	public void load()
-	{
-		if (this.huntersConfigFile == null)
-		{
-			this.huntersConfigFile = new File(this.plugin.getDataFolder(), "hunters.yml");
-		}
-		this.huntersConfig = YamlConfiguration.loadConfiguration(this.huntersConfigFile);
-
-		this.plugin.log("Loaded " + this.huntersConfig.getKeys(false).size() + " werewolf hunters.");
-	}
-
-	public void save()
-	{
-		if ((this.huntersConfig == null) || (this.huntersConfigFile == null))
-		{
-			return;
-		}
-		try
-		{
-			this.huntersConfig.save(this.huntersConfigFile);
-		}
-		catch (Exception ex)
-		{
-			this.plugin.log("Could not save config to " + this.huntersConfigFile + ": " + ex.getMessage());
-		}
+		this.hunters = hunters;
 	}
 
 	public boolean isHunting(UUID playerId)
@@ -172,22 +144,19 @@ public class HuntManager
 		Werewolf.getEconomy().depositPlayer(killer, this.totalBounty);
 		this.totalBounty = 0;
 
-		int kills = this.huntersConfig.getInt(killerName + ".Kills");
-		this.huntersConfig.set(killerName + ".Kills", Integer.valueOf(kills + 1));
-		this.huntersConfig.set(killerName + ".LastKill", formatter.format(thisDate));
-
-		save();
+		HunterRecord hunter = this.hunters.getOrCreate(killerName);
+		hunter.setKills(hunter.getKills() + 1);
+		hunter.setLastKill(formatter.format(thisDate));
 	}
 
 	public int getHunterKills(String hunterName)
 	{
-		return this.huntersConfig.getInt(hunterName + ".Kills");
+		HunterRecord hunter = this.hunters.get(hunterName);
+		return hunter != null ? hunter.getKills() : 0;
 	}
 
 	public Set<String> getHunters()
 	{
-		Set<String> hunters = this.huntersConfig.getKeys(false);
-
-		return hunters;
+		return this.hunters.names();
 	}
 }

@@ -1,6 +1,5 @@
 package com.dogonfire.werewolf.managers;
 
-import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -9,12 +8,11 @@ import java.util.List;
 import java.util.UUID;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.storage.TrophyRepository;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -27,41 +25,12 @@ import com.dogonfire.werewolf.managers.ClanManager.ClanType;
 public class TrophyManager implements Listener
 {
 	private Werewolf plugin				= null;
-	private FileConfiguration	skullsConfig		= null;
-	private File				skullsConfigFile	= null;
+	private final TrophyRepository	trophies;
 
-	public TrophyManager(Werewolf plugin)
+	public TrophyManager(Werewolf plugin, TrophyRepository trophies)
 	{
 		this.plugin = plugin;
-	}
-
-	public void load()
-	{
-		if (this.skullsConfigFile == null)
-		{
-			this.skullsConfigFile = new File(this.plugin.getDataFolder(), "trophies.yml");
-		}
-		this.skullsConfig = YamlConfiguration.loadConfiguration(this.skullsConfigFile);
-
-		this.plugin.log("Loaded " + this.skullsConfig.getKeys(false).size() + " Werewolf trophies.");
-
-		this.plugin.getServer().getPluginManager().registerEvents(this, this.plugin);
-	}
-
-	public void save()
-	{
-		if ((this.skullsConfig == null) || (this.skullsConfig == null))
-		{
-			return;
-		}
-		try
-		{
-			this.skullsConfig.save(this.skullsConfigFile);
-		}
-		catch (Exception ex)
-		{
-			this.plugin.log("Could not save config to " + this.skullsConfig + ": " + ex.getMessage());
-		}
+		this.trophies = trophies;
 	}
 
 	// UUID's will render the skulls blank, so we use PlayerNames, for now.
@@ -110,6 +79,7 @@ public class TrophyManager implements Listener
 		List<String> lorePages = new ArrayList<String>();
 		lorePages.add(lorePage);
 		skullMeta.setLore(lorePages);
+		Werewolf.getItemManager().tagWerewolfTrophy(skullMeta);
 
 		skullTrophy.setItemMeta(skullMeta);
 
@@ -151,17 +121,34 @@ public class TrophyManager implements Listener
 		return location.getBlockX() * 73856093 ^ location.getBlockY() * 19349663 ^ location.getBlockZ() * 83492791;
 	}
 
+	/** Werewolf trophies are tagged; older ones (and dropped ones, which lose the tag) are known by their gold "... Head" name */
+	private boolean isTrophy(ItemStack skull)
+	{
+		if (Werewolf.getItemManager().isWerewolfTrophy(skull))
+		{
+			return true;
+		}
+		String name = skull.hasItemMeta() && skull.getItemMeta().hasDisplayName() ? skull.getItemMeta().getDisplayName() : "";
+		return name.startsWith(ChatColor.GOLD.toString()) && name.endsWith(" Head");
+	}
+
 	public void handlePlaceSkull(ItemStack skull, Location location)
 	{
 		this.plugin.logDebug("Setting skull at " + location);
-		this.skullsConfig.set(hashVector(location) + ".Description", skull.getItemMeta().getLore());
-
-		save();
+		List<String> lore = isTrophy(skull) ? skull.getItemMeta().getLore() : null;
+		if (lore == null || lore.isEmpty())
+		{
+			this.trophies.remove(String.valueOf(hashVector(location)));
+		}
+		else
+		{
+			this.trophies.put(String.valueOf(hashVector(location)), lore);
+		}
 	}
 
 	public boolean handleBreakSkull(ItemStack skullItem, Location location)
 	{			
-		String description = this.skullsConfig.getString(hashVector(location) + ".Description");
+		List<String> description = this.trophies.getDescription(String.valueOf(hashVector(location)));
 		if (description == null)
 		{
 			return false;
@@ -171,23 +158,20 @@ public class TrophyManager implements Listener
 		
 		skullMeta.setDisplayName(ChatColor.GOLD + "Werewolf Head");
 
-		List<String> lorePages = new ArrayList<String>();
-		lorePages.add(description);
-		skullMeta.setLore(lorePages);
+		skullMeta.setLore(new ArrayList<String>(description));
+		Werewolf.getItemManager().tagWerewolfTrophy(skullMeta);
 
-		this.skullsConfig.set(String.valueOf(hashVector(location)), null);
-
-		save();
+		this.trophies.remove(String.valueOf(hashVector(location)));
 
 		skullItem.setItemMeta(skullMeta);
 
 		return true;
 	}
 
-	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = false)
+	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onBlockBreak(BlockBreakEvent event)
 	{
-		if (event.getBlock().getType() != Material.PLAYER_HEAD)
+		if (event.getBlock().getType() != Material.PLAYER_HEAD || event.getBlock().getDrops().isEmpty())
 		{
 			return;
 		}
@@ -200,7 +184,7 @@ public class TrophyManager implements Listener
 		}
 	}
 
-	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = false)
+	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onBlockPlace(BlockPlaceEvent event)
 	{
 		if (event.getItemInHand().getType() != Material.PLAYER_HEAD)

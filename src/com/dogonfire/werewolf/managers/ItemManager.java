@@ -13,7 +13,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
@@ -93,8 +92,8 @@ public class ItemManager
 	    pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.InfectionPotionDescription2, ChatColor.GRAY));
 	    
 	    potionMeta.setLore(pages);
-	    //potionMeta.setMainEffect(PotionEffectType.CONFUSION);
-	    potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.CONFUSION, 300, 0), true);
+	    //potionMeta.setMainEffect(PotionEffectType.NAUSEA);
+	    potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.NAUSEA, 300, 0), true);
 
 		// Add NBT data
 		potionMeta.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, "InfectionPotion");
@@ -118,8 +117,8 @@ public class ItemManager
 	    pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.CurePotionDescription2, ChatColor.GRAY));
 	    
 	    potionMeta.setLore(pages);
-	    //potionMeta.setMainEffect(PotionEffectType.CONFUSION);
-	    potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.CONFUSION, 300, 0), true);
+	    //potionMeta.setMainEffect(PotionEffectType.NAUSEA);
+	    potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.NAUSEA, 300, 0), true);
 
 		// Add NBT data
 		potionMeta.getPersistentDataContainer().set(namespacedKey, PersistentDataType.STRING, "CurePotion");
@@ -149,10 +148,9 @@ public class ItemManager
 	    pages.add(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WolfbanePotionDescription2, ChatColor.GRAY));
 	    
 	    potionMeta.setLore(pages);
-	    PotionData pd = new PotionData(PotionType.POISON);
-	    potionMeta.setBasePotionData(pd);
-	    //potionMeta.setMainEffect(PotionEffectType.CONFUSION);
-	    potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.CONFUSION, 300, 0), true);
+	    potionMeta.setBasePotionType(PotionType.POISON);
+	    //potionMeta.setMainEffect(PotionEffectType.NAUSEA);
+	    potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.NAUSEA, 300, 0), true);
 
 	    //itemStack.setItemMeta(potionMeta);
 		

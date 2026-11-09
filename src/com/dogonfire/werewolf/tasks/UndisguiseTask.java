@@ -31,21 +31,21 @@ public class UndisguiseTask implements Runnable
 		if (player != null)
 		{
 			
-			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.CONFUSION);
+			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.NAUSEA);
 			// Walkspeed works sooo, but let's still remove it...
 			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.SPEED);
 			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.HUNGER);
 			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.NIGHT_VISION);
-			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.INCREASE_DAMAGE);
+			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.STRENGTH);
 			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.REGENERATION);
-			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.JUMP);
+			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.JUMP_BOOST);
 			
 			player.setWalkSpeed(0.2F);
 			
 			// \/ what? \/
 			if (!this.plugin.usePounce)
 			{
-				Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.JUMP);
+				Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.JUMP_BOOST);
 			}
 			else
 			{

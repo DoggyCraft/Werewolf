@@ -9,7 +9,6 @@ import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.tasks.CheckTransformationTask;
 import com.dogonfire.werewolf.tasks.PotionEffectTask;
-import com.dogonfire.werewolf.versioning.UpdateNotifier;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Particle;
@@ -57,24 +56,19 @@ public class PlayerListener implements Listener
 		
 		if (Werewolf.getWerewolfManager().isWerewolf(event.getPlayer().getUniqueId())) {
 			// We want to be sure potion effects are cleared...
-			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.CONFUSION);
+			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.NAUSEA);
 			// Walkspeed works sooo, but let's still remove it...
 			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.SPEED);
 			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.HUNGER);
 			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.NIGHT_VISION);
-			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.INCREASE_DAMAGE);
+			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.STRENGTH);
 			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.REGENERATION);
-			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.JUMP);
+			Werewolf.pu.removePotionEffectNoGraphic(event.getPlayer(), PotionEffectType.JUMP_BOOST);
 			
 			event.getPlayer().setWalkSpeed(0.2F);
 		}
 
 		this.plugin.getServer().getScheduler().scheduleSyncDelayedTask(this.plugin, new CheckTransformationTask(plugin, event.getPlayer().getUniqueId()), 20L);
-		
-		if (this.plugin.useUpdateNotifications && (event.getPlayer().isOp() || Werewolf.getPermissionsManager().hasPermission(event.getPlayer(), "werewolf.updates")))
-		{
-			this.plugin.getServer().getScheduler().runTaskAsynchronously(this.plugin, new UpdateNotifier(this.plugin, event.getPlayer()));
-		}
 	}
 
 	@EventHandler
@@ -146,7 +140,7 @@ public class PlayerListener implements Listener
 						player.sendMessage(ChatColor.LIGHT_PURPLE + "A wild wolf joins your pack!");
 
 						double maxHealth = 20;
-						AttributeInstance healthAttribute = wolf.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+						AttributeInstance healthAttribute = wolf.getAttribute(Attribute.MAX_HEALTH);
 						healthAttribute.setBaseValue(maxHealth);
 						wolf.setHealth(maxHealth);
 						wolf.setOwner(player);
@@ -316,10 +310,10 @@ public class PlayerListener implements Listener
 				{
 					Werewolf.server.getScheduler().scheduleSyncDelayedTask(this.plugin, new PotionEffectTask(this.plugin, player, new PotionEffect(PotionEffectType.POISON, 4 * 20, 2)), 16L);
 					
-					player.spawnParticle(Particle.FIREWORKS_SPARK, player.getLocation(), 100);
+					player.spawnParticle(Particle.FIREWORK, player.getLocation(), 100);
 					DustOptions dustOptions = new DustOptions(Color.BLACK, 1);
-					player.spawnParticle(Particle.REDSTONE, player.getLocation().add(new Vector(0, 1, 0)), 100, dustOptions);
-					player.spawnParticle(Particle.REDSTONE, player.getLocation().add(new Vector(0, 2, 0)), 100, dustOptions);
+					player.spawnParticle(Particle.DUST, player.getLocation().add(new Vector(0, 1, 0)), 100, dustOptions);
+					player.spawnParticle(Particle.DUST, player.getLocation().add(new Vector(0, 2, 0)), 100, dustOptions);
 
 					plugin.untransform(player);
 				}

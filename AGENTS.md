@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Werewolf is a Spigot/Bukkit Minecraft server plugin (`com.dogonfire.werewolf`), built with Maven against `spigot-api` 1.19.4 (runtime minimum 1.13; see `MIN`/`MAX` in `Werewolf.java`). Source targets Java 8 (`jdk.version` in `pom.xml`); CI builds on JDK 17.
+Werewolf is a Spigot/Bukkit Minecraft server plugin (`com.dogonfire.werewolf`), built with Maven against `spigot-api` 26.3 (runtime minimum 26.1; see `MIN`/`MAX` in `Werewolf.java`). Source targets Java 25 (`maven.compiler.release` in `pom.xml`), which 26.x servers require anyway; CI builds on JDK 25.
 
 ## Commands
 
 ```bash
-nix develop                # devshell with JDK 17 + Maven (flake.nix); prefix commands with `nix develop -c` otherwise
+nix develop                # devshell with JDK 25 + Maven (flake.nix); prefix commands with `nix develop -c` otherwise
 mvn clean package          # default goal; produces target/Werewolf-<version>.jar
 mvn -B test                # what GitHub Actions runs on every push (compiles only — there are no unit tests)
 ```

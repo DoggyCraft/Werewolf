@@ -92,7 +92,6 @@ public class Werewolf extends JavaPlugin
 	public double								wolfbanePrice							= 200.0D;
 	public double								bookPrice								= 100.0D;
 	public boolean								useClans								= true;
-	public boolean								useUpdateNotifications					= true;
 	public boolean								useScoreboards							= true;
 	public boolean								metricsOptOut							= false;
 	public int									transformsForNoDropItems				= 2;
@@ -157,8 +156,8 @@ public class Werewolf extends JavaPlugin
 	public boolean								craftableLoreBookEnabled				= true;
 
 	private Version								version									= null;
-	public static final String					MAX										= "1.19.4-R0.1-SNAPSHOT";
-	public static final String					MIN										= "1.13";
+	public static final String					MAX										= "26.3-R0.1-SNAPSHOT";
+	public static final String					MIN										= "26.1";
 	public static final String					NMS										= VersionFactory.getNmsVersion().toString();
 	private static boolean						isCompatible							= true;
 
@@ -425,7 +424,7 @@ public class Werewolf extends JavaPlugin
 
 		permissionsManager = new PermissionsManager(this);
 
-		if (pm.getPlugin("Vampire") != null)
+		if (pm.getPlugin("VampireRevamp") != null && pm.getPlugin("VampireRevamp").isEnabled())
 		{
 			log("Vampire plugin detected. Enabling support for vampirism :-)");
 
@@ -721,7 +720,6 @@ public class Werewolf extends JavaPlugin
 		this.autoBounty = config.getBoolean("Settings.AutoBounty", false);
 		this.autoBountyMaximum = config.getInt("Settings.AutoBountyMaximum", 1000);
 		this.renameWerewolves = config.getBoolean("Settings.RenameWerewolves", true);
-		this.useUpdateNotifications = config.getBoolean("Settings.DisplayUpdateNotifications", true);
 		this.metricsOptOut = config.getBoolean("Settings.MetricsOptOut", false);
 		this.werewolfUrges = config.getBoolean("Settings.WerewolfUrges", true);
 		this.wolfChat = config.getBoolean("Settings.WolfChat", true);
@@ -812,7 +810,6 @@ public class Werewolf extends JavaPlugin
 	public void saveSettings()
 	{
 		config.set("Settings.ServerName", this.serverName);
-		config.set("Settings.DisplayUpdateNotifications", Boolean.valueOf(this.useUpdateNotifications));
 		config.set("Settings.MetricsOptOut", Boolean.valueOf(this.metricsOptOut));
 		config.set("Settings.AutoBounty", Boolean.valueOf(this.autoBounty));
 		config.set("Settings.AutoBountyMaximum", Integer.valueOf(this.autoBountyMaximum));
@@ -1048,19 +1045,6 @@ public class Werewolf extends JavaPlugin
 				public int getValue()
 				{
 					if (Werewolf.this.useTrophies)
-					{
-						return 1;
-					}
-					return 0;
-				}
-			});
-
-			featuresEnabledGraph.addPlotter(new Metrics.Plotter("Using Update Notifications")
-			{
-				@Override
-				public int getValue()
-				{
-					if (Werewolf.this.useUpdateNotifications)
 					{
 						return 1;
 					}

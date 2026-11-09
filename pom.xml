@@ -15,18 +15,9 @@
         </license>
     </licenses>
     <properties>
-        <jdk.version>1.8</jdk.version>
-        <maven.compiler.source>${jdk.version}</maven.compiler.source>
-        <maven.compiler.target>${jdk.version}</maven.compiler.target>
+        <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <bukkitAPIVersion>1.19.4-R0.1-SNAPSHOT</bukkitAPIVersion>
-        <sonar.host.url>http://localhost:9000/</sonar.host.url>
-        <!--suppress UnresolvedMavenProperty -->
-        <sonar.dependencyCheck.reportPath>${dependency.check.report.dir}/dependency-check-report.xml
-        </sonar.dependencyCheck.reportPath>
-        <!--suppress UnresolvedMavenProperty -->
-        <sonar.dependencyCheck.htmlReportPath>${dependency.check.report.dir}/dependency-check-report.html
-        </sonar.dependencyCheck.htmlReportPath>
+        <bukkitAPIVersion>26.3-R0.1-SNAPSHOT</bukkitAPIVersion>
     </properties>
     <repositories>
         <!-- Spigot Repo for Spigot and Bukkit -->
@@ -34,34 +25,25 @@
             <id>spigot-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots</url>
         </repository>
-        <!-- Vault repo for Vault -->
+        <!-- Lib's Disguises -->
         <repository>
-            <id>vault-repo</id>
-            <url>https://nexus.hc.to/content/repositories/pub_releases</url>
+            <id>lib-co-nz</id>
+            <url>https://mvn.lib.co.nz/public/</url>
         </repository>
-        <!-- MD_5 repo for other known plugins -->
-        <repository>
-            <id>md_5-public</id>
-            <url>https://repo.md-5.net/content/groups/public/</url>
-        </repository>
-        <!--	<repository>-->
-        <!--  		<id>robingrether-repo</id>-->
-        <!--  		<url>http://repo.robingrether.de/</url>-->
-        <!--	</repository>    -->
         <!-- ProtocolLib -->
         <repository>
             <id>dmulloy2-repo</id>
             <url>https://repo.dmulloy2.net/repository/public/</url>
         </repository>
-        <!-- EngineHub (prior Sk89q) repo for Essentials, WorldEdit, etc. -->
+        <!-- EngineHub (prior Sk89q) repo for WorldGuard -->
         <repository>
             <id>enginehub-repo</id>
             <url>https://maven.enginehub.org/repo/</url>
         </repository>
-        <!-- PlaceholderAPI repo for PlaceholderAPI -->
+        <!-- PlaceholderAPI -->
         <repository>
             <id>placeholderapi</id>
-            <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
+            <url>https://repo.extendedclip.com/releases/</url>
         </repository>
         <!-- CodeMC repo for SkinsRestorer -->
         <repository>
@@ -73,16 +55,11 @@
             <id>clan-jhoo</id>
             <url>https://nexus.clanjhoo.com/repository/maven-public/</url>
         </repository>
-        <!-- NeetGames for McMMO -->
-<!--        <repository>-->
-<!--            <id>neetgames</id>-->
-<!--            <url>https://nexus.neetgames.com/repository/maven-releases/</url>-->
-<!--        </repository>-->
-        <!-- JitPack for GitHub repos -->
-<!--        <repository>-->
-<!--            <id>jitpack.io</id>-->
-<!--            <url>https://jitpack.io</url>-->
-<!--        </repository>-->
+        <!-- JitPack for VaultAPI -->
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
     </repositories>
     <dependencies>
         <!-- Spigot -->
@@ -94,51 +71,9 @@
         </dependency>
         <!-- VaultAPI -->
         <dependency>
-            <groupId>net.milkbowl.vault</groupId>
+            <groupId>com.github.MilkBowl</groupId>
             <artifactId>VaultAPI</artifactId>
-            <version>1.7</version>
-            <scope>provided</scope>
-        </dependency>
-        <!-- Lib's Disguises -->
-        <dependency>
-            <groupId>LibsDisguises</groupId>
-            <artifactId>LibsDisguises</artifactId>
-            <version>10.0.34</version>
-            <scope>provided</scope>
-        </dependency>
-        <!-- SkinsRestorer API -->
-        <dependency>
-            <groupId>net.skinsrestorer</groupId>
-            <artifactId>skinsrestorer-api</artifactId>
-            <version>14.2.10</version>
-            <scope>provided</scope>
-        </dependency>
-        <!-- WorldGuard -->
-        <dependency>
-            <groupId>com.sk89q.worldguard</groupId>
-            <artifactId>worldguard-bukkit</artifactId>
-            <version>7.0.7</version>
-            <scope>provided</scope>
-        </dependency>
-        <!-- ProtocolLib -->
-        <dependency>
-            <groupId>com.comphenix.protocol</groupId>
-            <artifactId>ProtocolLib</artifactId>
-            <version>5.0.0</version>
-            <scope>provided</scope>
-        </dependency>
-        <!-- PlaceholderAPI -->
-        <dependency>
-            <groupId>me.clip</groupId>
-            <artifactId>placeholderapi</artifactId>
-            <version>2.11.3</version>
-            <scope>provided</scope>
-        </dependency>
-        <!-- Vampire(Revamp) -->
-        <dependency>
-            <groupId>com.clanjhoo</groupId>
-            <artifactId>vampire</artifactId>
-            <version>1.0.BETA-17</version>
+            <version>1.7.1</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -147,25 +82,90 @@
                 </exclusion>
             </exclusions>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.github.Mowstyl</groupId>-->
-<!--            <artifactId>Vampire</artifactId>-->
-<!--            <version>master-SNAPSHOT</version>-->
-<!--            <scope>provided</scope>-->
-<!--        </dependency>-->
-        <!-- McMMO -->
-<!--        <dependency>-->
-<!--            <groupId>com.gmail.nossr50.mcMMO</groupId>-->
-<!--            <artifactId>mcMMO</artifactId>-->
-<!--            <version>2.1.220</version>-->
-<!--            <scope>provided</scope>-->
-<!--        </dependency>-->
-        <!-- SonarQube Code Analysis -->
+        <!-- Lib's Disguises -->
         <dependency>
-            <groupId>org.sonarsource.scanner.maven</groupId>
-            <artifactId>sonar-maven-plugin</artifactId>
-            <version>3.9.1.2184</version>
-            <type>pom</type>
+            <groupId>me.libraryaddict.disguises</groupId>
+            <artifactId>libsdisguises</artifactId>
+            <version>26.10.24</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- PacketEvents (LibsDisguises API exposes its types, but doesn't declare it) -->
+        <dependency>
+            <groupId>com.github.retrooper</groupId>
+            <artifactId>packetevents-api</artifactId>
+            <version>2.14.0</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- SkinsRestorer API -->
+        <dependency>
+            <groupId>net.skinsrestorer</groupId>
+            <artifactId>skinsrestorer-api</artifactId>
+            <version>15.12.6</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- WorldGuard -->
+        <dependency>
+            <groupId>com.sk89q.worldguard</groupId>
+            <artifactId>worldguard-bukkit</artifactId>
+            <version>7.0.21</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.spigotmc</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- ProtocolLib -->
+        <dependency>
+            <groupId>com.comphenix.protocol</groupId>
+            <artifactId>ProtocolLib</artifactId>
+            <version>5.3.0</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- PlaceholderAPI -->
+        <dependency>
+            <groupId>me.clip</groupId>
+            <artifactId>placeholderapi</artifactId>
+            <version>2.12.3</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Vampire(Revamp) -->
+        <dependency>
+            <groupId>com.clanjhoo</groupId>
+            <artifactId>vampire</artifactId>
+            <version>1.0.2</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
     <build>
@@ -185,7 +185,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>3.6.0</version>
             </plugin>
         </plugins>
     </build>

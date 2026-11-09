@@ -66,7 +66,7 @@ public class SignManager implements Listener
 		String priceText = "";
 		if (this.plugin.vaultEnabled)
 		{
-			priceText = Werewolf.getEconomy().format(this.plugin.infectionPrice);
+			priceText = Werewolf.getEconomy().format(this.plugin.getSettings().signs().infectionPrice());
 		}
 		event.setLine(0, "Werewolf");
 		event.setLine(1, "Infection");
@@ -81,7 +81,7 @@ public class SignManager implements Listener
 		String priceText = "";
 		if (this.plugin.vaultEnabled)
 		{
-			priceText = Werewolf.getEconomy().format(this.plugin.curePrice);
+			priceText = Werewolf.getEconomy().format(this.plugin.getSettings().signs().curePrice());
 		}
 		event.setLine(0, "Werewolf");
 		event.setLine(1, "Cure");
@@ -96,7 +96,7 @@ public class SignManager implements Listener
 		String priceText = "";
 		if (this.plugin.vaultEnabled)
 		{
-			priceText = Werewolf.getEconomy().format(this.plugin.wolfbanePrice);
+			priceText = Werewolf.getEconomy().format(this.plugin.getSettings().signs().wolfbanePrice());
 		}
 		event.setLine(0, "Werewolf");
 		event.setLine(1, "Wolfbane");
@@ -111,7 +111,7 @@ public class SignManager implements Listener
 		String priceText = "";
 		if (this.plugin.vaultEnabled)
 		{
-			priceText = Werewolf.getEconomy().format(this.plugin.silverSwordPrice);
+			priceText = Werewolf.getEconomy().format(this.plugin.getSettings().signs().silverSwordPrice());
 		}
 		event.setLine(0, "Werewolf");
 		event.setLine(1, "SilverSword");
@@ -126,7 +126,7 @@ public class SignManager implements Listener
 		String priceText = "";
 		if (this.plugin.vaultEnabled)
 		{
-			priceText = Werewolf.getEconomy().format(this.plugin.bookPrice);
+			priceText = Werewolf.getEconomy().format(this.plugin.getSettings().signs().bookPrice());
 		}
 		event.setLine(0, "Werewolf");
 		event.setLine(1, "LoreBook");
@@ -159,14 +159,14 @@ public class SignManager implements Listener
 				{
 					if (this.plugin.vaultEnabled)
 					{
-						Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.infectionPrice));
+						Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.getSettings().signs().infectionPrice()));
 					}
 					else
 					{
 						Werewolf.getLanguageManager().setAmount("free");
 					}
 					
-					plugin.sendInfo(player.getUniqueId(), LanguageManager.LANGUAGESTRING.YouPlacedAInfectionPotionSign, ChatColor.GREEN, "", (int)this.plugin.infectionPrice, 1);
+					plugin.sendInfo(player.getUniqueId(), LanguageManager.LANGUAGESTRING.YouPlacedAInfectionPotionSign, ChatColor.GREEN, "", (int)this.plugin.getSettings().signs().infectionPrice(), 1);
 				}
 			}
 			else
@@ -192,13 +192,13 @@ public class SignManager implements Listener
 				{
 					if (this.plugin.vaultEnabled)
 					{
-						Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.curePrice));
+						Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.getSettings().signs().curePrice()));
 					}
 					else
 					{
 						Werewolf.getLanguageManager().setAmount("free");
 					}
-					this.plugin.sendInfo(player.getUniqueId(), LanguageManager.LANGUAGESTRING.YouPlacedACurePotionSign, ChatColor.GREEN, "", (int)this.plugin.curePrice, 1);
+					this.plugin.sendInfo(player.getUniqueId(), LanguageManager.LANGUAGESTRING.YouPlacedACurePotionSign, ChatColor.GREEN, "", (int)this.plugin.getSettings().signs().curePrice(), 1);
 				}
 			}
 			else
@@ -224,13 +224,13 @@ public class SignManager implements Listener
 				{
 					if (this.plugin.vaultEnabled)
 					{
-						Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.wolfbanePrice));
+						Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.getSettings().signs().wolfbanePrice()));
 					}
 					else
 					{
 						Werewolf.getLanguageManager().setAmount("free");
 					}
-					this.plugin.sendInfo(player.getUniqueId(), LanguageManager.LANGUAGESTRING.YouPlacedAWolfbanePotionSign, ChatColor.GREEN, "", (int)this.plugin.wolfbanePrice, 1);
+					this.plugin.sendInfo(player.getUniqueId(), LanguageManager.LANGUAGESTRING.YouPlacedAWolfbanePotionSign, ChatColor.GREEN, "", (int)this.plugin.getSettings().signs().wolfbanePrice(), 1);
 				}
 			}
 			else
@@ -256,13 +256,13 @@ public class SignManager implements Listener
 				{
 					if (this.plugin.vaultEnabled)
 					{
-						Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.silverSwordPrice));
+						Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.getSettings().signs().silverSwordPrice()));
 					}
 					else
 					{
 						Werewolf.getLanguageManager().setAmount("free");
 					}
-					this.plugin.sendInfo(player.getUniqueId(), LanguageManager.LANGUAGESTRING.YouPlacedASilverSwordSign, ChatColor.GREEN, "", (int)this.plugin.silverSwordPrice, 1);
+					this.plugin.sendInfo(player.getUniqueId(), LanguageManager.LANGUAGESTRING.YouPlacedASilverSwordSign, ChatColor.GREEN, "", (int)this.plugin.getSettings().signs().silverSwordPrice(), 1);
 				}
 			}
 			else
@@ -288,13 +288,13 @@ public class SignManager implements Listener
 				{
 					if (this.plugin.vaultEnabled)
 					{
-						Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.bookPrice));
+						Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.getSettings().signs().bookPrice()));
 					}
 					else
 					{
 						Werewolf.getLanguageManager().setAmount("free");
 					}
-					this.plugin.sendInfo(player.getUniqueId(), LanguageManager.LANGUAGESTRING.YouPlacedABookSign, ChatColor.GREEN, "", (int)this.plugin.bookPrice, 1);
+					this.plugin.sendInfo(player.getUniqueId(), LanguageManager.LANGUAGESTRING.YouPlacedABookSign, ChatColor.GREEN, "", (int)this.plugin.getSettings().signs().bookPrice(), 1);
 				}
 			}
 			else
@@ -335,9 +335,9 @@ public class SignManager implements Listener
 				double price = 0.0D;
 				if (this.plugin.vaultEnabled)
 				{
-					Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.infectionPrice));
+					Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.getSettings().signs().infectionPrice()));
 
-					price = this.plugin.infectionPrice;
+					price = this.plugin.getSettings().signs().infectionPrice();
 					if (!Werewolf.getEconomy().has(player, price))
 					{
 						this.plugin.sendInfo(player.getUniqueId(), LanguageManager.LANGUAGESTRING.YouDoNotHaveEnoughMoney, ChatColor.RED, "", (int)price, 1);
@@ -361,10 +361,10 @@ public class SignManager implements Listener
 			{
 				double price = 0.0D;
 
-				Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.curePrice));
+				Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.getSettings().signs().curePrice()));
 				if (this.plugin.vaultEnabled)
 				{
-					price = this.plugin.curePrice;
+					price = this.plugin.getSettings().signs().curePrice();
 					if (!Werewolf.getEconomy().has(player, price))
 					{
 						this.plugin.sendInfo(player.getUniqueId(), LanguageManager.LANGUAGESTRING.YouDoNotHaveEnoughMoney, ChatColor.RED, "", (int)price, 1);
@@ -387,10 +387,10 @@ public class SignManager implements Listener
 			{
 				double price = 0.0D;
 
-				Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.wolfbanePrice));
+				Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.getSettings().signs().wolfbanePrice()));
 				if (this.plugin.vaultEnabled)
 				{
-					price = this.plugin.wolfbanePrice;
+					price = this.plugin.getSettings().signs().wolfbanePrice();
 					if (!Werewolf.getEconomy().has(player, price))
 					{
 						this.plugin.sendInfo(player.getUniqueId(), LanguageManager.LANGUAGESTRING.YouDoNotHaveEnoughMoney, ChatColor.RED, "", (int)price, 1);
@@ -413,10 +413,10 @@ public class SignManager implements Listener
 			{
 				double price = 0.0D;
 
-				Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.silverSwordPrice));
+				Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.getSettings().signs().silverSwordPrice()));
 				if (this.plugin.vaultEnabled)
 				{
-					price = this.plugin.silverSwordPrice;
+					price = this.plugin.getSettings().signs().silverSwordPrice();
 					if (!Werewolf.getEconomy().has(player, price))
 					{
 						this.plugin.sendInfo(player.getUniqueId(), LanguageManager.LANGUAGESTRING.YouDoNotHaveEnoughMoney, ChatColor.RED, "", (int)price, 1);
@@ -439,10 +439,10 @@ public class SignManager implements Listener
 			{
 				double price = 0.0D;
 
-				Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.bookPrice));
+				Werewolf.getLanguageManager().setAmount(Werewolf.getEconomy().format(this.plugin.getSettings().signs().bookPrice()));
 				if (this.plugin.vaultEnabled)
 				{
-					price = this.plugin.bookPrice;
+					price = this.plugin.getSettings().signs().bookPrice();
 					if (!Werewolf.getEconomy().has(player, price))
 					{
 						this.plugin.sendInfo(player.getUniqueId(), LanguageManager.LANGUAGESTRING.YouDoNotHaveEnoughMoney, ChatColor.RED, "", (int)price, 1);

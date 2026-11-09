@@ -94,7 +94,7 @@ public class TrophyManager implements Listener
 		skullTrophy.setItemMeta(skullMeta);
 		
 		String werewolfName = "Werewolf";
-		if (plugin.werewolfNamesEnabled)
+		if (plugin.getSettings().names().enabled())
 		{
 			werewolfName = Werewolf.getWerewolfManager().getWerewolfName(werewolfId) + "'s";
 		}

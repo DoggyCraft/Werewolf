@@ -40,7 +40,7 @@ public class LibsDisguisesFactory implements IWerewolfDisguiseFactory
 				PlayerDisguise skin = new PlayerDisguise(werewolfName, getSkinAccountName());
 				skin.getWatcher().setCapeEnabled(false);
 
-				if (Werewolf.instance().werewolfNamesEnabled)
+				if (Werewolf.instance().getSettings().names().enabled())
 				{
 					String customWerewolfName = Werewolf.getWerewolfManager().getWerewolfName(player.getUniqueId());
 					if (customWerewolfName != null && !customWerewolfName.isEmpty())
@@ -93,7 +93,7 @@ public class LibsDisguisesFactory implements IWerewolfDisguiseFactory
 			PlayerDisguise skin = new PlayerDisguise(werewolfDisguise.getWerewolfName(), werewolfDisguise.getSkinAccountName());
 			skin.getWatcher().setCapeEnabled(false);
 
-			if (Werewolf.instance().werewolfNamesEnabled)
+			if (Werewolf.instance().getSettings().names().enabled())
 			{
 				String customWerewolfName = Werewolf.getWerewolfManager().getWerewolfName(player.getUniqueId());
 				if (customWerewolfName != null && !customWerewolfName.isEmpty())

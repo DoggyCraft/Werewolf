@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.config.Settings;
 import com.dogonfire.werewolf.events.NewAlphaEvent;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -69,28 +70,19 @@ public class ClanManager
 
 		this.plugin.log("Loaded " + this.clansConfig.getKeys(false).size() + " clans.");
 		
-		this.alphaAccount = plugin.alphaAccountName;
-		this.alphaAccountId = UUID.fromString(plugin.alphaAccountUUID);
-		
-		this.clanNames.put(ClanType.Potion, plugin.potionName);
-		this.clanNames.put(ClanType.WerewolfBite, plugin.werewolfBiteName);
-		this.clanNames.put(ClanType.WildBite, plugin.wildBiteName);
+		Settings.Clans clans = plugin.getSettings().clans();
+		this.alphaAccount = clans.alphaSkin().accountName();
+		this.alphaAccountId = clans.alphaSkin().accountId();
 
-		this.werewolfAccount.put(ClanType.Potion, plugin.potionAccountName);
-		this.werewolfAccount.put(ClanType.WerewolfBite, plugin.werewolfBiteAccountName);
-		this.werewolfAccount.put(ClanType.WildBite, plugin.wildBiteAccountName);
-
-		this.werewolfAccountId.put(ClanType.Potion,       UUID.fromString(plugin.potionAccountUUID));
-		this.werewolfAccountId.put(ClanType.WerewolfBite, UUID.fromString(plugin.werewolfBiteAccountUUID));
-		this.werewolfAccountId.put(ClanType.WildBite,     UUID.fromString(plugin.wildBiteAccountUUID));
-					
-		this.werewolfTextures.put(ClanType.Potion,       plugin.potionSkinValue);
-		this.werewolfTextures.put(ClanType.WerewolfBite, plugin.werewolfBiteSkinValue);
-		this.werewolfTextures.put(ClanType.WildBite,     plugin.wildBiteSkinValue);
-						
-		this.werewolfTextureSignatures.put(ClanType.Potion,       plugin.potionSkinSignature);
-		this.werewolfTextureSignatures.put(ClanType.WerewolfBite, plugin.werewolfBiteSkinSignature);
-		this.werewolfTextureSignatures.put(ClanType.WildBite,     plugin.wildBiteSkinSignature);
+		for (ClanType clan : ClanType.values())
+		{
+			Settings.Skin skin = clans.skins().get(clan);
+			this.clanNames.put(clan, clans.names().get(clan));
+			this.werewolfAccount.put(clan, skin.accountName());
+			this.werewolfAccountId.put(clan, skin.accountId());
+			this.werewolfTextures.put(clan, skin.value());
+			this.werewolfTextureSignatures.put(clan, skin.signature());
+		}
 		
 		for (ClanType clan : ClanType.values())
 		{
@@ -166,12 +158,12 @@ public class ClanManager
 
 	public String getWerewolfTextureForAlpha(ClanType type)
 	{
-		return plugin.alphaSkinValue;
+		return plugin.getSettings().clans().alphaSkin().value();
 	}
 
 	public String getWerewolfTextureSignatureForAlpha(ClanType type)
 	{
-		return plugin.alphaSkinSignature;
+		return plugin.getSettings().clans().alphaSkin().signature();
 	}
 	
 	public void handleMobKill(Player player, ClanType clanType, EntityType mobType)
@@ -309,7 +301,7 @@ public class ClanManager
 	// TODO Bloodrage clan?
 	public void updateClans()
 	{
-		if (!this.plugin.useClans)
+		if (!this.plugin.getSettings().clans().enabled())
 		{
 			return;
 		}
@@ -438,7 +430,7 @@ public class ClanManager
 	/** Runs from the main loop: fills every empty (or stale) alpha slot */
 	public void checkAlphas()
 	{
-		if (!this.plugin.useClans || this.clansConfig == null)
+		if (!this.plugin.getSettings().clans().enabled() || this.clansConfig == null)
 		{
 			return;
 		}

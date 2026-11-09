@@ -23,8 +23,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.util.Vector;
 
 import com.dogonfire.werewolf.managers.ClanManager;
-import com.dogonfire.werewolf.managers.DamageManager;
-import com.dogonfire.werewolf.managers.WolfFormManager;
+import com.dogonfire.werewolf.config.Settings;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
@@ -84,12 +83,12 @@ public class DamageListener implements Listener
 			if (Werewolf.getWerewolfManager().hasWerewolfSkin(werewolfPlayer.getUniqueId()))
 			{
 				double damage = event.getDamage();
-				WolfFormManager.Stats stats = Werewolf.getWolfFormManager().getStats(werewolfPlayer.getUniqueId());
+				Settings.Stats stats = Werewolf.getWolfFormManager().getStats(werewolfPlayer.getUniqueId());
 
 				// Gold weapons cut through a werewolf's natural defence until it is mature enough to be immune
 				boolean goldHit = isGoldWeaponHit(event) && !Werewolf.getWerewolfManager().isGoldImmune(werewolfPlayer.getUniqueId());
 				boolean silverHit = isSilverSwordHit(event);
-				boolean bypassDefense = goldHit || (silverHit && this.plugin.silverSwordBypassesDefense);
+				boolean bypassDefense = goldHit || (silverHit && this.plugin.getSettings().items().silverSwordBypassesDefense());
 
 				switch (event.getCause())
 				{
@@ -109,7 +108,7 @@ public class DamageListener implements Listener
 						// Per-clan natural defence (alphas have their own, lower value)
 						if (!bypassDefense)
 						{
-							damage *= stats.defense;
+							damage *= stats.defense();
 						}
 						break;
 
@@ -119,7 +118,7 @@ public class DamageListener implements Listener
 
 				if (silverHit)
 				{
-					damage *= DamageManager.SilverSwordMultiplier;
+					damage *= plugin.getSettings().items().silverSwordMultiplier();
 				}
 
 				event.setDamage(damage);
@@ -162,16 +161,16 @@ public class DamageListener implements Listener
 
 				if (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 				{
-					WolfFormManager.Stats stats = Werewolf.getWolfFormManager().getStats(player.getUniqueId());
+					Settings.Stats stats = Werewolf.getWolfFormManager().getStats(player.getUniqueId());
 					double damage;
 
 					if (player.getInventory().getItemInMainHand().getType().equals(Material.AIR))
 					{
-						damage = stats.fistDamage;
+						damage = stats.fistDamage();
 					}
 					else
 					{
-						damage = stats.itemDamage;
+						damage = stats.itemDamage();
 					}
 
 					event.setDamage(damage);
@@ -230,7 +229,7 @@ public class DamageListener implements Listener
 		}
 
 		if (!Werewolf.getWerewolfManager().hasWerewolfSkin(victim.getUniqueId()) && (Werewolf.getPermissionsManager().hasPermission(victim, "werewolf.becomeinfected") || victim.isOp())
-				&& (!Werewolf.getWerewolfManager().isWerewolf(victim) && (event.getDamager() instanceof Wolf) && Math.random() < this.plugin.wildWolfInfectionRisk))
+				&& (!Werewolf.getWerewolfManager().isWerewolf(victim) && (event.getDamager() instanceof Wolf) && Math.random() < this.plugin.getSettings().infection().wildWolfBiteRisk()))
 		{
 			Tameable tameable = (Tameable) event.getDamager();
 
@@ -442,7 +441,7 @@ public class DamageListener implements Listener
 				}
 			}
 
-			if (this.plugin.useClans)
+			if (this.plugin.getSettings().clans().enabled())
 			{
 				ClanManager.ClanType clan = Werewolf.getWerewolfManager().getWerewolfClan(killer.getUniqueId());
 				Werewolf.getClanManager().handleMobKill(killer, clan, event.getEntity().getType());

@@ -129,7 +129,7 @@ public class DisguiseTask implements Runnable
 		
 		Boolean renamed = false;
 
-		if (plugin.werewolfNamesEnabled)
+		if (plugin.getSettings().names().enabled())
 		{
 			String werewolfName = Werewolf.getWerewolfManager().getWerewolfName(player.getUniqueId());
 
@@ -224,7 +224,7 @@ public class DisguiseTask implements Runnable
 		Werewolf.getWerewolfManager().pushPlayerData(this.player);
 		Werewolf.getStatisticsManager().clearStatistics(this.player.getUniqueId());
 
-		if (plugin.useScoreboards)
+		if (plugin.getSettings().general().scoreboardsEnabled())
 		{
 			Werewolf.getWerewolfScoreboardManager().newPlayerHuntingScoreboard(this.player);
 		}
@@ -243,11 +243,11 @@ public class DisguiseTask implements Runnable
 		// Bukkit.getScoreboardManager();
 		// }
 
-		if (this.plugin.useWerewolfGroupName)
+		if (this.plugin.getSettings().general().werewolfGroupEnabled())
 		{
 			String originalGroup = Werewolf.getPermissionsManager().getGroup(this.player.getName());
 			Werewolf.getWerewolfManager().setOriginalPermissionGroup(this.player.getUniqueId(), originalGroup);
-			Werewolf.getPermissionsManager().setGroup(this.player.getName(), this.plugin.werewolfGroupName);
+			Werewolf.getPermissionsManager().setGroup(this.player.getName(), this.plugin.getSettings().general().werewolfGroupName());
 		}
 
 		Werewolf.getLanguageManager().setAmount("" + Werewolf.getWerewolfManager().getNumberOfTransformations(this.player.getUniqueId()));

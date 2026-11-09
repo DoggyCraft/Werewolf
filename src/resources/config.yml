@@ -1,0 +1,374 @@
+# Werewolf configuration
+#
+# Missing keys fall back to the defaults shown here, so you only need to keep the settings you change.
+# Use /ww reload to apply changes without restarting.
+# Chances written as 0.0 - 1.0 are probabilities (0.25 = 25%). Chances written as 0 - 100 are percentages.
+
+# Used by the plugin to upgrade old configs. Do not change.
+config-version: 2
+
+Settings:
+  # Name shown in messages that mention the server
+  ServerName: Your Server
+  # Language file in plugins/Werewolf/lang/ (english, danish, ...). Missing files are downloaded on start
+  Language: english
+  # Log extra information to the console
+  Debug: false
+  # Werewolves only transform at night when the moon is full. If false they transform every night
+  OnlyTransformDuringFullMoon: true
+  # Drop armor and the held item when transforming. If false they are moved into the inventory where possible
+  DropArmorOnTransform: true
+  # Show werewolf names in death messages
+  RenameWerewolves: true
+  # Werewolves sometimes get messages about their urges
+  WerewolfUrges: true
+  # Chat from werewolves in wolf form is turned into growls for non-werewolves
+  WolfChat: true
+  # Cure a werewolf when they are killed in wolf form
+  CureWerewolfWhenSlain: false
+  # Randomly add money to the werewolf bounty while werewolves roam (needs Vault)
+  AutoBounty: false
+  # The bounty AutoBounty stops adding at
+  AutoBountyMaximum: 1000
+
+# Worlds werewolves exist in. Leave empty to use the server's main world
+AllowedWorlds: []
+
+# Night in world ticks (0 - 24000). Werewolves transform between Start and End
+Night:
+  Start: 13000
+  End: 23000
+
+Moon:
+  # Display names for the moon phases
+  PhaseNames:
+    FullMoon: Full Moon
+    WaningGibbous: Waning Gibbous
+    LastQuarter: Last Quarter
+    WaningCrescent: Waning Crescent
+    NewMoon: New Moon
+    WaxingCrescent: Waxing Crescent
+    FirstQuarter: First Quarter
+    WaxingGibbous: Waxing Gibbous
+
+Werewolf:
+  # Damage a werewolf deals with bare hands (in half hearts). Default for Stats.<clan>.FistDamage
+  HandDamage: 8.0
+  # Damage a werewolf deals with an item in hand. Default for Stats.<clan>.ItemDamage
+  ItemDamage: 3.0
+  # Multiplier on damage a werewolf takes (0.8 = takes 80%). Default for Stats.<clan>.Defense
+  ArmorMultiplier: 0.8
+  # Radius (blocks) in which wild wolves can join a werewolf's pack
+  WolfDistance: 10
+  # Wolf form stats per clan (WildBite = Silvermane, WerewolfBite = Bloodmoon, Potion = Witherfang).
+  # Speed is the walk speed (-1.0 - 1.0, players walk at 0.2). Defense is the damage taken multiplier.
+  # A missing value uses the global value above (alphas: double damage, half the damage taken)
+  Stats:
+    WildBite:
+      Speed: 0.5
+      Defense: 0.8
+      FistDamage: 8.0
+      ItemDamage: 3.0
+      Alpha:
+        Speed: 0.5
+        Defense: 0.4
+        FistDamage: 16.0
+        ItemDamage: 6.0
+    WerewolfBite:
+      Speed: 0.5
+      Defense: 0.8
+      FistDamage: 8.0
+      ItemDamage: 3.0
+      Alpha:
+        Speed: 0.5
+        Defense: 0.4
+        FistDamage: 16.0
+        ItemDamage: 6.0
+    Potion:
+      Speed: 1.0
+      Defense: 0.8
+      FistDamage: 8.0
+      ItemDamage: 3.0
+      Alpha:
+        Speed: 1.0
+        Defense: 0.4
+        FistDamage: 16.0
+        ItemDamage: 6.0
+  # Potion effects in wolf form per clan, as EFFECT:amplifier:duration_in_ticks (amplifier 0 = level I).
+  # Effect names are Minecraft ids such as speed, jump_boost, strength or night_vision
+  Effects:
+    WildBite:
+    - HUNGER:1:32000
+    - NIGHT_VISION:0:32000
+    - JUMP_BOOST:1:32000
+    - REGENERATION:0:32000
+    WerewolfBite:
+    - HUNGER:1:32000
+    - NIGHT_VISION:0:32000
+    - JUMP_BOOST:1:32000
+    - STRENGTH:1:32000
+    Potion:
+    - HUNGER:1:32000
+    - NIGHT_VISION:0:32000
+    - JUMP_BOOST:2:32000
+  # Potion effects removed from werewolves in wolf form (unless their clan's Effects give it)
+  BlockedPotions: []
+
+# Commands werewolves cannot use. "/plugin:command" is matched as "/command" too.
+# Players with werewolf.bypass.blockedcommands are not affected
+BlockedCommands:
+  # Blocked for every werewolf
+  All: []
+  # Blocked in wolf form
+  WolfForm:
+  - /skin
+  - /skins
+  # Blocked for clan alphas
+  Alpha: []
+
+# Werewolves only eat meat
+Diet:
+  Enabled: true
+  # Cancel eating a blocked food. If false they can eat it but get no hunger back
+  PreventConsumption: true
+  # Also apply the diet in human form
+  HumanForm: false
+  # Material names of the foods werewolves cannot eat
+  BlockedFoods:
+  - APPLE
+  - BREAD
+  - PUMPKIN
+  - MELON
+  - MUSHROOM_STEW
+  - BEETROOT_SOUP
+  - BEETROOT
+  - BAKED_POTATO
+  - PUMPKIN_PIE
+  - POTATO
+  - POISONOUS_POTATO
+  - GOLDEN_APPLE
+  - ENCHANTED_GOLDEN_APPLE
+  - DRIED_KELP
+  - CAKE
+  - COOKIE
+  - CARROT
+  - MILK_BUCKET
+  - GOLDEN_CARROT
+  - SUSPICIOUS_STEW
+  - CHORUS_FRUIT
+  - MELON_SLICE
+  - SWEET_BERRIES
+  - GLOW_BERRIES
+  - HONEY_BOTTLE
+
+Infection:
+  # Chance (0.0 - 1.0) that drinking a cure potion cures a werewolf
+  CureChance: 1.0
+  # Chance (0.0 - 1.0) that a werewolf's bite infects a player. 0 turns werewolf bites off
+  WerewolfBiteRisk: 0.05
+  # Chance (0.0 - 1.0) that a bite infects when the werewolf has used /ww intent
+  WerewolfBiteIntentRisk: 0.25
+  # Chance (0.0 - 1.0) that a wild wolf's bite infects a player
+  WildWolfBiteRisk: 0.75
+  # Werewolves who have not transformed for this many days are cured. 0 turns this off
+  AutoCureDays: 14
+
+# Number of transformations (levels) a werewolf needs for each perk
+Maturity:
+  # Can use /ww intent to choose whether a bite infects
+  Intent: 2
+  # Keeps their items when transforming
+  NoDropItems: 3
+  # Can sniff and follow a player's scent
+  ScentTrack: 5
+  # Can transform at will with /ww transform
+  ControlledTransformation: 7
+  # No longer hurt by gold
+  GoldImmunity: 10
+
+# How long a /ww transform wolf form lasts
+Transformation:
+  # Limit the time. If false a controlled transformation lasts until the werewolf ends it
+  Limit: true
+  # LINEAR: Base + Modifier * level. EXPONENTIAL: Base + level ^ Modifier. CONSTANT: Base
+  Equation: LINEAR
+  # Seconds
+  Base: 300.0
+  Modifier: 30.0
+
+# Cooldowns in seconds. 0 turns a cooldown off
+Cooldowns:
+  # Between /ww transform form changes
+  Transform: 600
+  Howl: 60
+  Growl: 30
+  # Between attempts to sniff a player's scent
+  Sniff: 5
+
+# Scent tracking for mature werewolves
+Scent:
+  # Chance (0 - 100) that a sniff picks up the scent
+  Chance: 10
+  # Length of the particle trail in blocks. 0 hides the trail
+  Range: 8
+  # Height offset of the trail
+  YOffset: 0.0
+  # Particles per trail block
+  ParticleAmount: 10
+  # Distances (blocks) where the trail changes color. Keep them in descending order
+  Distances:
+    Far: 500
+    Close: 200
+    VeryClose: 50
+  # Slowness amplifier while following a scent. -1 gives no slowness
+  SlownessAmplifier: 2
+
+# Werewolf hunting: trackers and hunting gear
+Hunting:
+  Enabled: true
+  Trackers:
+    # Trackers also work in the off hand
+    UseEitherHand: true
+  # When trackers point at a target
+  Target:
+    Werewolf:
+      WolfForm: true
+      HumanForm: false
+      Daytime: false
+      Nighttime: true
+    Vampire:
+      Daytime: false
+      Nighttime: true
+  # Turn PvP on for werewolves trespassing in claims (needs GriefPrevention and PvPManager)
+  ForcePvP:
+    Enabled: false
+    Claims: true
+    AdminClaims: false
+
+# Respect protection from these plugins when they are installed
+Integrations:
+  WorldGuard: true
+  PvPManager: true
+  GriefPrevention: true
+
+Items:
+  # Damage multiplier of the silver sword against werewolves
+  SilverSwordMultiplier: 2
+  # Damage per second a werewolf takes while holding a silver sword. 0 turns this off
+  SilverSwordPenalty: 2.0
+  # Silver sword hits ignore a werewolf's Defense
+  SilverSwordBypassesDefense: true
+  # Chance (0 - 100) that wolfbane turns a werewolf in wolf form back to human
+  WolfbaneUntransformChance: 25
+  # Which items can be crafted
+  CraftableSilverSword: true
+  CraftableSilverArmor: true
+  CraftableLoreBookEnabled: true
+  CraftableInfectionPotionEnabled: true
+  CraftableCurePotionEnabled: true
+  CraftableWolfbanePotionEnabled: true
+  CraftableWerewolfTracker: true
+  CraftableVampireTracker: true
+  # Per piece. Purity: chance (0 - 100, summed over worn pieces) to block an infection.
+  # Defense: percentage (0 - 100, summed) less damage taken from werewolves and vampires
+  SilverArmor:
+    Helmet:
+      Purity: 10
+      Defense: 8
+    Chestplate:
+      Purity: 45
+      Defense: 20
+    Leggings:
+      Purity: 35
+      Defense: 14
+    Boots:
+      Purity: 10
+      Defense: 8
+
+# Werewolf shop signs (needs Vault)
+Signs:
+  Enabled: false
+  CurePrice: 500.0
+  InfectionPrice: 1000.0
+  WolfbanePrice: 250.0
+  SilverSwordPrice: 1000.0
+  BookPrice: 100.0
+
+# Random names given to werewolves in wolf form
+WerewolfNames:
+  Enabled: true
+  Given_names:
+  - Dark
+  - Black
+  - White
+  - Red
+  - Blood
+  - Blue
+  - Gray
+  - Neon
+  - Wild
+  - Lurking
+  - Feral
+  - Bestial
+  - Fierce
+  - Vicious
+  - Bloodthirsty
+  - Fearsome
+  - Ghoulish
+  - Wrathful
+  - Teenage
+  - Savage
+  Surnames:
+  - Devourer
+  - Fang
+  - Wolf
+  - Howl
+  - Turned
+  - Ghoul
+  - Paws
+  - Claw
+
+# Move werewolves to this permission group while in wolf form (needs Vault)
+WerewolfGroup:
+  Enabled: false
+  Name: Werewolf
+
+Trophies:
+  # Killing a werewolf in wolf form with a sword drops their head as a trophy
+  Enabled: false
+
+Scoreboards:
+  Enabled: true
+
+Chat:
+  Prefix: Werewolf
+
+Disguises:
+  # Skin backend: auto, builtin (Paper only), libsdisguises or skinsrestorer.
+  # auto picks builtin on Paper, otherwise LibsDisguises, then SkinsRestorer
+  Backend: auto
+
+Clans:
+  Enabled: true
+  # Clan display names
+  PotionName: Witherfang
+  WerewolfBiteName: Bloodmoon
+  WildBiteName: Silvermane
+  # Skins: the Minecraft account each skin comes from, and its texture value and signature
+  # (from https://sessionserver.mojang.com/session/minecraft/profile/<uuid>?unsigned=false)
+  AlphaAccountName: WerewolfAlpha
+  PotionAccountName: WF_Werewolf
+  WerewolfBiteAccountName: BM_Werewolf
+  WildBiteAccountName: SM_Werewolf
+  AlphaAccountUUID: e0d074bd-6722-47fc-95d3-f28e2899e155
+  PotionAccountUUID: c61647e5-fc2f-4536-abe9-c851911ad22f
+  WerewolfBiteAccountUUID: da508ecc-dbd9-46c5-8095-47b91aa4ff5f
+  WildBiteAccountUUID: b68a8f00-7d24-4c52-b6ad-1423bfbe26ee
+  AlphaSkinValue: ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzE3NjgzNiwKICAicHJvZmlsZUlkIiA6ICJlMGQwNzRiZDY3MjI0N2ZjOTVkM2YyOGUyODk5ZTE1NSIsCiAgInByb2ZpbGVOYW1lIiA6ICJXZXJld29sZkFscGhhIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2NhZTg4YjY5MjA0YWUyYzNlM2NiZTcwOWUzZTYyNTIxZTUzZmEwNWU0ZGFkODkxYzZhZmJkZmI5MDg2OGE3ZTAiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ==
+  AlphaSkinSignature: GIDMFU5fTmB4T4RFFs/pQDAg7ZsCsu5KAxMXiQw4G32G0Db5SRmJ6OtiSc3SRznJO9EAW7lmjo38+BdY4b3cgTM7IbXmZGx5ML22ZW5KYspUoot2wo9kIj5ksh+H0Tfy9JCPLpg17nd7O1aY5+RhI5Aq+mhtyhJFXn1a906Qg9/XtHhiw0bUrthpa1RrtHnbH6+hFKgzNKAEeT93MvrPajOT7dmzQ72UK3KXgpe6KzbrWFf+NL0ZbpfkjwabSIALUdcL6+92EI//dB5yMgHEln9wfzKjH+82cDGEoGQjAnJIf+/KVWOtkfNRJauwpUkIUkD4tmkXxCCTyXXwUuIb7e7CwxyFWK4K7e7ir/P5zf1NuQZV+X1MwbF1c++dlGa4yBIvrb97F9tTu+7tw6KFwxqCvj4yRjhkGXsN0soI39v95q7ucxWaX0D4oKwa9QYi9zLW6DIh9bPxGa78TAPC/WyAdM/8J+/uinX2mvEsECsKQVmrCGRrqrZgfctsnXHuqstKMNOecwDFDzi8rWlcM3/wrdHn14Lvn2bsZGR4Xhr532CY2t+JgkQvYBM5Z+tkW5C7MCVH4BbLwf2zDcDkGIOzq5VoKlu/2WML88etjyzSIhCN0WJXWFkeRr7ddTar7Nx8/AzHRUBcTGXC+UGiHMYWWq8bAILFggLKY8eJzq0=
+  PotionSkinValue: ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzM4MjA1NCwKICAicHJvZmlsZUlkIiA6ICJjNjE2NDdlNWZjMmY0NTM2YWJlOWM4NTE5MTFhZDIyZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJXRl9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS84NjA2YmNlMjkzZGRiY2RlNDE1NzE5NGJkMTZkZDhmZDQzNTAyMjU3MTUyYThiYTJiMWFmMTRlOTM3ZWY5NzAzIgogICAgfQogIH0KfQ==
+  PotionSkinSignature: M4bpafjzWq9GBbbHGL2xL8dwHxghLdily2bUnBsPPfsjrYidl8uws2pagluNPzxcCSqiZusJvbyoELgFBHrhKxDMGsUvG2nG/XV6GrZj8+bOYKlsU5IszwDaXJB9p6Uxh68pGoKximacJa1ELayKxbxLhJndGVTtO55pOvIB425f6VMRdJa6EvimsiibPMgGBKDVR4BP9ctP5Ij1cFyVpUZuiocp069LKPBMRR4mjRIeD4fmhz6o7yP5g4j6v3/n75T/NPR/NnMcRO7zYDnH0V0/a+dr0UTsGbH+4teuxdExgBrh2sjCCt7Zb4Yno6ElDYIABRqPUHSzNQ7IY3BHzGBaLZ29K/nUgN4mABlqj30ZL6RXmnlyzJUF/MxTcU0R/ROe8nmrt7eX700c29yrtufEkHhhUNX/hB/LjLIAoRIQgpHOGaocCgFsVRR1GGTot1KHuj8k0rvUKmxITpxbjOhdXwkwIMJ/WCAFygeBP6CTfnIKvZbJO2IAkv0/SQ8T38zLl2Xo0wbcUhQS4T44PWGzAVIX9I21lce9VHh55qTgQn0k+Wf9wog/KJw4HjLpWm+eTKuJiZH5zVGxQOzS0AU0OT+g/wHTcBqqtEDD1MeqhYfnQX7uU0wVN+HbahYV6Q2pE6qgyHCqjFTaS+N1dhmtTnhPsJdA4EhHCE9AAWE=
+  WerewolfBiteSkinValue: ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzQzNDY4NywKICAicHJvZmlsZUlkIiA6ICJkYTUwOGVjY2RiZDk0NmM1ODA5NTQ3YjkxYWE0ZmY1ZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJCTV9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9jMzc5MWEwOGM1Zjk1ZTQ1MGZkMmZiOGEwZTc1ZmViYTMwN2ZhZDJkNjYzMTkzNTAzYzU3NmMxOWRjM2MwYzdlIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=
+  WerewolfBiteSkinSignature: Z8NgxOC7mVyeW9hGKMxGKGG16ZDkADR5RXmyktriE6wUodq+TRokU0LIGaCHYrc6ReH3rzQJtNj5Whs83tLPAWGMj79silx6jzPhZ5Db2iTZQjVAG98rNGFBxgsjqSG72LyeyxwRIN6L/OSnf2qna2dP1T12d2uyfdipzuNdXnreG/5WqRj0Rrn3ok+GieuoR1DzYugkPu/3vhJOAFfvtSdoAv0C1JtuKaIeDj5BOm+RHvzwcFiYU9dhnGA0n3mxjGUpCCY/RFGF5l80Cw2RqN6j4rougUhklPe4swpS9KX2fF2TsK/JS8WJ1jHuKyykqnml2VHqsoNDX8yTCD/tTdXWJ+lTDsdkdCkPLbX2hkfIJ/0vv55GnQltERie757K+HHncmYw4tBxjgtTCcdIcLNNoAf9jlQC4f8sUCdPiIr7PKoxrik6GkZKx52DsaUGvv/+32E/Aswo1TnD0gMFOiWTtYfJ4OmMW5Ez+AtpoWnypAFKDtTIqMadhD/3HatlpCXsAuA49vE15dfN6WF+wJ66hCtxUKZJSqFhQ81Fan3R9+62E1f+7Vm8yyzoo/ttRmg7zFRAMTaf200z4Ei3xZvq0NiN8USdd3au4DAwK45Tn3FYc+Qo+9TVYn1iDEG9uo5BGYhxiYAz/TnVJccKOqaCzlu1KV/JxabEpAFd534=
+  WildBiteSkinValue: ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzQwOTQzMiwKICAicHJvZmlsZUlkIiA6ICJiNjhhOGYwMDdkMjQ0YzUyYjZhZDE0MjNiZmJlMjZlZSIsCiAgInByb2ZpbGVOYW1lIiA6ICJTTV9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS82MzZhNWVkN2I0ZmZmM2I3MzU0YzRjOGM5NjBmM2QxOTVkZWZkMjgyMjA4NjYyNjY1ZGViYjQ2NGJiNWJmZTY1IiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=
+  WildBiteSkinSignature: RlCvrZ4SYkPDg2xl6f97ya5Z+578Uov0R6eHqJdFAPEB/rXqlwgPXS3bEhubQ3pLV9QS8BPE2OqycGrg7QrrQ7w267aurZ6Ax7RmGunGnuiJ9jcjlxjwp6Ltk4o/N8OUBYfF3TUfFXnj6lzZUeITZDSb21o/2UFglVxssk5U0PFN7/VpV4g6hv8iDBT9TH6v8wG8I4AZqgU2eoYGvddkLlCX/63FVEEbUb/eTc8R/iOyQVvnhaP8vhs1DXu7kp/b50hhDM31pDkMT3TJq2tEEHGmLZVok9aabtIuhRlIfpjyvJOV5VO9RDWiZeZqKQcYO1F7p+bv5gl8Cqodl7OrG8tzwjq2hH+tRMLidHCjgvsbHOLElUjWoBnMu10r+94Adl9+B/CPUF+NFqUwQ2jCY+WS75M/GX9C7gftO8f1c5n9eO8HVaUeB4fmPqAA0yoCUvIjVgr46a1imcppl2O1fKS+kIVI+Lb08Ujymilqe5lEnwOz/ykndAoleMM7+6kViHGF5/HkUS8l50AnJYVgIUPwLTlwY2GlvtSOcSEHTXCx9YsHBY60r4Ow3bi5pCkNvBTvaHqCWIHLuIA86r2GQPJGuZGn7iy1KJTlvDjZ2LhdfDktZpzmhfcAR8Iw2bnM9jeWKgg3gzEQgkROzQBvzONDVMqcL2ILXPKEdniypy8=

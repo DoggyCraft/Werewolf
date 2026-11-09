@@ -1,6 +1,5 @@
 package com.dogonfire.werewolf.managers;
 
-import com.dogonfire.werewolf.Werewolf;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -9,11 +8,6 @@ import org.bukkit.util.Vector;
 
 public class DamageManager
 {
-	public static int 		SilverSwordMultiplier = 3;
-	public static double	werewolfHandDamage			= 8.0D;
-	public static double	werewolfItemDamage			= 3.0D;
-	public static double	SilverArmorMultiplier		= 0.25D;
-		
 	public static double getDamageFromItemInHand(Player player)
 	{
 		ItemStack is = player.getInventory().getItemInMainHand();
@@ -57,18 +51,6 @@ public class DamageManager
 			
 			default: damage = 1; break;
 		}
-
-		// The silver sword multiplier is applied in DamageListener, which this damage passes through as well
-		/*
-		switch (mat)
-		{
-			case GOLD_SWORD:
-				damage *= SilverSwordMultiplier; 
-				break;
-			default: 
-				break;
-		}
-		*/
 				
 		return damage;
 	}

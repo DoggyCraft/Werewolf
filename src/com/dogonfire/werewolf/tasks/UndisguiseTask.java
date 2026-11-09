@@ -30,11 +30,6 @@ public class UndisguiseTask implements Runnable
 		if (player != null)
 		{
 			Werewolf.getWolfFormManager().removeWolfForm(player, Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()));
-
-			if (this.plugin.usePounce)
-			{
-				player.setAllowFlight(false);
-			}
 			
 			/*
 			String playerListName = Werewolf.getWerewolfManager().getPlayerListName(player);
@@ -59,7 +54,7 @@ public class UndisguiseTask implements Runnable
 				player.setScoreboard(manager.getMainScoreboard());
 			}
 			
-			if(plugin.useScoreboards)
+			if(plugin.getSettings().general().scoreboardsEnabled())
 			{
 				Werewolf.getWerewolfScoreboardManager().removePlayerHuntingScoreboard(player);
 			}		
@@ -67,10 +62,10 @@ public class UndisguiseTask implements Runnable
 				
 		Werewolf.getWerewolfManager().popPlayerData(this.playerId);
 		
-		if (this.plugin.useWerewolfGroupName && player != null)
+		if (this.plugin.getSettings().general().werewolfGroupEnabled() && player != null)
 		{
 			String groupName = Werewolf.getWerewolfManager().getOriginalPermissionGroup(playerId);
-			if ((groupName != null) && (!groupName.equals(this.plugin.werewolfGroupName)))
+			if ((groupName != null) && (!groupName.equals(this.plugin.getSettings().general().werewolfGroupName())))
 			{
 				this.plugin.logDebug("Putting " + player.getName() + " into group " + groupName);
 

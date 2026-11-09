@@ -38,7 +38,7 @@ public class LanguageManager
 	 */
 	public void load()
 	{
-		String languageFileName = this.plugin.language + ".yml";
+		String languageFileName = this.plugin.getSettings().general().language() + ".yml";
 
 		YamlConfiguration english = loadBundledLanguage("english.yml");
 		YamlConfiguration bundled = loadBundledLanguage(languageFileName);
@@ -68,7 +68,7 @@ public class LanguageManager
 		}
 		else
 		{
-			this.plugin.log("Language '" + this.plugin.language + "' was not found. Using english.");
+			this.plugin.log("Language '" + this.plugin.getSettings().general().language() + "' was not found. Using english.");
 			this.languageConfig = english;
 		}
 
@@ -112,7 +112,7 @@ public class LanguageManager
 
 		if (string.contains("$ServerName"))
 		{
-			string = string.replace("$ServerName", ChatColor.GOLD + this.plugin.serverName + color);
+			string = string.replace("$ServerName", ChatColor.GOLD + this.plugin.getSettings().general().serverName() + color);
 		}
 		if (string.contains("$PlayerName"))
 		{
@@ -134,7 +134,7 @@ public class LanguageManager
 		String string = id;
 		if (string.contains("$ServerName"))
 		{
-			string = string.replace("$ServerName", this.plugin.serverName);
+			string = string.replace("$ServerName", this.plugin.getSettings().general().serverName());
 		}
 		if (string.contains("$PlayerName"))
 		{

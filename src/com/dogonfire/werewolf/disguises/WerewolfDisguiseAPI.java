@@ -13,7 +13,13 @@ import net.md_5.bungee.api.ChatColor;
 // Let's abstract disguise commands away, so that we don't depend on a particular Disguise plugin
 public abstract class WerewolfDisguiseAPI
 {
+	public enum Backend
+	{
+		BUILTIN, LIBSDISGUISES, SKINSRESTORER
+	}
+
 	static IWerewolfDisguiseFactory werewolfDisguiser;
+	static private Backend activeBackend;
 	static private HashMap<UUID, WerewolfDisguise> disguises = new HashMap<UUID, WerewolfDisguise>(); 
 	static private HashMap<UUID, UUID> disguisedPlayers = new HashMap<UUID, UUID>(); 
 	
@@ -30,6 +36,7 @@ public abstract class WerewolfDisguiseAPI
 		backend = backend == null ? "auto" : backend.toLowerCase();
 
 		werewolfDisguiser = null;
+		activeBackend = null;
 		disguises.clear();
 
 		switch (backend)
@@ -38,18 +45,21 @@ public abstract class WerewolfDisguiseAPI
 			if (paper)
 			{
 				werewolfDisguiser = new PaperSkinFactory();
+				activeBackend = Backend.BUILTIN;
 			}
 			break;
 		case "libsdisguises":
 			if (libsDisguises)
 			{
 				werewolfDisguiser = new LibsDisguisesFactory();
+				activeBackend = Backend.LIBSDISGUISES;
 			}
 			break;
 		case "skinsrestorer":
 			if (skinsRestorer)
 			{
 				werewolfDisguiser = new SkinsRestorerFactory();
+				activeBackend = Backend.SKINSRESTORER;
 			}
 			break;
 		default:
@@ -60,14 +70,17 @@ public abstract class WerewolfDisguiseAPI
 			if (paper)
 			{
 				werewolfDisguiser = new PaperSkinFactory();
+				activeBackend = Backend.BUILTIN;
 			}
 			else if (libsDisguises)
 			{
 				werewolfDisguiser = new LibsDisguisesFactory();
+				activeBackend = Backend.LIBSDISGUISES;
 			}
 			else if (skinsRestorer)
 			{
 				werewolfDisguiser = new SkinsRestorerFactory();
+				activeBackend = Backend.SKINSRESTORER;
 			}
 			break;
 		}
@@ -80,6 +93,12 @@ public abstract class WerewolfDisguiseAPI
 
 		Werewolf.instance().log("Using " + werewolfDisguiser.getClass().getSimpleName().replace("Factory", "") + " for werewolf skins.");
 		return true;
+	}
+
+	/** The skin backend chosen by {@link #init(String)}, or null if disguises are disabled */
+	public static Backend getBackend()
+	{
+		return activeBackend;
 	}
 
 	// Checked by name so PaperSkinFactory (which links against Paper classes) is never loaded on Spigot

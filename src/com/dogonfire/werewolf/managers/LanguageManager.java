@@ -377,6 +377,8 @@ public class LanguageManager
 		CreatedSilverArmor,
 		HelpTrack,
 		HelpTracker,
-		HelpSilverArmor;
+		HelpSilverArmor,
+		ForcePvPTrespassing,
+		ForcePvPCannotDisable;
 	}
 }

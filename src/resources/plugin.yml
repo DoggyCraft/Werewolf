@@ -6,7 +6,7 @@ api-version: '1.21'
 load: POSTWORLD
 description: Werewolves in Minecraft!
 depend: []
-softdepend: [Vault, HealthBar, LibsDisguises, SkinsRestorer, PlaceholderAPI, VampireRevamp]
+softdepend: [Vault, HealthBar, LibsDisguises, SkinsRestorer, PlaceholderAPI, VampireRevamp, WorldGuard, PvPManager, GriefPrevention]
 website: https://dev.bukkit.org/server-mods/werewolf
 commands:
    werewolf:
@@ -188,6 +188,9 @@ permissions:
         default: false
     werewolf.bypass.blockedcommands:
         description: Lets a werewolf use commands listed under BlockedCommands in config.yml
+        default: op
+    werewolf.bypass.forcepvp:
+        description: The player's PvP is never forced on when trespassing in claims (Hunting.ForcePvP)
         default: op
     werewolf.immunewolfbane:
         description: The player is not affected by wolfbane potions

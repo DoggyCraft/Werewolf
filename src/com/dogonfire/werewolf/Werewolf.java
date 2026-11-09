@@ -5,6 +5,10 @@ import com.dogonfire.werewolf.commands.Commands;
 import com.dogonfire.werewolf.tasks.CompassTrackerTask;
 import com.dogonfire.werewolf.disguises.WerewolfDisguiseAPI;
 import com.dogonfire.werewolf.events.WerewolfTransformEvent;
+import com.dogonfire.werewolf.integrations.ForcePvPIntegration;
+import com.dogonfire.werewolf.integrations.IntegrationListener;
+import com.dogonfire.werewolf.integrations.PvPManagerIntegration;
+import com.dogonfire.werewolf.integrations.WorldGuardIntegration;
 import com.dogonfire.werewolf.listeners.ChatListener;
 import com.dogonfire.werewolf.listeners.DamageListener;
 import com.dogonfire.werewolf.listeners.HuntingGearListener;
@@ -202,7 +206,35 @@ public class Werewolf extends JavaPlugin
 	public int									scentDistanceVeryClose					= 50;
 	public int									scentSlownessAmplifier					= 2;
 	public int									sniffCooldownSeconds					= 5;
+	public boolean								worldGuardIntegration					= true;
+	public boolean								pvpManagerIntegration					= true;
+	public boolean								griefPreventionIntegration				= true;
+	public boolean								forcePvPEnabled							= false;
+	public boolean								forcePvPClaims							= true;
+	public boolean								forcePvPAdminClaims						= false;
+	private final List<IntegrationListener>		integrations							= new ArrayList<IntegrationListener>();
 
+
+	// The integration is written against PvPManager 4.x (me.chancesd); 3.x (me.NoChance) has a different API
+	private boolean isPvPManager4(PluginManager pm)
+	{
+		Plugin pvpManager = pm.getPlugin("PvPManager");
+		if (pvpManager == null || !pvpManager.isEnabled())
+		{
+			return false;
+		}
+
+		try
+		{
+			Class.forName("me.chancesd.pvpmanager.player.CombatPlayer", false, pvpManager.getClass().getClassLoader());
+			return true;
+		}
+		catch (ClassNotFoundException | LinkageError e)
+		{
+			log("PvPManager " + pvpManager.getDescription().getVersion() + " is not supported (needs 4.x). PvPManager integration is disabled.");
+			return false;
+		}
+	}
 
 	public static Werewolf instance()
 	{
@@ -358,6 +390,12 @@ public class Werewolf extends JavaPlugin
 			CompassTrackerTask.stop();
 		}
 
+		for (IntegrationListener integration : this.integrations)
+		{
+			integration.shutdown();
+		}
+		this.integrations.clear();
+
 		if (scentManager != null)
 		{
 			scentManager.stopAll();
@@ -477,6 +515,26 @@ public class Werewolf extends JavaPlugin
 			new WerewolfPlaceholderExpansion(this).register();
 		}
 
+		// Region/PvP plugins. Each integration class references its plugin's classes, so only construct it when present
+		boolean worldGuard = pm.getPlugin("WorldGuard") != null && pm.getPlugin("WorldGuard").isEnabled();
+		boolean pvpManager = isPvPManager4(pm);
+		boolean griefPrevention = pm.getPlugin("GriefPrevention") != null && pm.getPlugin("GriefPrevention").isEnabled();
+		if (worldGuard)
+		{
+			log("WorldGuard detected. Trackers and sniffing respect PvP and invincible regions.");
+			this.integrations.add(new WorldGuardIntegration(this));
+		}
+		if (pvpManager)
+		{
+			log("PvPManager detected. Trackers and sniffing respect PvP protection.");
+			this.integrations.add(new PvPManagerIntegration(this));
+		}
+		if (pvpManager && griefPrevention)
+		{
+			log("GriefPrevention and PvPManager detected. Force PvP for trespassers is available (Hunting.ForcePvP).");
+			this.integrations.add(new ForcePvPIntegration(this));
+		}
+
 		getServer().getPluginManager().registerEvents(playerListener, this);
 		getServer().getPluginManager().registerEvents(interactListener, this);
 		getServer().getPluginManager().registerEvents(damageListener, this);
@@ -491,6 +549,10 @@ public class Werewolf extends JavaPlugin
 		if (this.dropArmorOnTransform)
 		{
 			getServer().getPluginManager().registerEvents(inventoryListener, this);
+		}
+		for (IntegrationListener integration : this.integrations)
+		{
+			getServer().getPluginManager().registerEvents(integration, this);
 		}
 
 		loadSettings();
@@ -753,6 +815,13 @@ public class Werewolf extends JavaPlugin
 		this.trackWerewolfNighttime = config.getBoolean("Hunting.Target.Werewolf.Nighttime", true);
 		this.trackVampireDaytime = config.getBoolean("Hunting.Target.Vampire.Daytime", false);
 		this.trackVampireNighttime = config.getBoolean("Hunting.Target.Vampire.Nighttime", true);
+		this.forcePvPEnabled = config.getBoolean("Hunting.ForcePvP.Enabled", false);
+		this.forcePvPClaims = config.getBoolean("Hunting.ForcePvP.Claims", true);
+		this.forcePvPAdminClaims = config.getBoolean("Hunting.ForcePvP.AdminClaims", false);
+
+		this.worldGuardIntegration = config.getBoolean("Integrations.WorldGuard", true);
+		this.pvpManagerIntegration = config.getBoolean("Integrations.PvPManager", true);
+		this.griefPreventionIntegration = config.getBoolean("Integrations.GriefPrevention", true);
 
 		for (MoonManager.MoonPhase phase : MoonManager.MoonPhase.values())
 		{
@@ -987,6 +1056,13 @@ public class Werewolf extends JavaPlugin
 		config.set("Hunting.Target.Werewolf.Nighttime", Boolean.valueOf(this.trackWerewolfNighttime));
 		config.set("Hunting.Target.Vampire.Daytime", Boolean.valueOf(this.trackVampireDaytime));
 		config.set("Hunting.Target.Vampire.Nighttime", Boolean.valueOf(this.trackVampireNighttime));
+		config.set("Hunting.ForcePvP.Enabled", Boolean.valueOf(this.forcePvPEnabled));
+		config.set("Hunting.ForcePvP.Claims", Boolean.valueOf(this.forcePvPClaims));
+		config.set("Hunting.ForcePvP.AdminClaims", Boolean.valueOf(this.forcePvPAdminClaims));
+
+		config.set("Integrations.WorldGuard", Boolean.valueOf(this.worldGuardIntegration));
+		config.set("Integrations.PvPManager", Boolean.valueOf(this.pvpManagerIntegration));
+		config.set("Integrations.GriefPrevention", Boolean.valueOf(this.griefPreventionIntegration));
 
 		for (MoonManager.MoonPhase phase : MoonManager.MoonPhase.values())
 		{

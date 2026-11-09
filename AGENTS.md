@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Werewolf is a Spigot/Bukkit Minecraft server plugin (`com.dogonfire.werewolf`), built with Maven against `spigot-api` 26.3 (runtime minimum 26.1, enforced by `api-version` in `plugin.yml` and the Java 25 bytecode). Source targets Java 25 (`maven.compiler.release` in `pom.xml`), which 26.x servers require anyway; CI builds on JDK 25.
+Werewolf is a Spigot/Bukkit Minecraft server plugin (`com.dogonfire.werewolf`), built with Maven against `paper-api` 26.3 (runtime minimum 26.1, enforced by `api-version` in `plugin.yml` and the Java 25 bytecode). It must still run on Spigot: the only Paper-only API calls live in `disguises/PaperSkinFactory`, which is only loaded after a runtime check. Source targets Java 25 (`maven.compiler.release` in `pom.xml`), which 26.x servers require anyway; CI builds on JDK 25.
 
 ## Commands
 
@@ -38,7 +38,7 @@ mvn -B test                # what GitHub Actions runs on every push (compiles on
 - `tasks/` are one-off `Runnable`s scheduled with `runTaskLater`. Transforming a player is asynchronous: `disguiseWerewolf()` schedules a `DisguiseTask`, and `undisguiseWerewolf()` schedules an `UndisguiseTask`.
 - `commands/Commands.java` handles `/werewolf` (`/ww`), `/growl` and `/howl` in one big `if/else` chain on `args[0]`. Any new subcommand also needs a `usage` entry and its permission nodes in `src/resources/plugin.yml`.
 
-**Disguises.** `disguises/WerewolfDisguiseAPI` hides which skin plugin is in use. `init()` chooses `LibsDisguisesFactory` first, then `SkinsRestorerFactory`. Both implement `IWerewolfDisguiseFactory`. MySkin is detected but no longer supported. If neither plugin is present, `disguisesEnabled` is false and werewolves keep their normal skin. The werewolf skin textures and signatures, and the fake account UUIDs for the four werewolf types (Alpha, Witherfang/potion, Bloodmoon, Silvermane), are hardcoded in `Werewolf.java`.
+**Disguises.** `disguises/WerewolfDisguiseAPI` hides which skin backend is in use. `init(backend)` runs after config is loaded and takes `Disguises.Backend`: `auto` picks `PaperSkinFactory` (built in, uses Paper's `Player#setPlayerProfile`) on Paper, otherwise `LibsDisguisesFactory`, then `SkinsRestorerFactory`; `builtin`/`libsdisguises`/`skinsrestorer` force one. All implement `IWerewolfDisguiseFactory`. If none is usable, `disguisesEnabled` is false and werewolves keep their normal skin. The werewolf skin textures and signatures, and the fake account names/UUIDs for the four werewolf types (Alpha, Witherfang/potion, Bloodmoon/WerewolfBite, Silvermane/WildBite), are defaults in `Werewolf.java` and saved to config.yml (`migrateSwappedClanSkins` fixes configs from before Bloodmoon and Silvermane got their own skins).
 
 **Custom items.** Silver sword, silver armor, wolfbane, infection/cure potions and the lore book get a `PersistentDataContainer` tag (key `werewolf:ww-item`) in `ItemManager`. Code checks that tag to recognize an item, not its display name. Crafting recipes are in `items/Recipes.java`, and each one is turned on or off by a `craftable*Enabled` flag.
 

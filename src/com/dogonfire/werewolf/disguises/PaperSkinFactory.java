@@ -1,0 +1,95 @@
+package com.dogonfire.werewolf.disguises;
+
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.bukkit.entity.Player;
+
+import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
+import com.dogonfire.werewolf.Werewolf;
+
+/**
+ * Built-in skin changing using Paper's Player#setPlayerProfile. Paper refreshes the player
+ * for everyone, so no other plugin is needed. Only constructed when running on Paper.
+ */
+public class PaperSkinFactory implements IWerewolfDisguiseFactory
+{
+	private static final String				TEXTURES		= "textures";
+
+	// The player's own skin, kept so it can be put back when they turn human
+	private final Map<UUID, ProfileProperty>	originalSkins	= new ConcurrentHashMap<>();
+
+	public class PaperWerewolfDisguise extends WerewolfDisguise
+	{
+		public PaperWerewolfDisguise(UUID accountId, String accountName)
+		{
+			super(accountId, accountName);
+		}
+
+		@Override
+		public boolean disguise(Player player, String werewolfName)
+		{
+			Werewolf.instance().logDebug("Disguising player " + player.getName() + " using the built-in Paper skins...");
+
+			PlayerProfile profile = player.getPlayerProfile();
+
+			for (ProfileProperty property : profile.getProperties())
+			{
+				if (property.getName().equals(TEXTURES))
+				{
+					originalSkins.putIfAbsent(player.getUniqueId(), property);
+				}
+			}
+
+			profile.setProperty(new ProfileProperty(TEXTURES, getSkinTextureValue(player), getSkinTextureSignature(player)));
+			player.setPlayerProfile(profile);
+			return true;
+		}
+
+		@Override
+		public boolean undisguise(Player player)
+		{
+			Werewolf.instance().logDebug("Undisguising player " + player.getName() + " using the built-in Paper skins...");
+
+			PlayerProfile profile = player.getPlayerProfile();
+			ProfileProperty originalSkin = originalSkins.remove(player.getUniqueId());
+
+			if (originalSkin != null)
+			{
+				profile.setProperty(originalSkin);
+				player.setPlayerProfile(profile);
+				return true;
+			}
+
+			// We don't know the original skin (e.g. the plugin was reloaded mid-transformation), so ask Mojang for it
+			PlayerProfile lookup = Werewolf.instance().getServer().createProfile(player.getUniqueId(), player.getName());
+			lookup.update().thenAccept(updated -> Werewolf.instance().getServer().getScheduler().runTask(Werewolf.instance(), () ->
+			{
+				if (!player.isOnline())
+				{
+					return;
+				}
+
+				PlayerProfile current = player.getPlayerProfile();
+				current.removeProperty(TEXTURES);
+				for (ProfileProperty property : updated.getProperties())
+				{
+					if (property.getName().equals(TEXTURES))
+					{
+						current.setProperty(property);
+					}
+				}
+				player.setPlayerProfile(current);
+			}));
+			return true;
+		}
+	}
+
+	@Override
+	public WerewolfDisguise newDisguise(UUID disguiseAccountId, String disguiseAccountName)
+	{
+		return new PaperWerewolfDisguise(disguiseAccountId, disguiseAccountName);
+	}
+}

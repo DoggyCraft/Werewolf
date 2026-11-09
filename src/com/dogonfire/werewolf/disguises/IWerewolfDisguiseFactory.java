@@ -56,26 +56,27 @@ public interface IWerewolfDisguiseFactory
 			}
 			else
 			{
-				// TODO create a way to load the correct UUID's from
-				// Werewolf.java, if even possible...
-				switch (accountName)
+				Werewolf plugin = Werewolf.instance();
+				if (accountName.equals(plugin.alphaAccountName))
 				{
-				case "WerewolfAlpha":
-					this.accountId = UUID.fromString(Werewolf.instance().alphaAccountUUID);
-					break;
-				case "WF_Werewolf":
-					this.accountId = UUID.fromString(Werewolf.instance().potionAccountUUID);
-					break;
-				case "SM_Werewolf":
-					this.accountId = UUID.fromString(Werewolf.instance().werewolfBiteAccountUUID);
-					break;
-				case "BM_Werewolf":
-					this.accountId = UUID.fromString(Werewolf.instance().wildBiteAccountUUID);
-					break;
-				default:
+					this.accountId = UUID.fromString(plugin.alphaAccountUUID);
+				}
+				else if (accountName.equals(plugin.potionAccountName))
+				{
+					this.accountId = UUID.fromString(plugin.potionAccountUUID);
+				}
+				else if (accountName.equals(plugin.werewolfBiteAccountName))
+				{
+					this.accountId = UUID.fromString(plugin.werewolfBiteAccountUUID);
+				}
+				else if (accountName.equals(plugin.wildBiteAccountName))
+				{
+					this.accountId = UUID.fromString(plugin.wildBiteAccountUUID);
+				}
+				else
+				{
 					// Account called Werewolf. No clan has this skin...
 					this.accountId = UUID.fromString("c21f069b-137c-4992-8edc-e1a12995ff0f");
-					break;
 				}
 			}
 

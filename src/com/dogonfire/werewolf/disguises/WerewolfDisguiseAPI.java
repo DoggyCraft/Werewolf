@@ -17,25 +17,84 @@ public abstract class WerewolfDisguiseAPI
 	static private HashMap<UUID, WerewolfDisguise> disguises = new HashMap<UUID, WerewolfDisguise>(); 
 	static private HashMap<UUID, UUID> disguisedPlayers = new HashMap<UUID, UUID>(); 
 	
-	public static boolean init()
+	/**
+	 * @param backend "auto" (built-in on Paper, otherwise LibsDisguises, then SkinsRestorer),
+	 *                or one of "builtin", "libsdisguises", "skinsrestorer" to force it
+	 */
+	public static boolean init(String backend)
 	{
 		PluginManager pm = Werewolf.instance.getServer().getPluginManager();
-		
-		if (pm.getPlugin("LibsDisguises") != null && pm.getPlugin("LibsDisguises").isEnabled())
+		boolean libsDisguises = pm.getPlugin("LibsDisguises") != null && pm.getPlugin("LibsDisguises").isEnabled();
+		boolean skinsRestorer = pm.getPlugin("SkinsRestorer") != null && pm.getPlugin("SkinsRestorer").isEnabled();
+		boolean paper = isPaper();
+		backend = backend == null ? "auto" : backend.toLowerCase();
+
+		werewolfDisguiser = null;
+		disguises.clear();
+
+		switch (backend)
 		{
-			Werewolf.instance().log("Lib's Disguises found, using it for werewolf disguise!");
-			werewolfDisguiser = new LibsDisguisesFactory();
-			return true;
-		}
-		else if (pm.getPlugin("SkinsRestorer") != null && pm.getPlugin("SkinsRestorer").isEnabled())
-		{
-			Werewolf.instance().log("SkinsRestorer found, using it for werewolf disguises!");
-			werewolfDisguiser = new SkinsRestorerFactory();
-			return true;
+		case "builtin":
+			if (paper)
+			{
+				werewolfDisguiser = new PaperSkinFactory();
+			}
+			break;
+		case "libsdisguises":
+			if (libsDisguises)
+			{
+				werewolfDisguiser = new LibsDisguisesFactory();
+			}
+			break;
+		case "skinsrestorer":
+			if (skinsRestorer)
+			{
+				werewolfDisguiser = new SkinsRestorerFactory();
+			}
+			break;
+		default:
+			if (!backend.equals("auto"))
+			{
+				Werewolf.instance().log("Unknown Disguises.Backend '" + backend + "', using auto.");
+			}
+			if (paper)
+			{
+				werewolfDisguiser = new PaperSkinFactory();
+			}
+			else if (libsDisguises)
+			{
+				werewolfDisguiser = new LibsDisguisesFactory();
+			}
+			else if (skinsRestorer)
+			{
+				werewolfDisguiser = new SkinsRestorerFactory();
+			}
+			break;
 		}
 
-		Werewolf.instance().log(ChatColor.RED + "No supported disguise plugin found... Werewolf disguises are disabled!");
-		return false;
+		if (werewolfDisguiser == null)
+		{
+			Werewolf.instance().log(ChatColor.RED + "No usable skin backend for Disguises.Backend '" + backend + "' (built-in needs Paper; otherwise install LibsDisguises or SkinsRestorer)... Werewolf disguises are disabled!");
+			return false;
+		}
+
+		Werewolf.instance().log("Using " + werewolfDisguiser.getClass().getSimpleName().replace("Factory", "") + " for werewolf skins.");
+		return true;
+	}
+
+	// Checked by name so PaperSkinFactory (which links against Paper classes) is never loaded on Spigot
+	private static boolean isPaper()
+	{
+		try
+		{
+			Class<?> profileClass = Class.forName("com.destroystokyo.paper.profile.PlayerProfile");
+			Player.class.getMethod("setPlayerProfile", profileClass);
+			return true;
+		}
+		catch (ClassNotFoundException | NoSuchMethodException e)
+		{
+			return false;
+		}
 	}
 
 	public static WerewolfDisguise getDisguise(UUID disguiseAccountId, String disguiseAccountName)

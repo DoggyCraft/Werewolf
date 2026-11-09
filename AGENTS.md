@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Werewolf is a Spigot/Bukkit Minecraft server plugin (`com.dogonfire.werewolf`), built with Maven against `spigot-api` 26.3 (runtime minimum 26.1; see `MIN`/`MAX` in `Werewolf.java`). Source targets Java 25 (`maven.compiler.release` in `pom.xml`), which 26.x servers require anyway; CI builds on JDK 25.
+Werewolf is a Spigot/Bukkit Minecraft server plugin (`com.dogonfire.werewolf`), built with Maven against `spigot-api` 26.3 (runtime minimum 26.1, enforced by `api-version` in `plugin.yml` and the Java 25 bytecode). Source targets Java 25 (`maven.compiler.release` in `pom.xml`), which 26.x servers require anyway; CI builds on JDK 25.
 
 ## Commands
 
@@ -24,7 +24,7 @@ mvn -B test                # what GitHub Actions runs on every push (compiles on
 **Central singleton.** `Werewolf.java` (the `JavaPlugin`) is the hub:
 - It holds every config value as a public field. `loadSettings()`/`saveSettings()` map them to `config.yml`, so a new config option needs a field plus entries in both methods.
 - It holds every manager in a static field, reached through static getters (`Werewolf.getWerewolfManager()`, `getClanManager()`, …). Other code calls these getters and `Werewolf.instance()` instead of receiving its dependencies.
-- `onEnable()` sets things up in an order that matters: version check → construct managers and listeners → detect a disguise plugin → detect optional plugins (Vault turns on `HuntManager`, bounties and signs; also Vampire, HealthBar, PlaceholderAPI) → register listeners → `loadSettings`/`saveSettings` → each manager's `load()` → recipes → repeating tasks. Some managers are only created when a feature is on (`huntManager` needs Vault, `werewolfScoreboardManager` needs `useScoreboards`, `InventoryListener` needs `dropArmorOnTransform`), so they can be null.
+- `onEnable()` sets things up in an order that matters: construct managers and listeners → detect a disguise plugin → detect optional plugins (Vault turns on `HuntManager`, bounties and signs; also Vampire, HealthBar, PlaceholderAPI) → register listeners → `loadSettings`/`saveSettings` → each manager's `load()` → recipes → repeating tasks. Some managers are only created when a feature is on (`huntManager` needs Vault, `werewolfScoreboardManager` needs `useScoreboards`, `InventoryListener` needs `dropArmorOnTransform`), so they can be null.
 
 **Main game loop.** A sync repeating task calls `WerewolfManager.update()` every 100 ticks. That method handles night/full-moon transformations, infection progress and auto-cure. Moon phase and night timing helpers (`isFullMoonInWorld`, `isNightInWorld`, `isUnderOpenSky`, `allowedWorlds`) are on `Werewolf`. Clans update on a separate 72000-tick task.
 

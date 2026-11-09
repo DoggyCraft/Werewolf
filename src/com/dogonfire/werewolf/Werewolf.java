@@ -3,8 +3,6 @@ package com.dogonfire.werewolf;
 import com.clanjhoo.vampire.VampireAPI;
 import com.dogonfire.werewolf.commands.Commands;
 import com.dogonfire.werewolf.tasks.CompassTrackerTask;
-import com.dogonfire.werewolf.utils.Metrics;
-import com.dogonfire.werewolf.utils.Metrics.Graph;
 import com.dogonfire.werewolf.disguises.WerewolfDisguiseAPI;
 import com.dogonfire.werewolf.listeners.ChatListener;
 import com.dogonfire.werewolf.listeners.DamageListener;
@@ -17,8 +15,6 @@ import com.dogonfire.werewolf.tasks.DisguiseTask;
 import com.dogonfire.werewolf.tasks.UndisguiseTask;
 import com.dogonfire.werewolf.utils.PacketUtils;
 import com.dogonfire.werewolf.utils.WerewolfPlaceholderExpansion;
-import com.dogonfire.werewolf.versioning.Version;
-import com.dogonfire.werewolf.versioning.VersionFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -93,7 +89,6 @@ public class Werewolf extends JavaPlugin
 	public double								bookPrice								= 100.0D;
 	public boolean								useClans								= true;
 	public boolean								useScoreboards							= true;
-	public boolean								metricsOptOut							= false;
 	public int									transformsForNoDropItems				= 2;
 	public int									transformsForControlledTransformation	= 6;
 	public int									transformsForGoldImmunity				= 8;
@@ -155,22 +150,12 @@ public class Werewolf extends JavaPlugin
 	public boolean								craftableSilverArmorEnabled				= true;
 	public boolean								craftableLoreBookEnabled				= true;
 
-	private Version								version									= null;
-	public static final String					MAX										= "26.3-R0.1-SNAPSHOT";
-	public static final String					MIN										= "26.1";
-	public static final String					NMS										= VersionFactory.getNmsVersion().toString();
-	private static boolean						isCompatible							= true;
 
 	public static Werewolf instance()
 	{
 		return instance;
 	}
 	
-	public static Class<?> isCombatibleServer() throws Exception
-	{
-		return Class.forName("net.minecraft.server." + NMS + ".ItemStack");
-	}
-
 	public static StatisticsManager getStatisticsManager()
 	{
 		return statisticsManager;
@@ -293,11 +278,6 @@ public class Werewolf extends JavaPlugin
 		getServer().getScheduler().runTaskLater(this, new com.dogonfire.werewolf.tasks.InfoTask(this, color, playerId, message, amount, name), delay);
 	}
 
-	public static boolean isCompatible()
-	{
-		return isCompatible;
-	}
-
 	public void onDisable()
 	{
 		if (vaultEnabled)
@@ -314,7 +294,6 @@ public class Werewolf extends JavaPlugin
 		}
 
 		saveSettings();
-		reloadSettings();
 
 		pluginEnabled = false;
 	}
@@ -332,33 +311,8 @@ public class Werewolf extends JavaPlugin
 		instance = this;
 		server = getServer();
 		config = getConfig();
-		version = VersionFactory.getServerVersion();
 
 		this.commands = new Commands(this);
-
-		if (!version.isCompatible(MIN))
-		{
-			log(ChatColor.RED + "* Werewolf is not compatible with your server");
-			log(ChatColor.RED + "* Your server version is " + ChatColor.GOLD + version.toString());
-			log(ChatColor.RED + "* The minimum supported version for this plugin is " + ChatColor.GOLD + MIN);
-			log(ChatColor.RED + "* Werewolves are now disabled.");
-
-			pluginEnabled = false;
-			isCompatible = false;
-			// this.getServer().getPluginManager().disablePlugin(this);
-
-			return;
-		}
-
-		if (!version.isSupported(MAX))
-		{
-			log(ChatColor.RED + "* Werewolf is not supported and tested with your server version!");
-			log(ChatColor.RED + "* Your server version is " + ChatColor.GOLD + version.toString());
-			log(ChatColor.RED + "* The maximum supported version for this plugin is " + ChatColor.GOLD + MAX);
-			log(ChatColor.RED + "* You can still report bugs to https://github.com/DogOnFire/Werewolf/issues.");
-
-			isCompatible = false;
-		}
 
 		pluginEnabled = true;
 
@@ -491,11 +445,6 @@ public class Werewolf extends JavaPlugin
 					Werewolf.getClanManager().updateClans();
 				}
 			}, 20L, 72000L);
-		}
-
-		if (!this.metricsOptOut)
-		{
-			startMetrics();
 		}
 	}
 
@@ -661,12 +610,12 @@ public class Werewolf extends JavaPlugin
 
 		this.debug = config.getBoolean("Settings.Debug", false);
 
-		DamageManager.werewolfItemDamage = config.getInt("WerewolfWolf.ItemDamage", 3);
-		DamageManager.werewolfHandDamage = config.getInt("WerewolfWolf.HandDamage", 8);
-		DamageManager.SilverArmorMultiplier = config.getDouble("WerewolfWolf.ArmorMultiplier", 0.8D);
-		this.wolfdistance = config.getInt("WerewolfWolf.WolfDistance", 10);
+		DamageManager.werewolfItemDamage = config.getDouble("Werewolf.ItemDamage", config.getDouble("WerewolfWolf.ItemDamage", 3));
+		DamageManager.werewolfHandDamage = config.getDouble("Werewolf.HandDamage", config.getDouble("WerewolfWolf.HandDamage", 8));
+		DamageManager.SilverArmorMultiplier = config.getDouble("Werewolf.ArmorMultiplier", config.getDouble("WerewolfWolf.ArmorMultiplier", 0.8D));
+		this.wolfdistance = config.getInt("Werewolf.WolfDistance", config.getInt("WerewolfWolf.WolfDistance", 10));
 
-		this.cureChance = config.getDouble("Infection.CurePotionChance", 1.0D);
+		this.cureChance = config.getDouble("Infection.CureChance", config.getDouble("Infection.CurePotionChance", 1.0D));
 
 		this.werewolfInfectionRisk = config.getDouble("Infection.WerewolfBiteRisk", 0.05D);
 		this.wildWolfInfectionRisk = config.getDouble("Infection.WildWolfBiteRisk", 0.75D);
@@ -692,6 +641,7 @@ public class Werewolf extends JavaPlugin
 		nightStart = config.getInt("Night.Start", 13000);
 		nightEnd = config.getInt("Night.End", 23000);
 
+		this.wolfMessage.clear();
 		this.wolfMessage.add("*Grunt*");
 		this.wolfMessage.add("*Grunt* *Grrrr*");
 		this.wolfMessage.add("*Grunt* *Grunt*");
@@ -712,7 +662,7 @@ public class Werewolf extends JavaPlugin
 		this.werewolfGroupName = config.getString("WerewolfGroup.Name", "Werewolf");
 		this.useWerewolfGroupName = config.getBoolean("WerewolfGroup.Enabled", false);
 		this.useTrophies = config.getBoolean("Trophies.Enabled", false);
-		if (this.useTrophies)
+		if (this.useTrophies && trophyManager == null)
 		{
 			trophyManager = new TrophyManager(this);
 		}
@@ -720,7 +670,6 @@ public class Werewolf extends JavaPlugin
 		this.autoBounty = config.getBoolean("Settings.AutoBounty", false);
 		this.autoBountyMaximum = config.getInt("Settings.AutoBountyMaximum", 1000);
 		this.renameWerewolves = config.getBoolean("Settings.RenameWerewolves", true);
-		this.metricsOptOut = config.getBoolean("Settings.MetricsOptOut", false);
 		this.werewolfUrges = config.getBoolean("Settings.WerewolfUrges", true);
 		this.wolfChat = config.getBoolean("Settings.WolfChat", true);
 		this.dropArmorOnTransform = config.getBoolean("Settings.DropArmorOnTransform", true);
@@ -729,7 +678,7 @@ public class Werewolf extends JavaPlugin
 		this.cureWerewolfWhenSlain = config.getBoolean("Settings.CureWerewolfWhenSlain", false);
 
 		this.useSigns = config.getBoolean("Signs.Enabled", false);
-		if (this.useSigns)
+		if (this.useSigns && signManager == null)
 		{
 			signManager = new SignManager(this);
 			getServer().getPluginManager().registerEvents(signManager, this);
@@ -810,7 +759,6 @@ public class Werewolf extends JavaPlugin
 	public void saveSettings()
 	{
 		config.set("Settings.ServerName", this.serverName);
-		config.set("Settings.MetricsOptOut", Boolean.valueOf(this.metricsOptOut));
 		config.set("Settings.AutoBounty", Boolean.valueOf(this.autoBounty));
 		config.set("Settings.AutoBountyMaximum", Integer.valueOf(this.autoBountyMaximum));
 		config.set("Settings.RenameWerewolves", Boolean.valueOf(this.renameWerewolves));
@@ -926,148 +874,4 @@ public class Werewolf extends JavaPlugin
 		return this.commands.onTabComplete(sender, cmd, alias, args);
 	}
 
-	public void startMetrics()
-	{
-		try
-		{
-			Metrics metrics = new Metrics(this);
-
-			Graph pluginsUsedGraph = metrics.createGraph("External plugins used");
-
-			pluginsUsedGraph.addPlotter(new Metrics.Plotter("Using Vault")
-			{
-				@Override
-				public int getValue()
-				{
-					if (Werewolf.this.vaultEnabled)
-					{
-						return 1;
-					}
-					return 0;
-				}
-			});
-
-			pluginsUsedGraph.addPlotter(new Metrics.Plotter("Using Lib's Disguises")
-			{
-				@Override public int getValue()
-				{
-					Plugin pl = getServer().getPluginManager().getPlugin("LibsDisguises");
-					if (pl != null && pl.isEnabled())
-					{
-						return 1;
-					}
-					return 0;
-				}
-			});
-
-			pluginsUsedGraph.addPlotter(new Metrics.Plotter("Using SkinsRestorer")
-			{
-				@Override public int getValue()
-				{
-					Plugin pl = getServer().getPluginManager().getPlugin("SkinsRestorer");
-					if (pl != null && pl.isEnabled())
-					{
-						return 1;
-					}
-					return 0;
-				}
-			});
-
-			 pluginsUsedGraph.addPlotter(new Metrics.Plotter("Using Vampire")
-			 {
-				 @Override public int getValue()
-				 {
-					 if (Werewolf.this.vampireEnabled)
-					 {
-						 return 1;
-					 }
-					 return 0;
-				 }
-			 });
-
-			Graph featuresEnabledGraph = metrics.createGraph("Features enabled");
-
-			featuresEnabledGraph.addPlotter(new Metrics.Plotter("WolfChat")
-			{
-				@Override
-				public int getValue()
-				{
-					if (Werewolf.this.wolfChat)
-					{
-						return 1;
-					}
-					return 0;
-				}
-			});
-
-			featuresEnabledGraph.addPlotter(new Metrics.Plotter("Rename Werewolves")
-			{
-				@Override
-				public int getValue()
-				{
-					if (Werewolf.this.renameWerewolves)
-					{
-						return 1;
-					}
-					return 0;
-				}
-			});
-
-			featuresEnabledGraph.addPlotter(new Metrics.Plotter("Using clans")
-			{
-				@Override
-				public int getValue()
-				{
-					if (Werewolf.this.useClans)
-					{
-						return 1;
-					}
-					return 0;
-				}
-			});
-
-			featuresEnabledGraph.addPlotter(new Metrics.Plotter("Using Signs")
-			{
-				@Override
-				public int getValue()
-				{
-					if (Werewolf.this.useSigns)
-					{
-						return 1;
-					}
-					return 0;
-				}
-			});
-
-			featuresEnabledGraph.addPlotter(new Metrics.Plotter("Using Trophies")
-			{
-				@Override
-				public int getValue()
-				{
-					if (Werewolf.this.useTrophies)
-					{
-						return 1;
-					}
-					return 0;
-				}
-			});
-
-			Graph languageGraph = metrics.createGraph("Languages");
-
-			languageGraph.addPlotter(new Metrics.Plotter(this.language)
-			{
-				@Override
-				public int getValue()
-				{
-					return 1;
-				}
-			});
-
-			metrics.start();
-		}
-		catch (Exception e)
-		{
-			log("Failed to submit metrics :-(");
-		}
-	}
 }

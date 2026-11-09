@@ -33,13 +33,6 @@ public abstract class WerewolfDisguiseAPI
 			werewolfDisguiser = new SkinsRestorerFactory();
 			return true;
 		}
-		else if (pm.getPlugin("MySkin") != null && pm.getPlugin("MySkin").isEnabled())
-		{
-			Werewolf.instance().log("MySkin found - Werewolf doesn't support MySkin anymore, please use SkinsRestorer or Lib's Disguises instead!");
-//			Werewolf.instance().log("MySkin found, using it for werewolf disguises!");
-//			werewolfDisguiser = new MySkinFactory();
-//			return true;
-		}
 
 		Werewolf.instance().log(ChatColor.RED + "No supported disguise plugin found... Werewolf disguises are disabled!");
 		return false;

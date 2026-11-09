@@ -8,6 +8,8 @@ import org.bukkit.Effect;
 import org.bukkit.EntityEffect;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Wolf;
@@ -79,6 +81,10 @@ public class DamageListener implements Listener
 			if (Werewolf.getWerewolfManager().hasWerewolfSkin(werewolfPlayer.getUniqueId()))
 			{
 				double damage = event.getDamage();
+
+				// Gold weapons cut through a werewolf's natural defence until it is mature enough to be immune
+				boolean goldHit = isGoldWeaponHit(event) && !Werewolf.getWerewolfManager().isGoldImmune(werewolfPlayer.getUniqueId());
+
 				switch (event.getCause())
 				{
 					case FALL:
@@ -94,14 +100,17 @@ public class DamageListener implements Listener
                     case PROJECTILE:
                     case THORNS:
                     case FREEZE:
-						damage *= DamageManager.SilverArmorMultiplier;
+						if (!goldHit)
+						{
+							damage *= DamageManager.SilverArmorMultiplier;
+						}
 						break;
 
 					default:
 						break;
 				}
 
-				if (Werewolf.getClanManager().isAlpha(werewolfPlayer.getUniqueId()))
+				if (!goldHit && Werewolf.getClanManager().isAlpha(werewolfPlayer.getUniqueId()))
 				{
 					damage /= 2.0D;
 				}
@@ -173,7 +182,7 @@ public class DamageListener implements Listener
 							if (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.infectother") && Werewolf.getPermissionsManager().hasPermission(victim, "werewolf.becomeinfected") && !Werewolf.getWerewolfManager().isWerewolf(victim)) {
 								this.plugin.logDebug(player.getName() + " is doing risk damage to " + victim.getName());
 
-								if (Math.random() < this.plugin.werewolfInfectionRisk && Werewolf.getWerewolfManager().makeWerewolf(victim, false, Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId()), WerewolfInfectionEvent.Source.WEREWOLF_BITE)) {
+								if (Math.random() < Werewolf.getWerewolfManager().getBiteInfectionRisk(player.getUniqueId()) && Werewolf.getWerewolfManager().makeWerewolf(victim, false, Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId()), WerewolfInfectionEvent.Source.WEREWOLF_BITE)) {
 
 									Werewolf.getLanguageManager().setPlayerName(player.getName());
 									victim.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteVictim, ChatColor.LIGHT_PURPLE));
@@ -218,6 +227,30 @@ public class DamageListener implements Listener
 		if (event.getDamage() <= 0.0D)
 		{
 			event.setDamage(1.0D);
+		}
+	}
+
+	private boolean isGoldWeaponHit(EntityDamageEvent event)
+	{
+		if (!(event instanceof EntityDamageByEntityEvent))
+		{
+			return false;
+		}
+
+		Entity damager = ((EntityDamageByEntityEvent) event).getDamager();
+		if (!(damager instanceof LivingEntity) || ((LivingEntity) damager).getEquipment() == null)
+		{
+			return false;
+		}
+
+		switch (((LivingEntity) damager).getEquipment().getItemInMainHand().getType())
+		{
+			case GOLDEN_SWORD:
+			case GOLDEN_AXE:
+			case GOLDEN_SPEAR:
+				return true;
+			default:
+				return false;
 		}
 	}
 

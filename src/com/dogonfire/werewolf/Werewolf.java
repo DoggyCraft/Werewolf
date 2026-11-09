@@ -19,6 +19,7 @@ import com.dogonfire.werewolf.utils.WerewolfPlaceholderExpansion;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -92,7 +93,16 @@ public class Werewolf extends JavaPlugin
 	public int									transformsForNoDropItems				= 2;
 	public int									transformsForControlledTransformation	= 6;
 	public int									transformsForGoldImmunity				= 8;
-	public int									transformationTimeoutSeconds			= 1800;
+	public int									levelForIntent							= 2;
+	public double								werewolfIntentInfectionRisk				= 0.25D;
+	public boolean								transformationLimitEnabled				= true;
+	public String								transformationLimitEquation				= "LINEAR";
+	public double								transformationLimitBase					= 300.0D;
+	public double								transformationLimitModifier				= 30.0D;
+	public int									transformCooldownSeconds				= 600;
+	public int									howlCooldownSeconds						= 60;
+	public int									growlCooldownSeconds					= 30;
+	public EnumMap<MoonManager.MoonPhase, String>	moonPhaseNames						= new EnumMap<MoonManager.MoonPhase, String>(MoonManager.MoonPhase.class);
 	public boolean								usePounce								= false;
 	public float								pouncePlaneSpeed						= 1.0F;
 	public float								pounceHeightSpeed						= 1.0F;
@@ -112,6 +122,7 @@ public class Werewolf extends JavaPlugin
 	private static WerewolfScoreboardManager	werewolfScoreboardManager				= null;
 	private static StatisticsManager			statisticsManager						= null;
 	private static ItemManager itemManager								= null;
+	private static MoonManager					moonManager								= null;
 
 	public String								potionName								= "Witherfang";
 	public String								werewolfBiteName						= "Bloodmoon";
@@ -169,6 +180,11 @@ public class Werewolf extends JavaPlugin
 	public static ItemManager getItemManager()
 	{
 		return itemManager;
+	}
+
+	public static MoonManager getMoonManager()
+	{
+		return moonManager;
 	}
 
 	public static SignManager getSignManager()
@@ -316,6 +332,7 @@ public class Werewolf extends JavaPlugin
 
 		pluginEnabled = true;
 
+		moonManager = new MoonManager(this);
 		werewolfManager = new WerewolfManager(this);
 		clanManager = new ClanManager(this);
 		// potionManager = new PotionManager(this);
@@ -456,91 +473,6 @@ public class Werewolf extends JavaPlugin
 	public boolean isUnderOpenSky(Player player)
 	{
 		return player.getWorld().getHighestBlockYAt(player.getLocation()) <= player.getLocation().getBlockY();
-	}
-
-	public boolean isFullMoonDuskInWorld(World world)
-	{
-		long time = world.getFullTime() % 24000L;
-
-		return (time > 10000L) && (time < 14000L) && (moonCheck(world) == MoonPhase.FullMoon);
-	}
-
-	public boolean isNightInWorld(World world)
-	{
-		long time = world.getFullTime() % 24000L;
-
-		return (time > getTimeStart()) && (time < getTimeEnd());
-	}
-
-	public boolean isFullMoonInWorld(World world)
-	{
-		if (plugin.onlyTransformDuringFullMoon)
-		{
-			return (isNightInWorld(world)) && (moonCheck(world) == MoonPhase.FullMoon);
-		}
-		return isNightInWorld(world);
-	}
-
-	public static MoonPhase getMoonPhaseByInt(int I)
-	{
-		return MoonPhase.values()[I];
-	}
-
-	public MoonPhase moonCheck(World world)
-	{
-		long T = world.getFullTime();
-		long D = T / 24000L;
-		int days = (int) D;
-		int phaseInt = days % 8;
-		return getMoonPhaseByInt(phaseInt);
-	}
-
-	public String getNextFullMoonText(World world)
-	{
-		long T = world.getFullTime();
-		long D = T / 24000L;
-		int days = (int) D;
-		int phaseInt = days % 8;
-		switch (phaseInt)
-		{
-		case 0:
-			return getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.Today, ChatColor.GOLD);
-		case 1:
-			return getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In7Days, ChatColor.GOLD);
-		case 2:
-			return getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In6Days, ChatColor.GOLD);
-		case 3:
-			return getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In5Days, ChatColor.GOLD);
-		case 4:
-			return getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In4Days, ChatColor.GOLD);
-		case 5:
-			return getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In3Days, ChatColor.GOLD);
-		case 6:
-			return getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.In2Days, ChatColor.GOLD);
-		case 7:
-			return getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.Tomorrow, ChatColor.GOLD);
-		default:
-			return "WTF?";
-		}
-	}
-
-	public static enum MoonPhase {
-		FullMoon, WaningGibbous, LastQuarter, WaningCrescent, NewMoon, WaxingCrescent, FirstQuarter, WaxingGibbous;
-	}
-
-	public boolean hasTransformation()
-	{
-		return true;
-	}
-
-	public int getTimeStart()
-	{
-		return nightStart;
-	}
-
-	public int getTimeEnd()
-	{
-		return nightEnd;
 	}
 
 	public void transform(Player player, WerewolfTransformEvent.Reason reason)
@@ -695,6 +627,22 @@ public class Werewolf extends JavaPlugin
 
 		this.transformsForControlledTransformation = config.getInt("Maturity.ControlledTransformation", 7);
 		this.transformsForGoldImmunity = config.getInt("Maturity.GoldImmunity", 10);
+		this.levelForIntent = config.getInt("Maturity.Intent", 2);
+		this.werewolfIntentInfectionRisk = config.getDouble("Infection.WerewolfBiteIntentRisk", 0.25D);
+
+		this.transformationLimitEnabled = config.getBoolean("Transformation.Limit", true);
+		this.transformationLimitEquation = config.getString("Transformation.Equation", "LINEAR");
+		this.transformationLimitBase = config.getDouble("Transformation.Base", 300.0D);
+		this.transformationLimitModifier = config.getDouble("Transformation.Modifier", 30.0D);
+
+		this.transformCooldownSeconds = config.getInt("Cooldowns.Transform", 600);
+		this.howlCooldownSeconds = config.getInt("Cooldowns.Howl", 60);
+		this.growlCooldownSeconds = config.getInt("Cooldowns.Growl", 30);
+
+		for (MoonManager.MoonPhase phase : MoonManager.MoonPhase.values())
+		{
+			this.moonPhaseNames.put(phase, config.getString("Moon.PhaseNames." + phase.name(), phase.getDefaultName()));
+		}
 
 		/*
 		 * this.usePounce = config.getBoolean("Pounce.Enabled", false);
@@ -767,12 +715,28 @@ public class Werewolf extends JavaPlugin
 		config.set("Maturity.NoDropItems", Integer.valueOf(this.transformsForNoDropItems));
 		config.set("Maturity.ControlledTransformation", Integer.valueOf(this.transformsForControlledTransformation));
 		config.set("Maturity.GoldImmunity", Integer.valueOf(this.transformsForGoldImmunity));
+		config.set("Maturity.Intent", Integer.valueOf(this.levelForIntent));
+
+		config.set("Transformation.Limit", Boolean.valueOf(this.transformationLimitEnabled));
+		config.set("Transformation.Equation", this.transformationLimitEquation);
+		config.set("Transformation.Base", Double.valueOf(this.transformationLimitBase));
+		config.set("Transformation.Modifier", Double.valueOf(this.transformationLimitModifier));
+
+		config.set("Cooldowns.Transform", Integer.valueOf(this.transformCooldownSeconds));
+		config.set("Cooldowns.Howl", Integer.valueOf(this.howlCooldownSeconds));
+		config.set("Cooldowns.Growl", Integer.valueOf(this.growlCooldownSeconds));
+
+		for (MoonManager.MoonPhase phase : MoonManager.MoonPhase.values())
+		{
+			config.set("Moon.PhaseNames." + phase.name(), this.moonPhaseNames.getOrDefault(phase, phase.getDefaultName()));
+		}
 
 		config.set("Settings.Debug", Boolean.valueOf(this.debug));
 
 		config.set("Infection.CureChance", Double.valueOf(this.cureChance));
 		config.set("Infection.WerewolfBiteRisk", Double.valueOf(this.werewolfInfectionRisk));
 		config.set("Infection.WildWolfBiteRisk", Double.valueOf(this.wildWolfInfectionRisk));
+		config.set("Infection.WerewolfBiteIntentRisk", Double.valueOf(this.werewolfIntentInfectionRisk));
 		config.set("Infection.AutoCureDays", Integer.valueOf(this.autoCureDays));
 
 		config.set("Werewolf.HandDamage", Double.valueOf(DamageManager.werewolfHandDamage));

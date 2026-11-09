@@ -322,6 +322,20 @@ public class LanguageManager
 		In4Days,
 		In5Days,
 		In6Days,
-		In7Days;
+		In7Days,
+		WerewolfCommandMoonPhase,
+		WerewolfCommandIntentOn,
+		WerewolfCommandIntentOff,
+		CannotControlTransformationTonight,
+		TransformationTimeLimit,
+		TransformationTimeExpired,
+		FullMoonLevelGained,
+		AbilityOnCooldown,
+		IntentEnabled,
+		IntentDisabled,
+		InvalidMoonPhase,
+		MoonPhaseSet,
+		HelpIntent,
+		HelpSetPhase;
 	}
 }

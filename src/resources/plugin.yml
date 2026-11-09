@@ -11,7 +11,7 @@ website: https://dev.bukkit.org/server-mods/werewolf
 commands:
    werewolf:
       description: Command for the Werewolf plugin
-      usage: /<command> [toggle|infect|addbounty|check|reload|save|help|clan|list|transform|toggle|bounty|home|sethome|call|top|hunt|infectionpotion|curepotion|wolfbane|silversword|lorebook|on|off] [player]
+      usage: /<command> [toggle|infect|addbounty|check|reload|save|help|clan|list|transform|intent|setphase|toggle|bounty|home|sethome|call|top|hunt|infectionpotion|curepotion|wolfbane|silversword|lorebook|on|off] [player]
       aliases: [ww]
    growl:
       description: Command for Werewolves to growl
@@ -50,6 +50,8 @@ permissions:
             werewolf.addbounty: true
             werewolf.hunt: true
             werewolf.transform: true
+            werewolf.intent: true
+            werewolf.setphase: true
             werewolf.clan: true
             werewolf.list: true
             werewolf.reload: true
@@ -175,3 +177,9 @@ permissions:
     werewolf.infectother:
         description: Allows the Player to infect others with the Werewolf infection by attacking them 
         default: true            
+    werewolf.intent:
+        description: Allows a werewolf to toggle their intent to infect with /ww intent
+        default: true
+    werewolf.setphase:
+        description: Allows the Player to set the moon phase of a world with /ww setphase
+        default: false

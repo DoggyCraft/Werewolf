@@ -14,6 +14,7 @@ import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
 import com.dogonfire.werewolf.events.WerewolfTransformEvent;
 import com.dogonfire.werewolf.managers.ClanManager;
 import com.dogonfire.werewolf.managers.LanguageManager;
+import com.dogonfire.werewolf.managers.MoonManager;
 import java.util.Objects;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -53,7 +54,10 @@ public class Commands implements TabExecutor
 
 			this.plugin.log("");
 
-			Werewolf.getLanguageManager().setAmount(this.plugin.getNextFullMoonText(plugin.getServer().getWorlds().get(0)));
+			World world = plugin.getServer().getWorlds().get(0);
+			Werewolf.getLanguageManager().setType(Werewolf.getMoonManager().getPhaseName(Werewolf.getMoonManager().getMoonPhase(world)));
+			this.plugin.log(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfCommandMoonPhase, ChatColor.AQUA));
+			Werewolf.getLanguageManager().setAmount(Werewolf.getMoonManager().getNextFullMoonText(world));
 			this.plugin.log(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfCommandNextFullMoon, ChatColor.AQUA));
 
 		}
@@ -91,6 +95,13 @@ public class Commands implements TabExecutor
 
 				player.sendMessage("");
 
+				if (numberOfTransformations >= this.plugin.levelForIntent)
+				{
+					Werewolf.getLanguageManager().setType("/ww intent");
+					LanguageManager.LANGUAGESTRING intentString = Werewolf.getWerewolfManager().hasIntent(player.getUniqueId()) ? LanguageManager.LANGUAGESTRING.WerewolfCommandIntentOn : LanguageManager.LANGUAGESTRING.WerewolfCommandIntentOff;
+					player.sendMessage(Werewolf.getLanguageManager().getLanguageString(intentString, ChatColor.WHITE));
+				}
+
 				if (numberOfTransformations >= this.plugin.transformsForNoDropItems)
 				{
 					player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfCommandNoDropItems, ChatColor.WHITE));
@@ -112,7 +123,9 @@ public class Commands implements TabExecutor
 			}
 			player.sendMessage("");
 
-			Werewolf.getLanguageManager().setAmount(this.plugin.getNextFullMoonText(player.getWorld()));
+			Werewolf.getLanguageManager().setType(Werewolf.getMoonManager().getPhaseName(Werewolf.getMoonManager().getMoonPhase(player.getWorld())));
+			player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfCommandMoonPhase, ChatColor.AQUA));
+			Werewolf.getLanguageManager().setAmount(Werewolf.getMoonManager().getNextFullMoonText(player.getWorld()));
 			player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfCommandNextFullMoon, ChatColor.AQUA));
 
 			player.sendMessage("");
@@ -214,6 +227,16 @@ public class Commands implements TabExecutor
 			{
 				Werewolf.getLanguageManager().setType("/ww transform");
 				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpTransform, ChatColor.AQUA));
+			}
+			if (player.isOp() || (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.intent")))
+			{
+				Werewolf.getLanguageManager().setType("/ww intent");
+				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpIntent, ChatColor.AQUA));
+			}
+			if (player.isOp() || (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.setphase")))
+			{
+				Werewolf.getLanguageManager().setType("/ww setphase <phase> [world]");
+				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpSetPhase, ChatColor.AQUA));
 			}
 			if (player.isOp() || (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.check")))
 			{
@@ -474,19 +497,120 @@ public class Commands implements TabExecutor
 			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.MustExperienceMoreFullMoons, ChatColor.RED));
 			return false;
 		}
+		if (Werewolf.getMoonManager().isTransformationNight(player.getWorld()))
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.CannotControlTransformationTonight, ChatColor.RED));
+			return false;
+		}
 		if (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 		{
 			this.plugin.untransform(player, WerewolfTransformEvent.Reason.CONTROLLED);
 		}
 		else
 		{
-			if (Werewolf.getWerewolfManager().hasRecentTransform(player.getUniqueId()))
+			long cooldownLeft = Werewolf.getWerewolfManager().getTransformCooldownLeft(player.getUniqueId());
+			if (cooldownLeft > 0)
 			{
+				Werewolf.getLanguageManager().setAmount("" + cooldownLeft);
 				this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.CannotTransformSoSoon, ChatColor.RED));
 				return false;
 			}
 			this.plugin.transform(player, WerewolfTransformEvent.Reason.CONTROLLED);
+
+			long timeLimit = Werewolf.getWerewolfManager().getTransformationTimeLimitSeconds(player.getUniqueId());
+			if (timeLimit >= 0 && Werewolf.getWerewolfManager().isControlledForm(player.getUniqueId()))
+			{
+				Werewolf.getLanguageManager().setAmount("" + timeLimit);
+				this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.TransformationTimeLimit, ChatColor.LIGHT_PURPLE));
+			}
 		}
+		return true;
+	}
+
+	// Toggles a werewolf's intent to infect, which raises the infection chance of their bites
+	public boolean commandIntent(Player player)
+	{
+		if (player == null)
+		{
+			this.plugin.sendInfo(player, ChatColor.RED + "This command cannot be used from console");
+			return false;
+		}
+		if ((!Werewolf.getPermissionsManager().hasPermission(player, "werewolf.intent")) && !player.isOp())
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NoPermissionForCommand, ChatColor.RED));
+			return false;
+		}
+		if (!Werewolf.getWerewolfManager().isFullWerewolf(player.getUniqueId()))
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfCommandIsNotWerewolf, ChatColor.RED));
+			return false;
+		}
+		if (!Werewolf.getWerewolfManager().canUseIntent(player.getUniqueId()))
+		{
+			int fullMoons = this.plugin.levelForIntent - Werewolf.getWerewolfManager().getNumberOfTransformations(player.getUniqueId());
+			Werewolf.getLanguageManager().setAmount("" + fullMoons);
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.MustExperienceMoreFullMoons, ChatColor.RED));
+			return false;
+		}
+
+		boolean intent = !Werewolf.getWerewolfManager().hasIntent(player.getUniqueId());
+		Werewolf.getWerewolfManager().setIntent(player.getUniqueId(), intent);
+
+		LanguageManager.LANGUAGESTRING message = intent ? LanguageManager.LANGUAGESTRING.IntentEnabled : LanguageManager.LANGUAGESTRING.IntentDisabled;
+		this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(message, ChatColor.LIGHT_PURPLE));
+		return true;
+	}
+
+	// Admin command: /ww setphase <phase> [world]. Moves the world's time forward to the next night with that phase.
+	public boolean commandSetPhase(CommandSender sender, String[] args)
+	{
+		Player player = (sender instanceof Player) ? (Player) sender : null;
+
+		if (player != null && !player.isOp() && !Werewolf.getPermissionsManager().hasPermission(player, "werewolf.setphase"))
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NoPermissionForCommand, ChatColor.RED));
+			return false;
+		}
+
+		MoonManager.MoonPhase phase = args.length >= 2 ? MoonManager.MoonPhase.fromString(args[1]) : null;
+		if (phase == null)
+		{
+			List<String> phaseNames = new ArrayList<String>();
+			for (MoonManager.MoonPhase p : MoonManager.MoonPhase.values())
+			{
+				phaseNames.add(p.name());
+			}
+			Werewolf.getLanguageManager().setType(String.join(", ", phaseNames));
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.InvalidMoonPhase, ChatColor.RED));
+			return false;
+		}
+
+		World world;
+		if (args.length >= 3)
+		{
+			world = this.plugin.getServer().getWorld(args[2]);
+			if (world == null)
+			{
+				this.plugin.sendInfo(player, ChatColor.RED + "No world named " + args[2]);
+				return false;
+			}
+		}
+		else if (player != null)
+		{
+			world = player.getWorld();
+		}
+		else
+		{
+			world = this.plugin.getServer().getWorlds().get(0);
+		}
+
+		Werewolf.getMoonManager().setMoonPhase(world, phase);
+
+		Werewolf.getLanguageManager().setPlayerName(world.getName());
+		Werewolf.getLanguageManager().setType(Werewolf.getMoonManager().getPhaseName(Werewolf.getMoonManager().getMoonPhase(world)));
+		this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.MoonPhaseSet, ChatColor.AQUA));
+
+		this.plugin.log(sender.getName() + " set the moon phase in " + world.getName() + " to " + phase.name());
 		return true;
 	}
 
@@ -1098,6 +1222,14 @@ public class Commands implements TabExecutor
 			this.plugin.sendInfo(player, ChatColor.RED + "You are not in wolf form");
 			return false;
 		}
+		long cooldownLeft = Werewolf.getWerewolfManager().getGrowlCooldownLeft(player.getUniqueId());
+		if (cooldownLeft > 0)
+		{
+			Werewolf.getLanguageManager().setAmount("" + cooldownLeft);
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AbilityOnCooldown, ChatColor.RED));
+			return false;
+		}
+		Werewolf.getWerewolfManager().setLastGrowl(player.getUniqueId());
 		Werewolf.getWerewolfManager().growl(player);
 
 		return true;
@@ -1121,6 +1253,14 @@ public class Commands implements TabExecutor
 			this.plugin.sendInfo(player, ChatColor.RED + "You are not in wolf form");
 			return false;
 		}
+		long cooldownLeft = Werewolf.getWerewolfManager().getHowlCooldownLeft(player.getUniqueId());
+		if (cooldownLeft > 0)
+		{
+			Werewolf.getLanguageManager().setAmount("" + cooldownLeft);
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AbilityOnCooldown, ChatColor.RED));
+			return false;
+		}
+		Werewolf.getWerewolfManager().setLastHowl(player.getUniqueId());
 
 		Werewolf.getWerewolfManager().howl(player);
 
@@ -1387,6 +1527,11 @@ public class Commands implements TabExecutor
 				commandInfo(player);
 				return true;
 			}
+			if (args[0].equalsIgnoreCase("setphase"))
+			{
+				commandSetPhase(sender, args);
+				return true;
+			}
 			if (args.length == 2)
 			{
 				if (args[0].equalsIgnoreCase("toggle"))
@@ -1437,6 +1582,10 @@ public class Commands implements TabExecutor
 				else if (args[0].equalsIgnoreCase("transform"))
 				{
 					commandTransform(player);
+				}
+				else if (args[0].equalsIgnoreCase("intent"))
+				{
+					commandIntent(player);
 				}
 				else if (args[0].equalsIgnoreCase("toggle"))
 				{
@@ -1507,7 +1656,7 @@ public class Commands implements TabExecutor
 					for (World world : this.plugin.getServer().getWorlds())
 					{
 						this.plugin.loadSettings();
-						if (this.plugin.isNightInWorld(world))
+						if (Werewolf.getMoonManager().isNight(world))
 						{
 							for (Player werewolf : world.getPlayers())
 							{
@@ -1599,11 +1748,19 @@ public class Commands implements TabExecutor
 			{
 				arg1.add("infect");
 			}
+			if (player == null || player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.setphase"))
+			{
+				arg1.add("setphase");
+			}
 			if (player != null)
 			{
 				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.transform"))
 				{
 					arg1.add("transform");
+				}
+				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.intent"))
+				{
+					arg1.add("intent");
 				}
 				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.infectionpotion"))
 				{
@@ -1666,6 +1823,24 @@ public class Commands implements TabExecutor
 
 			Iterable<String> SECOND_ARGUMENTS = arg2;
 			StringUtil.copyPartialMatches(args[1], SECOND_ARGUMENTS, result);
+		}
+		else if (args.length == 2 && args[0].equalsIgnoreCase("setphase"))
+		{
+			List<String> phases = new ArrayList<String>();
+			for (MoonManager.MoonPhase phase : MoonManager.MoonPhase.values())
+			{
+				phases.add(phase.name());
+			}
+			StringUtil.copyPartialMatches(args[1], phases, result);
+		}
+		else if (args.length == 3 && args[0].equalsIgnoreCase("setphase"))
+		{
+			List<String> worlds = new ArrayList<String>();
+			for (World world : this.plugin.getServer().getWorlds())
+			{
+				worlds.add(world.getName());
+			}
+			StringUtil.copyPartialMatches(args[2], worlds, result);
 		}
 		else if (args.length == 2 && (args[0].equalsIgnoreCase("check") || args[0].equalsIgnoreCase("infect") || args[0].equalsIgnoreCase("toggle")))
 		{

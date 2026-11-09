@@ -52,6 +52,7 @@ public class Werewolf extends JavaPlugin
 	public boolean 								vampireEnabled 							= false;
 	public boolean								vaultEnabled							= false;
 	public boolean								disguisesEnabled						= false;
+	public String									disguiseBackend							= "auto";
 	public boolean								healthBarEnabled						= false;
 	public static int							nightStart								= 13300;
 	public static int							nightEnd								= 23500;
@@ -129,20 +130,20 @@ public class Werewolf extends JavaPlugin
 	public String								wildBiteName							= "Silvermane";
 	public String								alphaAccountName						= "WerewolfAlpha";
 	public String								potionAccountName						= "WF_Werewolf";
-	public String								werewolfBiteAccountName					= "SM_Werewolf";
-	public String								wildBiteAccountName						= "BM_Werewolf";
+	public String								werewolfBiteAccountName					= "BM_Werewolf";
+	public String								wildBiteAccountName						= "SM_Werewolf";
 	public String								alphaAccountUUID						= "e0d074bd-6722-47fc-95d3-f28e2899e155";
 	public String								potionAccountUUID						= "c61647e5-fc2f-4536-abe9-c851911ad22f";
-	public String								werewolfBiteAccountUUID					= "b68a8f00-7d24-4c52-b6ad-1423bfbe26ee";
-	public String								wildBiteAccountUUID						= "da508ecc-dbd9-46c5-8095-47b91aa4ff5f";
+	public String								werewolfBiteAccountUUID					= "da508ecc-dbd9-46c5-8095-47b91aa4ff5f";
+	public String								wildBiteAccountUUID						= "b68a8f00-7d24-4c52-b6ad-1423bfbe26ee";
 	public String								alphaSkinValue							= "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzE3NjgzNiwKICAicHJvZmlsZUlkIiA6ICJlMGQwNzRiZDY3MjI0N2ZjOTVkM2YyOGUyODk5ZTE1NSIsCiAgInByb2ZpbGVOYW1lIiA6ICJXZXJld29sZkFscGhhIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2NhZTg4YjY5MjA0YWUyYzNlM2NiZTcwOWUzZTYyNTIxZTUzZmEwNWU0ZGFkODkxYzZhZmJkZmI5MDg2OGE3ZTAiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ==";
 	public String								alphaSkinSignature						= "GIDMFU5fTmB4T4RFFs/pQDAg7ZsCsu5KAxMXiQw4G32G0Db5SRmJ6OtiSc3SRznJO9EAW7lmjo38+BdY4b3cgTM7IbXmZGx5ML22ZW5KYspUoot2wo9kIj5ksh+H0Tfy9JCPLpg17nd7O1aY5+RhI5Aq+mhtyhJFXn1a906Qg9/XtHhiw0bUrthpa1RrtHnbH6+hFKgzNKAEeT93MvrPajOT7dmzQ72UK3KXgpe6KzbrWFf+NL0ZbpfkjwabSIALUdcL6+92EI//dB5yMgHEln9wfzKjH+82cDGEoGQjAnJIf+/KVWOtkfNRJauwpUkIUkD4tmkXxCCTyXXwUuIb7e7CwxyFWK4K7e7ir/P5zf1NuQZV+X1MwbF1c++dlGa4yBIvrb97F9tTu+7tw6KFwxqCvj4yRjhkGXsN0soI39v95q7ucxWaX0D4oKwa9QYi9zLW6DIh9bPxGa78TAPC/WyAdM/8J+/uinX2mvEsECsKQVmrCGRrqrZgfctsnXHuqstKMNOecwDFDzi8rWlcM3/wrdHn14Lvn2bsZGR4Xhr532CY2t+JgkQvYBM5Z+tkW5C7MCVH4BbLwf2zDcDkGIOzq5VoKlu/2WML88etjyzSIhCN0WJXWFkeRr7ddTar7Nx8/AzHRUBcTGXC+UGiHMYWWq8bAILFggLKY8eJzq0=";
 	public String								potionSkinValue							= "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzM4MjA1NCwKICAicHJvZmlsZUlkIiA6ICJjNjE2NDdlNWZjMmY0NTM2YWJlOWM4NTE5MTFhZDIyZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJXRl9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS84NjA2YmNlMjkzZGRiY2RlNDE1NzE5NGJkMTZkZDhmZDQzNTAyMjU3MTUyYThiYTJiMWFmMTRlOTM3ZWY5NzAzIgogICAgfQogIH0KfQ==";
 	public String								potionSkinSignature						= "M4bpafjzWq9GBbbHGL2xL8dwHxghLdily2bUnBsPPfsjrYidl8uws2pagluNPzxcCSqiZusJvbyoELgFBHrhKxDMGsUvG2nG/XV6GrZj8+bOYKlsU5IszwDaXJB9p6Uxh68pGoKximacJa1ELayKxbxLhJndGVTtO55pOvIB425f6VMRdJa6EvimsiibPMgGBKDVR4BP9ctP5Ij1cFyVpUZuiocp069LKPBMRR4mjRIeD4fmhz6o7yP5g4j6v3/n75T/NPR/NnMcRO7zYDnH0V0/a+dr0UTsGbH+4teuxdExgBrh2sjCCt7Zb4Yno6ElDYIABRqPUHSzNQ7IY3BHzGBaLZ29K/nUgN4mABlqj30ZL6RXmnlyzJUF/MxTcU0R/ROe8nmrt7eX700c29yrtufEkHhhUNX/hB/LjLIAoRIQgpHOGaocCgFsVRR1GGTot1KHuj8k0rvUKmxITpxbjOhdXwkwIMJ/WCAFygeBP6CTfnIKvZbJO2IAkv0/SQ8T38zLl2Xo0wbcUhQS4T44PWGzAVIX9I21lce9VHh55qTgQn0k+Wf9wog/KJw4HjLpWm+eTKuJiZH5zVGxQOzS0AU0OT+g/wHTcBqqtEDD1MeqhYfnQX7uU0wVN+HbahYV6Q2pE6qgyHCqjFTaS+N1dhmtTnhPsJdA4EhHCE9AAWE=";
-	public String								werewolfBiteSkinValue					= "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzQwOTQzMiwKICAicHJvZmlsZUlkIiA6ICJiNjhhOGYwMDdkMjQ0YzUyYjZhZDE0MjNiZmJlMjZlZSIsCiAgInByb2ZpbGVOYW1lIiA6ICJTTV9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS82MzZhNWVkN2I0ZmZmM2I3MzU0YzRjOGM5NjBmM2QxOTVkZWZkMjgyMjA4NjYyNjY1ZGViYjQ2NGJiNWJmZTY1IiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=";
-	public String								werewolfBiteSkinSignature				= "RlCvrZ4SYkPDg2xl6f97ya5Z+578Uov0R6eHqJdFAPEB/rXqlwgPXS3bEhubQ3pLV9QS8BPE2OqycGrg7QrrQ7w267aurZ6Ax7RmGunGnuiJ9jcjlxjwp6Ltk4o/N8OUBYfF3TUfFXnj6lzZUeITZDSb21o/2UFglVxssk5U0PFN7/VpV4g6hv8iDBT9TH6v8wG8I4AZqgU2eoYGvddkLlCX/63FVEEbUb/eTc8R/iOyQVvnhaP8vhs1DXu7kp/b50hhDM31pDkMT3TJq2tEEHGmLZVok9aabtIuhRlIfpjyvJOV5VO9RDWiZeZqKQcYO1F7p+bv5gl8Cqodl7OrG8tzwjq2hH+tRMLidHCjgvsbHOLElUjWoBnMu10r+94Adl9+B/CPUF+NFqUwQ2jCY+WS75M/GX9C7gftO8f1c5n9eO8HVaUeB4fmPqAA0yoCUvIjVgr46a1imcppl2O1fKS+kIVI+Lb08Ujymilqe5lEnwOz/ykndAoleMM7+6kViHGF5/HkUS8l50AnJYVgIUPwLTlwY2GlvtSOcSEHTXCx9YsHBY60r4Ow3bi5pCkNvBTvaHqCWIHLuIA86r2GQPJGuZGn7iy1KJTlvDjZ2LhdfDktZpzmhfcAR8Iw2bnM9jeWKgg3gzEQgkROzQBvzONDVMqcL2ILXPKEdniypy8=";
-	public String								wildBiteSkinValue						= "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzQzNDY4NywKICAicHJvZmlsZUlkIiA6ICJkYTUwOGVjY2RiZDk0NmM1ODA5NTQ3YjkxYWE0ZmY1ZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJCTV9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9jMzc5MWEwOGM1Zjk1ZTQ1MGZkMmZiOGEwZTc1ZmViYTMwN2ZhZDJkNjYzMTkzNTAzYzU3NmMxOWRjM2MwYzdlIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=";
-	public String								wildBiteSkinSignature					= "Z8NgxOC7mVyeW9hGKMxGKGG16ZDkADR5RXmyktriE6wUodq+TRokU0LIGaCHYrc6ReH3rzQJtNj5Whs83tLPAWGMj79silx6jzPhZ5Db2iTZQjVAG98rNGFBxgsjqSG72LyeyxwRIN6L/OSnf2qna2dP1T12d2uyfdipzuNdXnreG/5WqRj0Rrn3ok+GieuoR1DzYugkPu/3vhJOAFfvtSdoAv0C1JtuKaIeDj5BOm+RHvzwcFiYU9dhnGA0n3mxjGUpCCY/RFGF5l80Cw2RqN6j4rougUhklPe4swpS9KX2fF2TsK/JS8WJ1jHuKyykqnml2VHqsoNDX8yTCD/tTdXWJ+lTDsdkdCkPLbX2hkfIJ/0vv55GnQltERie757K+HHncmYw4tBxjgtTCcdIcLNNoAf9jlQC4f8sUCdPiIr7PKoxrik6GkZKx52DsaUGvv/+32E/Aswo1TnD0gMFOiWTtYfJ4OmMW5Ez+AtpoWnypAFKDtTIqMadhD/3HatlpCXsAuA49vE15dfN6WF+wJ66hCtxUKZJSqFhQ81Fan3R9+62E1f+7Vm8yyzoo/ttRmg7zFRAMTaf200z4Ei3xZvq0NiN8USdd3au4DAwK45Tn3FYc+Qo+9TVYn1iDEG9uo5BGYhxiYAz/TnVJccKOqaCzlu1KV/JxabEpAFd534=";
+	public String								werewolfBiteSkinValue					= "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzQzNDY4NywKICAicHJvZmlsZUlkIiA6ICJkYTUwOGVjY2RiZDk0NmM1ODA5NTQ3YjkxYWE0ZmY1ZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJCTV9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9jMzc5MWEwOGM1Zjk1ZTQ1MGZkMmZiOGEwZTc1ZmViYTMwN2ZhZDJkNjYzMTkzNTAzYzU3NmMxOWRjM2MwYzdlIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=";
+	public String								werewolfBiteSkinSignature				= "Z8NgxOC7mVyeW9hGKMxGKGG16ZDkADR5RXmyktriE6wUodq+TRokU0LIGaCHYrc6ReH3rzQJtNj5Whs83tLPAWGMj79silx6jzPhZ5Db2iTZQjVAG98rNGFBxgsjqSG72LyeyxwRIN6L/OSnf2qna2dP1T12d2uyfdipzuNdXnreG/5WqRj0Rrn3ok+GieuoR1DzYugkPu/3vhJOAFfvtSdoAv0C1JtuKaIeDj5BOm+RHvzwcFiYU9dhnGA0n3mxjGUpCCY/RFGF5l80Cw2RqN6j4rougUhklPe4swpS9KX2fF2TsK/JS8WJ1jHuKyykqnml2VHqsoNDX8yTCD/tTdXWJ+lTDsdkdCkPLbX2hkfIJ/0vv55GnQltERie757K+HHncmYw4tBxjgtTCcdIcLNNoAf9jlQC4f8sUCdPiIr7PKoxrik6GkZKx52DsaUGvv/+32E/Aswo1TnD0gMFOiWTtYfJ4OmMW5Ez+AtpoWnypAFKDtTIqMadhD/3HatlpCXsAuA49vE15dfN6WF+wJ66hCtxUKZJSqFhQ81Fan3R9+62E1f+7Vm8yyzoo/ttRmg7zFRAMTaf200z4Ei3xZvq0NiN8USdd3au4DAwK45Tn3FYc+Qo+9TVYn1iDEG9uo5BGYhxiYAz/TnVJccKOqaCzlu1KV/JxabEpAFd534=";
+	public String								wildBiteSkinValue						= "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzQwOTQzMiwKICAicHJvZmlsZUlkIiA6ICJiNjhhOGYwMDdkMjQ0YzUyYjZhZDE0MjNiZmJlMjZlZSIsCiAgInByb2ZpbGVOYW1lIiA6ICJTTV9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS82MzZhNWVkN2I0ZmZmM2I3MzU0YzRjOGM5NjBmM2QxOTVkZWZkMjgyMjA4NjYyNjY1ZGViYjQ2NGJiNWJmZTY1IiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=";
+	public String								wildBiteSkinSignature					= "RlCvrZ4SYkPDg2xl6f97ya5Z+578Uov0R6eHqJdFAPEB/rXqlwgPXS3bEhubQ3pLV9QS8BPE2OqycGrg7QrrQ7w267aurZ6Ax7RmGunGnuiJ9jcjlxjwp6Ltk4o/N8OUBYfF3TUfFXnj6lzZUeITZDSb21o/2UFglVxssk5U0PFN7/VpV4g6hv8iDBT9TH6v8wG8I4AZqgU2eoYGvddkLlCX/63FVEEbUb/eTc8R/iOyQVvnhaP8vhs1DXu7kp/b50hhDM31pDkMT3TJq2tEEHGmLZVok9aabtIuhRlIfpjyvJOV5VO9RDWiZeZqKQcYO1F7p+bv5gl8Cqodl7OrG8tzwjq2hH+tRMLidHCjgvsbHOLElUjWoBnMu10r+94Adl9+B/CPUF+NFqUwQ2jCY+WS75M/GX9C7gftO8f1c5n9eO8HVaUeB4fmPqAA0yoCUvIjVgr46a1imcppl2O1fKS+kIVI+Lb08Ujymilqe5lEnwOz/ykndAoleMM7+6kViHGF5/HkUS8l50AnJYVgIUPwLTlwY2GlvtSOcSEHTXCx9YsHBY60r4Ow3bi5pCkNvBTvaHqCWIHLuIA86r2GQPJGuZGn7iy1KJTlvDjZ2LhdfDktZpzmhfcAR8Iw2bnM9jeWKgg3gzEQgkROzQBvzONDVMqcL2ILXPKEdniypy8=";
 
 	public boolean								werewolfNamesEnabled					= true;
 	public List<String>							givenNames								= Arrays.asList("Dark", "Black", "White", "Red", "Blood", "Blue", "Gray", "Neon", "Wild", "Lurking", "Feral", "Bestial", "Fierce", "Vicious", "Bloodthirsty", "Fearsome", "Ghoulish", "Wrathful", "Teenage", "Savage");
@@ -343,20 +344,8 @@ public class Werewolf extends JavaPlugin
 		playerListener = new PlayerListener(this);
 		interactListener = new InteractListener(this);
 		chatListener = new ChatListener(this);
-		this.disguisesEnabled = true;
 		skinManager = new SkinManager(this);
-		
-		if(!WerewolfDisguiseAPI.init())
-		{
-			this.disguisesEnabled = false;
-		}
-		
-		// Pre-cache some known disguises
-		WerewolfDisguiseAPI.getDisguise(UUID.fromString(potionAccountUUID), potionAccountName);
-		WerewolfDisguiseAPI.getDisguise(UUID.fromString(wildBiteAccountUUID), wildBiteAccountName);
-		WerewolfDisguiseAPI.getDisguise(UUID.fromString(werewolfBiteAccountUUID), werewolfBiteAccountName);
-		WerewolfDisguiseAPI.getDisguise(UUID.fromString(alphaAccountUUID), alphaAccountName);
-				
+
 		// If ! prevent armor
 		if (this.dropArmorOnTransform)
 		{
@@ -432,6 +421,17 @@ public class Werewolf extends JavaPlugin
 		werewolfManager.load();
 		clanManager.load();
 		languageManager.load();
+
+		// Needs the skin settings from config.yml
+		this.disguisesEnabled = WerewolfDisguiseAPI.init(this.disguiseBackend);
+		if (this.disguisesEnabled)
+		{
+			// Pre-cache some known disguises
+			WerewolfDisguiseAPI.getDisguise(UUID.fromString(potionAccountUUID), potionAccountName);
+			WerewolfDisguiseAPI.getDisguise(UUID.fromString(wildBiteAccountUUID), wildBiteAccountName);
+			WerewolfDisguiseAPI.getDisguise(UUID.fromString(werewolfBiteAccountUUID), werewolfBiteAccountName);
+			WerewolfDisguiseAPI.getDisguise(UUID.fromString(alphaAccountUUID), alphaAccountName);
+		}
 
 		itemManager.setupRecipes();
 
@@ -663,20 +663,24 @@ public class Werewolf extends JavaPlugin
 		this.wildBiteName = config.getString("Clans.WildBiteName", "Silvermane");
 		this.alphaAccountName = config.getString("Clans.AlphaAccountName", "WerewolfAlpha");
 		this.potionAccountName = config.getString("Clans.PotionAccountName", "WF_Werewolf");
-		this.werewolfBiteAccountName = config.getString("Clans.WerewolfBiteAccountName", "SM_Werewolf");
-		this.wildBiteAccountName = config.getString("Clans.WildBiteAccountName", "BM_Werewolf");
+		this.werewolfBiteAccountName = config.getString("Clans.WerewolfBiteAccountName", "BM_Werewolf");
+		this.wildBiteAccountName = config.getString("Clans.WildBiteAccountName", "SM_Werewolf");
 		this.alphaAccountUUID = config.getString("Clans.AlphaAccountUUID", "e0d074bd-6722-47fc-95d3-f28e2899e155");
 		this.potionAccountUUID = config.getString("Clans.PotionAccountUUID", "c61647e5-fc2f-4536-abe9-c851911ad22f");
-		this.werewolfBiteAccountUUID = config.getString("Clans.WerewolfBiteAccountUUID", "b68a8f00-7d24-4c52-b6ad-1423bfbe26ee");
-		this.wildBiteAccountUUID = config.getString("Clans.WildBiteAccountUUID", "da508ecc-dbd9-46c5-8095-47b91aa4ff5f");
+		this.werewolfBiteAccountUUID = config.getString("Clans.WerewolfBiteAccountUUID", "da508ecc-dbd9-46c5-8095-47b91aa4ff5f");
+		this.wildBiteAccountUUID = config.getString("Clans.WildBiteAccountUUID", "b68a8f00-7d24-4c52-b6ad-1423bfbe26ee");
 		this.alphaSkinValue = config.getString("Clans.AlphaSkinValue", "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzE3NjgzNiwKICAicHJvZmlsZUlkIiA6ICJlMGQwNzRiZDY3MjI0N2ZjOTVkM2YyOGUyODk5ZTE1NSIsCiAgInByb2ZpbGVOYW1lIiA6ICJXZXJld29sZkFscGhhIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2NhZTg4YjY5MjA0YWUyYzNlM2NiZTcwOWUzZTYyNTIxZTUzZmEwNWU0ZGFkODkxYzZhZmJkZmI5MDg2OGE3ZTAiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ==");
 		this.alphaSkinSignature = config.getString("Clans.AlphaSkinSignature", "GIDMFU5fTmB4T4RFFs/pQDAg7ZsCsu5KAxMXiQw4G32G0Db5SRmJ6OtiSc3SRznJO9EAW7lmjo38+BdY4b3cgTM7IbXmZGx5ML22ZW5KYspUoot2wo9kIj5ksh+H0Tfy9JCPLpg17nd7O1aY5+RhI5Aq+mhtyhJFXn1a906Qg9/XtHhiw0bUrthpa1RrtHnbH6+hFKgzNKAEeT93MvrPajOT7dmzQ72UK3KXgpe6KzbrWFf+NL0ZbpfkjwabSIALUdcL6+92EI//dB5yMgHEln9wfzKjH+82cDGEoGQjAnJIf+/KVWOtkfNRJauwpUkIUkD4tmkXxCCTyXXwUuIb7e7CwxyFWK4K7e7ir/P5zf1NuQZV+X1MwbF1c++dlGa4yBIvrb97F9tTu+7tw6KFwxqCvj4yRjhkGXsN0soI39v95q7ucxWaX0D4oKwa9QYi9zLW6DIh9bPxGa78TAPC/WyAdM/8J+/uinX2mvEsECsKQVmrCGRrqrZgfctsnXHuqstKMNOecwDFDzi8rWlcM3/wrdHn14Lvn2bsZGR4Xhr532CY2t+JgkQvYBM5Z+tkW5C7MCVH4BbLwf2zDcDkGIOzq5VoKlu/2WML88etjyzSIhCN0WJXWFkeRr7ddTar7Nx8/AzHRUBcTGXC+UGiHMYWWq8bAILFggLKY8eJzq0=");
 		this.potionSkinValue = config.getString("Clans.PotionSkinValue", "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzM4MjA1NCwKICAicHJvZmlsZUlkIiA6ICJjNjE2NDdlNWZjMmY0NTM2YWJlOWM4NTE5MTFhZDIyZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJXRl9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS84NjA2YmNlMjkzZGRiY2RlNDE1NzE5NGJkMTZkZDhmZDQzNTAyMjU3MTUyYThiYTJiMWFmMTRlOTM3ZWY5NzAzIgogICAgfQogIH0KfQ==");
 		this.potionSkinSignature = config.getString("Clans.PotionSkinSignature", "M4bpafjzWq9GBbbHGL2xL8dwHxghLdily2bUnBsPPfsjrYidl8uws2pagluNPzxcCSqiZusJvbyoELgFBHrhKxDMGsUvG2nG/XV6GrZj8+bOYKlsU5IszwDaXJB9p6Uxh68pGoKximacJa1ELayKxbxLhJndGVTtO55pOvIB425f6VMRdJa6EvimsiibPMgGBKDVR4BP9ctP5Ij1cFyVpUZuiocp069LKPBMRR4mjRIeD4fmhz6o7yP5g4j6v3/n75T/NPR/NnMcRO7zYDnH0V0/a+dr0UTsGbH+4teuxdExgBrh2sjCCt7Zb4Yno6ElDYIABRqPUHSzNQ7IY3BHzGBaLZ29K/nUgN4mABlqj30ZL6RXmnlyzJUF/MxTcU0R/ROe8nmrt7eX700c29yrtufEkHhhUNX/hB/LjLIAoRIQgpHOGaocCgFsVRR1GGTot1KHuj8k0rvUKmxITpxbjOhdXwkwIMJ/WCAFygeBP6CTfnIKvZbJO2IAkv0/SQ8T38zLl2Xo0wbcUhQS4T44PWGzAVIX9I21lce9VHh55qTgQn0k+Wf9wog/KJw4HjLpWm+eTKuJiZH5zVGxQOzS0AU0OT+g/wHTcBqqtEDD1MeqhYfnQX7uU0wVN+HbahYV6Q2pE6qgyHCqjFTaS+N1dhmtTnhPsJdA4EhHCE9AAWE=");
-		this.werewolfBiteSkinValue = config.getString("Clans.WerewolfBiteSkinValue", "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzQwOTQzMiwKICAicHJvZmlsZUlkIiA6ICJiNjhhOGYwMDdkMjQ0YzUyYjZhZDE0MjNiZmJlMjZlZSIsCiAgInByb2ZpbGVOYW1lIiA6ICJTTV9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS82MzZhNWVkN2I0ZmZmM2I3MzU0YzRjOGM5NjBmM2QxOTVkZWZkMjgyMjA4NjYyNjY1ZGViYjQ2NGJiNWJmZTY1IiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=");
-		this.werewolfBiteSkinSignature = config.getString("Clans.WerewolfBiteSkinSignature", "RlCvrZ4SYkPDg2xl6f97ya5Z+578Uov0R6eHqJdFAPEB/rXqlwgPXS3bEhubQ3pLV9QS8BPE2OqycGrg7QrrQ7w267aurZ6Ax7RmGunGnuiJ9jcjlxjwp6Ltk4o/N8OUBYfF3TUfFXnj6lzZUeITZDSb21o/2UFglVxssk5U0PFN7/VpV4g6hv8iDBT9TH6v8wG8I4AZqgU2eoYGvddkLlCX/63FVEEbUb/eTc8R/iOyQVvnhaP8vhs1DXu7kp/b50hhDM31pDkMT3TJq2tEEHGmLZVok9aabtIuhRlIfpjyvJOV5VO9RDWiZeZqKQcYO1F7p+bv5gl8Cqodl7OrG8tzwjq2hH+tRMLidHCjgvsbHOLElUjWoBnMu10r+94Adl9+B/CPUF+NFqUwQ2jCY+WS75M/GX9C7gftO8f1c5n9eO8HVaUeB4fmPqAA0yoCUvIjVgr46a1imcppl2O1fKS+kIVI+Lb08Ujymilqe5lEnwOz/ykndAoleMM7+6kViHGF5/HkUS8l50AnJYVgIUPwLTlwY2GlvtSOcSEHTXCx9YsHBY60r4Ow3bi5pCkNvBTvaHqCWIHLuIA86r2GQPJGuZGn7iy1KJTlvDjZ2LhdfDktZpzmhfcAR8Iw2bnM9jeWKgg3gzEQgkROzQBvzONDVMqcL2ILXPKEdniypy8=");
-		this.wildBiteSkinValue = config.getString("Clans.WildBiteSkinValue", "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzQzNDY4NywKICAicHJvZmlsZUlkIiA6ICJkYTUwOGVjY2RiZDk0NmM1ODA5NTQ3YjkxYWE0ZmY1ZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJCTV9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9jMzc5MWEwOGM1Zjk1ZTQ1MGZkMmZiOGEwZTc1ZmViYTMwN2ZhZDJkNjYzMTkzNTAzYzU3NmMxOWRjM2MwYzdlIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=");
-		this.wildBiteSkinSignature = config.getString("Clans.WildBiteSkinSignature", "Z8NgxOC7mVyeW9hGKMxGKGG16ZDkADR5RXmyktriE6wUodq+TRokU0LIGaCHYrc6ReH3rzQJtNj5Whs83tLPAWGMj79silx6jzPhZ5Db2iTZQjVAG98rNGFBxgsjqSG72LyeyxwRIN6L/OSnf2qna2dP1T12d2uyfdipzuNdXnreG/5WqRj0Rrn3ok+GieuoR1DzYugkPu/3vhJOAFfvtSdoAv0C1JtuKaIeDj5BOm+RHvzwcFiYU9dhnGA0n3mxjGUpCCY/RFGF5l80Cw2RqN6j4rougUhklPe4swpS9KX2fF2TsK/JS8WJ1jHuKyykqnml2VHqsoNDX8yTCD/tTdXWJ+lTDsdkdCkPLbX2hkfIJ/0vv55GnQltERie757K+HHncmYw4tBxjgtTCcdIcLNNoAf9jlQC4f8sUCdPiIr7PKoxrik6GkZKx52DsaUGvv/+32E/Aswo1TnD0gMFOiWTtYfJ4OmMW5Ez+AtpoWnypAFKDtTIqMadhD/3HatlpCXsAuA49vE15dfN6WF+wJ66hCtxUKZJSqFhQ81Fan3R9+62E1f+7Vm8yyzoo/ttRmg7zFRAMTaf200z4Ei3xZvq0NiN8USdd3au4DAwK45Tn3FYc+Qo+9TVYn1iDEG9uo5BGYhxiYAz/TnVJccKOqaCzlu1KV/JxabEpAFd534=");
+		this.werewolfBiteSkinValue = config.getString("Clans.WerewolfBiteSkinValue", "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzQzNDY4NywKICAicHJvZmlsZUlkIiA6ICJkYTUwOGVjY2RiZDk0NmM1ODA5NTQ3YjkxYWE0ZmY1ZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJCTV9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9jMzc5MWEwOGM1Zjk1ZTQ1MGZkMmZiOGEwZTc1ZmViYTMwN2ZhZDJkNjYzMTkzNTAzYzU3NmMxOWRjM2MwYzdlIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=");
+		this.werewolfBiteSkinSignature = config.getString("Clans.WerewolfBiteSkinSignature", "Z8NgxOC7mVyeW9hGKMxGKGG16ZDkADR5RXmyktriE6wUodq+TRokU0LIGaCHYrc6ReH3rzQJtNj5Whs83tLPAWGMj79silx6jzPhZ5Db2iTZQjVAG98rNGFBxgsjqSG72LyeyxwRIN6L/OSnf2qna2dP1T12d2uyfdipzuNdXnreG/5WqRj0Rrn3ok+GieuoR1DzYugkPu/3vhJOAFfvtSdoAv0C1JtuKaIeDj5BOm+RHvzwcFiYU9dhnGA0n3mxjGUpCCY/RFGF5l80Cw2RqN6j4rougUhklPe4swpS9KX2fF2TsK/JS8WJ1jHuKyykqnml2VHqsoNDX8yTCD/tTdXWJ+lTDsdkdCkPLbX2hkfIJ/0vv55GnQltERie757K+HHncmYw4tBxjgtTCcdIcLNNoAf9jlQC4f8sUCdPiIr7PKoxrik6GkZKx52DsaUGvv/+32E/Aswo1TnD0gMFOiWTtYfJ4OmMW5Ez+AtpoWnypAFKDtTIqMadhD/3HatlpCXsAuA49vE15dfN6WF+wJ66hCtxUKZJSqFhQ81Fan3R9+62E1f+7Vm8yyzoo/ttRmg7zFRAMTaf200z4Ei3xZvq0NiN8USdd3au4DAwK45Tn3FYc+Qo+9TVYn1iDEG9uo5BGYhxiYAz/TnVJccKOqaCzlu1KV/JxabEpAFd534=");
+		this.wildBiteSkinValue = config.getString("Clans.WildBiteSkinValue", "ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzQwOTQzMiwKICAicHJvZmlsZUlkIiA6ICJiNjhhOGYwMDdkMjQ0YzUyYjZhZDE0MjNiZmJlMjZlZSIsCiAgInByb2ZpbGVOYW1lIiA6ICJTTV9XZXJld29sZiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS82MzZhNWVkN2I0ZmZmM2I3MzU0YzRjOGM5NjBmM2QxOTVkZWZkMjgyMjA4NjYyNjY1ZGViYjQ2NGJiNWJmZTY1IiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=");
+		this.wildBiteSkinSignature = config.getString("Clans.WildBiteSkinSignature", "RlCvrZ4SYkPDg2xl6f97ya5Z+578Uov0R6eHqJdFAPEB/rXqlwgPXS3bEhubQ3pLV9QS8BPE2OqycGrg7QrrQ7w267aurZ6Ax7RmGunGnuiJ9jcjlxjwp6Ltk4o/N8OUBYfF3TUfFXnj6lzZUeITZDSb21o/2UFglVxssk5U0PFN7/VpV4g6hv8iDBT9TH6v8wG8I4AZqgU2eoYGvddkLlCX/63FVEEbUb/eTc8R/iOyQVvnhaP8vhs1DXu7kp/b50hhDM31pDkMT3TJq2tEEHGmLZVok9aabtIuhRlIfpjyvJOV5VO9RDWiZeZqKQcYO1F7p+bv5gl8Cqodl7OrG8tzwjq2hH+tRMLidHCjgvsbHOLElUjWoBnMu10r+94Adl9+B/CPUF+NFqUwQ2jCY+WS75M/GX9C7gftO8f1c5n9eO8HVaUeB4fmPqAA0yoCUvIjVgr46a1imcppl2O1fKS+kIVI+Lb08Ujymilqe5lEnwOz/ykndAoleMM7+6kViHGF5/HkUS8l50AnJYVgIUPwLTlwY2GlvtSOcSEHTXCx9YsHBY60r4Ow3bi5pCkNvBTvaHqCWIHLuIA86r2GQPJGuZGn7iy1KJTlvDjZ2LhdfDktZpzmhfcAR8Iw2bnM9jeWKgg3gzEQgkROzQBvzONDVMqcL2ILXPKEdniypy8=");
+
+		migrateSwappedClanSkins();
+
+		this.disguiseBackend = config.getString("Disguises.Backend", "auto");
 
 		this.werewolfNamesEnabled = config.getBoolean("WerewolfNames.Enabled", true);
 		if (config.contains("WerewolfNames.Given_names"))
@@ -697,6 +701,36 @@ public class Werewolf extends JavaPlugin
 		this.craftableInfectionPotionEnabled = config.getBoolean("Items.CraftableInfectionPotionEnabled", true);
 		this.craftableCurePotionEnabled = config.getBoolean("Items.CraftableCurePotionEnabled", true);
 		this.craftableWolfbanePotionEnabled = config.getBoolean("Items.CraftableWolfbanePotionEnabled", true);
+	}
+
+	/**
+	 * Before 0.12 Bloodmoon (WerewolfBite) used the Silvermane skin account and vice versa.
+	 * Configs still holding that default pairing get the two clans' skin settings swapped.
+	 */
+	private void migrateSwappedClanSkins()
+	{
+		if (!"SM_Werewolf".equals(this.werewolfBiteAccountName) || !"BM_Werewolf".equals(this.wildBiteAccountName))
+		{
+			return;
+		}
+
+		log("Swapping the Bloodmoon and Silvermane skins so each clan uses its own skin account.");
+
+		String accountName = this.werewolfBiteAccountName;
+		this.werewolfBiteAccountName = this.wildBiteAccountName;
+		this.wildBiteAccountName = accountName;
+
+		String accountUUID = this.werewolfBiteAccountUUID;
+		this.werewolfBiteAccountUUID = this.wildBiteAccountUUID;
+		this.wildBiteAccountUUID = accountUUID;
+
+		String skinValue = this.werewolfBiteSkinValue;
+		this.werewolfBiteSkinValue = this.wildBiteSkinValue;
+		this.wildBiteSkinValue = skinValue;
+
+		String skinSignature = this.werewolfBiteSkinSignature;
+		this.werewolfBiteSkinSignature = this.wildBiteSkinSignature;
+		this.wildBiteSkinSignature = skinSignature;
 	}
 
 	public void saveSettings()
@@ -776,6 +810,8 @@ public class Werewolf extends JavaPlugin
 		config.set("Clans.WerewolfBiteSkinSignature", this.werewolfBiteSkinSignature);
 		config.set("Clans.WildBiteSkinValue", this.wildBiteSkinValue);
 		config.set("Clans.WildBiteSkinSignature", this.wildBiteSkinSignature);
+
+		config.set("Disguises.Backend", this.disguiseBackend);
 
 		config.set("WerewolfNames.Enabled", this.werewolfNamesEnabled);
 		config.set("WerewolfNames.Given_names", this.givenNames);

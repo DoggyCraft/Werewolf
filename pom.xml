@@ -17,13 +17,13 @@
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <bukkitAPIVersion>26.3-R0.1-SNAPSHOT</bukkitAPIVersion>
+        <paperAPIVersion>26.3.build.246-stable</paperAPIVersion>
     </properties>
     <repositories>
-        <!-- Spigot Repo for Spigot and Bukkit -->
+        <!-- PaperMC repo for the Paper API -->
         <repository>
-            <id>spigot-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots</url>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
         <!-- Lib's Disguises -->
         <repository>
@@ -62,11 +62,11 @@
         </repository>
     </repositories>
     <dependencies>
-        <!-- Spigot -->
+        <!-- Paper API (a superset of the Spigot API; Paper-only calls are guarded at runtime) -->
         <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot-api</artifactId>
-            <version>${bukkitAPIVersion}</version>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-api</artifactId>
+            <version>${paperAPIVersion}</version>
             <scope>provided</scope>
         </dependency>
         <!-- VaultAPI -->

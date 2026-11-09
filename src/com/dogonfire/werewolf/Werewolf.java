@@ -1,7 +1,10 @@
 package com.dogonfire.werewolf;
 
 import com.clanjhoo.vampire.VampireAPI;
-import com.dogonfire.werewolf.commands.Commands;
+import com.dogonfire.werewolf.commands.SingleCommandExecutor;
+import com.dogonfire.werewolf.commands.WerewolfCommand;
+import com.dogonfire.werewolf.commands.sub.GrowlCommand;
+import com.dogonfire.werewolf.commands.sub.HowlCommand;
 import com.dogonfire.werewolf.config.ConfigMigrator;
 import com.dogonfire.werewolf.config.Settings;
 import com.dogonfire.werewolf.config.SettingsLoader;
@@ -41,8 +44,6 @@ import org.bukkit.Effect;
 import org.bukkit.Server;
 import org.bukkit.Sound;
 import org.bukkit.World;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
@@ -81,7 +82,6 @@ public class Werewolf extends JavaPlugin
 	private static ScentManager					scentManager							= null;
 
 	private static Economy						economy									= null;
-	private Commands commands								= null;
 	private final List<IntegrationListener>		integrations							= new ArrayList<IntegrationListener>();
 
 	// The integration is written against PvPManager 4.x (me.chancesd); 3.x (me.NoChance) has a different API
@@ -314,7 +314,7 @@ public class Werewolf extends JavaPlugin
 
 		loadSettings();
 
-		this.commands = new Commands(this);
+		registerCommands();
 
 		pluginEnabled = true;
 
@@ -575,16 +575,18 @@ public class Werewolf extends JavaPlugin
 		}
 	}
 
-	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args)
+	private void registerCommands()
 	{
-		return this.commands.onCommand(sender, cmd, label, args);
-	}
+		WerewolfCommand werewolfCommand = new WerewolfCommand(this);
+		getCommand("werewolf").setExecutor(werewolfCommand);
+		getCommand("werewolf").setTabCompleter(werewolfCommand);
 
-	@Override
-	public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args)
-	{
-		return this.commands.onTabComplete(sender, cmd, alias, args);
-	}
+		SingleCommandExecutor growl = new SingleCommandExecutor(this, new GrowlCommand(this));
+		getCommand("growl").setExecutor(growl);
+		getCommand("growl").setTabCompleter(growl);
 
+		SingleCommandExecutor howl = new SingleCommandExecutor(this, new HowlCommand(this));
+		getCommand("howl").setExecutor(howl);
+		getCommand("howl").setTabCompleter(howl);
+	}
 }

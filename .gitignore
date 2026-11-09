@@ -17,4 +17,7 @@ dependency-reduced-pom.xml
 
 # IDEA
 /.idea/
+
+# Custom
 werewolf.iml
+.direnv/

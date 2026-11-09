@@ -12,7 +12,7 @@ import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.CommandUtil;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.managers.ClanManager;
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
 /** /ww clan: info about the werewolf's clan and the clan ranking */
@@ -46,7 +46,7 @@ public class ClanCommand extends SubCommand
 		ClanManager clans = ctx.getClanManager();
 		String clanName = clans.getClanName(player.getUniqueId());
 		String alphaName = "None!";
-		ClanType playerClan = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
+		Clan playerClan = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
 		UUID alphaId = clans.getAlpha(playerClan);
 
 		if (alphaId != null)
@@ -68,10 +68,10 @@ public class ClanCommand extends SubCommand
 
 		send(player, ChatColor.GOLD + "------------ The Werewolf Clans ------------");
 
-		List<ClanType> clanList = clans.getClansRanked();
+		List<Clan> clanList = clans.getClansRanked();
 
 		int n = 1;
-		for (ClanType clan : clanList)
+		for (Clan clan : clanList)
 		{
 			ChatColor nameColor = clan.equals(playerClan) ? ChatColor.GOLD : ChatColor.WHITE;
 			send(player, "" + ChatColor.GOLD + n + ") " + nameColor + clans.getClanName(clan) + ChatColor.AQUA + "  -  " + ctx.getWerewolfManager().getWerewolfClanMembers(clan).size() + " members  -  "

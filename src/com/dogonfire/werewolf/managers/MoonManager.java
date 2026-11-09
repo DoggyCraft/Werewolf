@@ -1,5 +1,6 @@
 package com.dogonfire.werewolf.managers;
 
+import com.dogonfire.werewolf.api.MoonPhase;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
@@ -19,49 +20,6 @@ import com.dogonfire.werewolf.WerewolfContext;
 public class MoonManager
 {
 	public static final long	DAY_LENGTH	= 24000L;
-
-	public static enum MoonPhase
-	{
-		FullMoon("Full Moon"),
-		WaningGibbous("Waning Gibbous"),
-		LastQuarter("Last Quarter"),
-		WaningCrescent("Waning Crescent"),
-		NewMoon("New Moon"),
-		WaxingCrescent("Waxing Crescent"),
-		FirstQuarter("First Quarter"),
-		WaxingGibbous("Waxing Gibbous");
-
-		private final String defaultName;
-
-		MoonPhase(String defaultName)
-		{
-			this.defaultName = defaultName;
-		}
-
-		public String getDefaultName()
-		{
-			return defaultName;
-		}
-
-		/** Accepts the enum name in any case, with or without underscores/spaces (FullMoon, full_moon, "Full Moon"). */
-		public static MoonPhase fromString(String name)
-		{
-			if (name == null)
-			{
-				return null;
-			}
-
-			String normalized = name.replace("_", "").replace(" ", "").replace("-", "");
-			for (MoonPhase phase : values())
-			{
-				if (phase.name().equalsIgnoreCase(normalized))
-				{
-					return phase;
-				}
-			}
-			return null;
-		}
-	}
 
 	private final Werewolf				plugin;
 	private final WerewolfContext ctx;

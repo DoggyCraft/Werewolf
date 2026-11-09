@@ -1,11 +1,11 @@
-package com.dogonfire.werewolf.events;
+package com.dogonfire.werewolf.api.event;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
 
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 
 /**
  * Fired when a werewolf is about to change into wolf form or back into human form.
@@ -37,12 +37,12 @@ public class WerewolfTransformEvent extends PlayerEvent implements Cancellable
 
 	private static final HandlerList	handlers	= new HandlerList();
 
-	private final ClanType				clan;
+	private final Clan				clan;
 	private final boolean				toWolfForm;
 	private final Reason				reason;
 	private boolean						cancelled;
 
-	public WerewolfTransformEvent(Player player, ClanType clan, boolean toWolfForm, Reason reason)
+	public WerewolfTransformEvent(Player player, Clan clan, boolean toWolfForm, Reason reason)
 	{
 		super(player);
 		this.clan = clan;
@@ -50,7 +50,7 @@ public class WerewolfTransformEvent extends PlayerEvent implements Cancellable
 		this.reason = reason;
 	}
 
-	public ClanType getClan()
+	public Clan getClan()
 	{
 		return clan;
 	}

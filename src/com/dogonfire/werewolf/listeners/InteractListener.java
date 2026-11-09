@@ -1,11 +1,11 @@
 package com.dogonfire.werewolf.listeners;
 
-import com.dogonfire.werewolf.managers.ClanManager;
+import com.dogonfire.werewolf.api.Clan;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
-import com.dogonfire.werewolf.events.WerewolfCureEvent;
-import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
+import com.dogonfire.werewolf.api.event.WerewolfCureEvent;
+import com.dogonfire.werewolf.api.event.WerewolfInfectionEvent;
 
 
 import org.bukkit.ChatColor;
@@ -124,7 +124,7 @@ public class InteractListener implements Listener
 			{
 				public void run()
 				{
-					ctx.getWerewolfManager().makeWerewolf(targetPlayer, true, ClanManager.ClanType.Potion, WerewolfInfectionEvent.Source.POTION);
+					ctx.getWerewolfManager().makeWerewolf(targetPlayer, true, Clan.Potion, WerewolfInfectionEvent.Source.POTION);
 				}
 			}, 140L);
 		}

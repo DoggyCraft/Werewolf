@@ -29,10 +29,10 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
-import com.dogonfire.werewolf.events.WerewolfCureEvent;
-import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
-import com.dogonfire.werewolf.events.WerewolfTransformEvent;
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.event.WerewolfCureEvent;
+import com.dogonfire.werewolf.api.event.WerewolfInfectionEvent;
+import com.dogonfire.werewolf.api.event.WerewolfTransformEvent;
+import com.dogonfire.werewolf.api.Clan;
 import com.dogonfire.werewolf.storage.WerewolfRecord;
 import com.dogonfire.werewolf.storage.WerewolfRepository;
 import com.dogonfire.werewolf.storage.WolfState;
@@ -193,7 +193,7 @@ public class WerewolfManager
 		return new HashSet<UUID>(this.werewolves.ids());
 	}
 
-	public Set<UUID> getWerewolvesInClan(ClanManager.ClanType clanType)
+	public Set<UUID> getWerewolvesInClan(Clan clanType)
 	{
 		Set<UUID> werewolfList = new HashSet<UUID>();
 		for (WerewolfRecord record : this.werewolves.inClan(clanType))
@@ -203,7 +203,7 @@ public class WerewolfManager
 		return werewolfList;
 	}
 
-	public void sendMessageToClan(ClanType clan, String message)
+	public void sendMessageToClan(Clan clan, String message)
 	{
 		for (UUID playerId : getWerewolvesInClan(clan))
 		{
@@ -248,7 +248,7 @@ public class WerewolfManager
 		return record != null ? record.getId() : null;
 	}
 
-	public boolean makeWerewolf(Player player, boolean turnNow, ClanManager.ClanType clan, WerewolfInfectionEvent.Source source)
+	public boolean makeWerewolf(Player player, boolean turnNow, Clan clan, WerewolfInfectionEvent.Source source)
 	{
 		WerewolfInfectionEvent event = new WerewolfInfectionEvent(player, clan, source, turnNow);
 		plugin.getServer().getPluginManager().callEvent(event);
@@ -259,7 +259,7 @@ public class WerewolfManager
 		clan = event.getClan();
 		if (clan == null)
 		{
-			clan = ClanType.values()[this.random.nextInt(ClanType.values().length)];
+			clan = Clan.values()[this.random.nextInt(Clan.values().length)];
 		}
 
 		// The only place a werewolves.yml entry is created; every other setter only changes existing werewolves
@@ -848,24 +848,24 @@ public class WerewolfManager
 	 * The werewolf's clan. Every werewolf has one (given in makeWerewolf, or at load for old data without one); players
 	 * who are not werewolves get WerewolfBite. Never changes any data.
 	 */
-	public ClanManager.ClanType getWerewolfClan(UUID playerId)
+	public Clan getWerewolfClan(UUID playerId)
 	{
 		WerewolfRecord record = this.werewolves.get(playerId);
 		if (record == null || record.getClan() == null)
 		{
-			return ClanManager.ClanType.WerewolfBite;
+			return Clan.WerewolfBite;
 		}
 
 		return record.getClan();
 	}
 
-	public UUID getAlphaCandidate(ClanManager.ClanType clan)
+	public UUID getAlphaCandidate(Clan clan)
 	{
 		return getAlphaCandidate(clan, null);
 	}
 
 	/** The clan member best suited to be alpha: full werewolves before infected ones, then the highest level. Skips {@code exclude}. */
-	public UUID getAlphaCandidate(ClanManager.ClanType clan, UUID exclude)
+	public UUID getAlphaCandidate(Clan clan, UUID exclude)
 	{
 		UUID best = null;
 		boolean bestFull = false;
@@ -900,7 +900,7 @@ public class WerewolfManager
 	}
 
 	/** UUIDs (as strings) of everyone in werewolves.yml in this clan */
-	public List<String> getWerewolfClanMembers(ClanManager.ClanType clan)
+	public List<String> getWerewolfClanMembers(Clan clan)
 	{
 		List<String> clanMembers = new ArrayList<String>();
 		for (WerewolfRecord record : this.werewolves.inClan(clan))
@@ -910,7 +910,7 @@ public class WerewolfManager
 		return clanMembers;
 	}
 
-	public List<UUID> getWerewolfClanMembersRanked(ClanManager.ClanType clan)
+	public List<UUID> getWerewolfClanMembersRanked(Clan clan)
 	{
 		List<UUID> clanMembers = new ArrayList<UUID>();
 		for (WerewolfRecord record : this.werewolves.inClan(clan))
@@ -941,7 +941,7 @@ public class WerewolfManager
 		record.setInfectedThisNight(thisNight);
 	}
 
-	public void setWerewolfClan(UUID playerId, ClanManager.ClanType clan)
+	public void setWerewolfClan(UUID playerId, Clan clan)
 	{
 		WerewolfRecord record = this.werewolves.get(playerId);
 		if (record == null)
@@ -949,7 +949,7 @@ public class WerewolfManager
 			return;
 		}
 
-		ClanManager.ClanType oldClan = record.getClan();
+		Clan oldClan = record.getClan();
 		record.setClan(clan);
 
 		// Leaving a clan as its alpha hands the old clan to its next best member; an empty clan gets this player

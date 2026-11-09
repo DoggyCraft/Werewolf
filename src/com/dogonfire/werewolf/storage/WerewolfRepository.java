@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 
 /** werewolves.yml: one {@link WerewolfRecord} per player UUID */
 public final class WerewolfRepository extends YamlRepository
@@ -72,7 +72,7 @@ public final class WerewolfRepository extends YamlRepository
 		return Collections.unmodifiableSet(this.records.keySet());
 	}
 
-	public List<WerewolfRecord> inClan(ClanType clan)
+	public List<WerewolfRecord> inClan(Clan clan)
 	{
 		List<WerewolfRecord> members = new ArrayList<WerewolfRecord>();
 		for (WerewolfRecord record : this.records.values())
@@ -138,7 +138,7 @@ public final class WerewolfRepository extends YamlRepository
 			WerewolfRecord record = new WerewolfRecord(playerId, this);
 			record.playerName = section.getString("PlayerName");
 			record.wolfState = parseEnum(WolfState.class, section.getString("WolfState"), key);
-			record.clan = parseEnum(ClanType.class, section.getString("Clan"), key);
+			record.clan = parseEnum(Clan.class, section.getString("Clan"), key);
 			record.werewolfName = section.getString("WerewolfName");
 			record.transformations = section.getInt("Transformations");
 			record.lastTransform = section.getString("LastTransform");
@@ -152,7 +152,7 @@ public final class WerewolfRepository extends YamlRepository
 			// Werewolves from old versions may have no clan: they get a random one, once
 			if (record.wolfState != null && record.clan == null)
 			{
-				record.clan = ClanType.values()[this.random.nextInt(ClanType.values().length)];
+				record.clan = Clan.values()[this.random.nextInt(Clan.values().length)];
 				assignedClans = true;
 			}
 

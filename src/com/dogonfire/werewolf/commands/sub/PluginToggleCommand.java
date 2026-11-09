@@ -7,7 +7,7 @@ import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
-import com.dogonfire.werewolf.events.WerewolfTransformEvent;
+import com.dogonfire.werewolf.api.event.WerewolfTransformEvent;
 
 /** /ww on and /ww off: switches werewolf transformations on or off for the whole server. Ops and the console only */
 public class PluginToggleCommand extends SubCommand

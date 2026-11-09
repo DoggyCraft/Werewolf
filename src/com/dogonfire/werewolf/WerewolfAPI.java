@@ -1,5 +1,6 @@
 package com.dogonfire.werewolf;
 
+import com.dogonfire.werewolf.api.Clan;
 import java.util.UUID;
 
 import com.dogonfire.werewolf.managers.ClanManager;
@@ -148,7 +149,7 @@ public class WerewolfAPI
 		return ctx().getWerewolfManager().getNumberOfWerewolves();
 	}
 
-	public static ClanManager.ClanType getWerewolfClan(UUID playerId) {
+	public static Clan getWerewolfClan(UUID playerId) {
 		if (!isWerewolf(playerId)) {
 			return null;
 		}

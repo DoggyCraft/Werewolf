@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
 /** /ww call: the clan alpha howls to call the online clan members */
@@ -33,7 +33,7 @@ public class CallCommand extends SubCommand
 			send(player, "You are not in wolf form");
 			return;
 		}
-		ClanType playerClan = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
+		Clan playerClan = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
 		if (!ctx.getClanManager().isAlpha(playerClan, player.getUniqueId()))
 		{
 			send(player, LANGUAGESTRING.YouAreNotTheAlphaOfTheClan, ChatColor.RED);

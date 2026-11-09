@@ -1,5 +1,6 @@
 package com.dogonfire.werewolf.commands.sub;
 
+import com.dogonfire.werewolf.api.MoonPhase;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +13,6 @@ import org.bukkit.util.StringUtil;
 import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
-import com.dogonfire.werewolf.managers.MoonManager;
 
 /** /ww setphase <phase> [world]: moves the world's time forward to the next night with that moon phase */
 public class SetPhaseCommand extends SubCommand
@@ -31,7 +31,7 @@ public class SetPhaseCommand extends SubCommand
 	@Override
 	public void execute(CommandSender sender, Player player, String[] args)
 	{
-		MoonManager.MoonPhase phase = args.length >= 2 ? MoonManager.MoonPhase.fromString(args[1]) : null;
+		MoonPhase phase = args.length >= 2 ? MoonPhase.fromString(args[1]) : null;
 		if (phase == null)
 		{
 			lang().setType(String.join(", ", phaseNames()));
@@ -70,7 +70,7 @@ public class SetPhaseCommand extends SubCommand
 	private static List<String> phaseNames()
 	{
 		List<String> names = new ArrayList<String>();
-		for (MoonManager.MoonPhase phase : MoonManager.MoonPhase.values())
+		for (MoonPhase phase : MoonPhase.values())
 		{
 			names.add(phase.name());
 		}

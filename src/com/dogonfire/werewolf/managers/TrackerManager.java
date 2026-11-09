@@ -17,8 +17,8 @@ import org.bukkit.inventory.ItemStack;
 
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
-import com.dogonfire.werewolf.events.TrackerTargetEvent;
-import com.dogonfire.werewolf.events.TrackerTargetEvent.TargetType;
+import com.dogonfire.werewolf.api.event.TrackerTargetEvent;
+import com.dogonfire.werewolf.api.event.TrackerTargetEvent.TargetType;
 
 /**
  * Werewolf and vampire tracker compasses. A human right-clicks a tracker to lock onto the nearest valid target; while

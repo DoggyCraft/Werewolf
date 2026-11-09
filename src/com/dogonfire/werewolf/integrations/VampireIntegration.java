@@ -12,7 +12,7 @@ import com.clanjhoo.vampire.entity.VPlayer;
 import com.clanjhoo.vampire.event.InfectionChangeEvent;
 import com.clanjhoo.vampire.event.VampireTypeChangeEvent;
 import com.dogonfire.werewolf.WerewolfContext;
-import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
+import com.dogonfire.werewolf.api.event.WerewolfInfectionEvent;
 import com.dogonfire.werewolf.managers.LanguageManager;
 
 /**

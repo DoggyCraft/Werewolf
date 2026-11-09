@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.SubCommand;
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 
 /** /ww list: the top members of the player's clan */
 public class ListCommand extends SubCommand
@@ -29,7 +29,7 @@ public class ListCommand extends SubCommand
 			return;
 		}
 
-		ClanType clan = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
+		Clan clan = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
 		List<UUID> list = ctx.getWerewolfManager().getWerewolfClanMembersRanked(clan);
 
 		player.sendMessage(ChatColor.GOLD + "--------- The Members of " + ctx.getClanManager().getClanName(clan) + " ---------");

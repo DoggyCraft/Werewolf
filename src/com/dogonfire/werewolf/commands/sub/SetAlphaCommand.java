@@ -12,7 +12,7 @@ import org.bukkit.util.StringUtil;
 import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.CommandUtil;
 import com.dogonfire.werewolf.commands.SubCommand;
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
 /** /ww setalpha <player>: makes a werewolf the alpha of their own clan */
@@ -57,7 +57,7 @@ public class SetAlphaCommand extends SubCommand
 		}
 
 		String name = ctx.getWerewolfManager().getPlayerName(playerId);
-		ClanType clan = ctx.getWerewolfManager().getWerewolfClan(playerId);
+		Clan clan = ctx.getWerewolfManager().getWerewolfClan(playerId);
 		lang().setPlayerName(name);
 
 		if (!ctx.getClanManager().assignAlphaInClan(clan, playerId))

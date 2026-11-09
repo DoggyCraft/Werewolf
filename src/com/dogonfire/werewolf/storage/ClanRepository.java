@@ -10,12 +10,12 @@ import java.util.logging.Logger;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.Clan;
 
 /** clans.yml: one {@link ClanRecord} per clan (alpha, home, last call). Clan points are not stored. */
 public final class ClanRepository extends YamlRepository
 {
-	private final Map<ClanType, ClanRecord> records = new EnumMap<ClanType, ClanRecord>(ClanType.class);
+	private final Map<Clan, ClanRecord> records = new EnumMap<Clan, ClanRecord>(Clan.class);
 
 	public ClanRepository(File dataFolder, Logger logger, ExecutorService writer)
 	{
@@ -24,7 +24,7 @@ public final class ClanRepository extends YamlRepository
 	}
 
 	/** Every clan has a record, possibly empty */
-	public ClanRecord get(ClanType clan)
+	public ClanRecord get(Clan clan)
 	{
 		return this.records.get(clan);
 	}
@@ -46,7 +46,7 @@ public final class ClanRepository extends YamlRepository
 	@Override
 	protected void clear()
 	{
-		for (ClanType clan : ClanType.values())
+		for (Clan clan : Clan.values())
 		{
 			this.records.put(clan, new ClanRecord(clan, this));
 		}
@@ -57,10 +57,10 @@ public final class ClanRepository extends YamlRepository
 	{
 		for (String key : yaml.getKeys(false))
 		{
-			ClanType clan = null;
+			Clan clan = null;
 			try
 			{
-				clan = ClanType.valueOf(key);
+				clan = Clan.valueOf(key);
 			}
 			catch (IllegalArgumentException ignored)
 			{

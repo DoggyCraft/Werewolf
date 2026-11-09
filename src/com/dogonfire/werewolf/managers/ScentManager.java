@@ -20,7 +20,7 @@ import org.bukkit.util.Vector;
 
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
-import com.dogonfire.werewolf.events.WerewolfSniffEvent;
+import com.dogonfire.werewolf.api.event.WerewolfSniffEvent;
 
 /**
  * Scent tracking: from Maturity.ScentTrack a werewolf in wolf form can sniff a player to pick up their scent, then

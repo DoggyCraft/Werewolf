@@ -1,5 +1,6 @@
 package com.dogonfire.werewolf.disguises;
 
+import com.dogonfire.werewolf.api.Clan;
 import com.dogonfire.werewolf.managers.ClanManager;
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
@@ -114,7 +115,7 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
 
         Settings.Clans clans = ctx.getSettings().clans();
         skinsRestorer.getSkinStorage().setCustomSkinData("Alpha", SkinProperty.of(clans.alphaSkin().value(), clans.alphaSkin().signature()));
-        for (ClanManager.ClanType clan : ClanManager.ClanType.values())
+        for (Clan clan : Clan.values())
         {
             Settings.Skin skin = clans.skins().get(clan);
             skinsRestorer.getSkinStorage().setCustomSkinData(clan.name(), SkinProperty.of(skin.value(), skin.signature()));

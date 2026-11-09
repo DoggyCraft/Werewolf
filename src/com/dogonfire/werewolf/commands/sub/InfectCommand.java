@@ -11,8 +11,8 @@ import org.bukkit.util.StringUtil;
 import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.commands.CommandUtil;
 import com.dogonfire.werewolf.commands.SubCommand;
-import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
-import com.dogonfire.werewolf.managers.ClanManager.ClanType;
+import com.dogonfire.werewolf.api.event.WerewolfInfectionEvent;
+import com.dogonfire.werewolf.api.Clan;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
 /** /ww infect [player] [clan]: gives yourself or an online player the werewolf infection */
@@ -107,7 +107,7 @@ public class InfectCommand extends SubCommand
 			return;
 		}
 
-		ClanType clan;
+		Clan clan;
 		if (args.length >= 3)
 		{
 			clan = CommandUtil.parseClan(ctx, args[2]);

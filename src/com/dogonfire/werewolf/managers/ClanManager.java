@@ -1,5 +1,6 @@
 package com.dogonfire.werewolf.managers;
 
+import com.dogonfire.werewolf.api.Clan;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -13,7 +14,7 @@ import java.util.UUID;
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.config.Settings;
-import com.dogonfire.werewolf.events.NewAlphaEvent;
+import com.dogonfire.werewolf.api.event.NewAlphaEvent;
 import com.dogonfire.werewolf.storage.ClanRecord;
 import com.dogonfire.werewolf.storage.ClanRepository;
 import org.bukkit.Location;
@@ -27,21 +28,16 @@ public class ClanManager
 	private final Werewolf plugin;
 	private final WerewolfContext ctx;
 
-	public enum ClanType
-	{
-		WildBite, WerewolfBite, Potion;
-	}
+	private HashMap<Clan, String>	werewolfAccount		= new HashMap<Clan, String>();
+	private HashMap<Clan, UUID>		werewolfAccountId	= new HashMap<Clan, UUID>();
 
-	private HashMap<ClanType, String>	werewolfAccount		= new HashMap<ClanType, String>();
-	private HashMap<ClanType, UUID>		werewolfAccountId	= new HashMap<ClanType, UUID>();
-
-	private HashMap<ClanType, String>	werewolfTextures	= new HashMap<ClanType, String>();
-	private HashMap<ClanType, String>	werewolfTextureSignatures	= new HashMap<ClanType, String>();
+	private HashMap<Clan, String>	werewolfTextures	= new HashMap<Clan, String>();
+	private HashMap<Clan, String>	werewolfTextureSignatures	= new HashMap<Clan, String>();
 
 	private final ClanRepository		clans;
-	private HashMap<ClanType, Double>	totalClanPoints		= new HashMap<ClanType, Double>();
+	private HashMap<Clan, Double>	totalClanPoints		= new HashMap<Clan, Double>();
 	private HashMap<String, Double>		playerClanPoints	= new HashMap<String, Double>();
-	private HashMap<ClanType, String>	clanNames			= new HashMap<ClanType, String>();
+	private HashMap<Clan, String>	clanNames			= new HashMap<Clan, String>();
 	private String						datePattern			= "HH:mm:ss dd-MM-yyyy";
 	
 	private UUID 						alphaAccountId		= null;
@@ -67,7 +63,7 @@ public class ClanManager
 		this.alphaAccount = clans.alphaSkin().accountName();
 		this.alphaAccountId = clans.alphaSkin().accountId();
 
-		for (ClanType clan : ClanType.values())
+		for (Clan clan : Clan.values())
 		{
 			Settings.Skin skin = clans.skins().get(clan);
 			this.clanNames.put(clan, clans.names().get(clan));
@@ -77,7 +73,7 @@ public class ClanManager
 			this.werewolfTextureSignatures.put(clan, skin.signature());
 		}
 		
-		for (ClanType clan : ClanType.values())
+		for (Clan clan : Clan.values())
 		{
 			this.totalClanPoints.put(clan, Double.valueOf(0.0D));
 		}
@@ -90,48 +86,48 @@ public class ClanManager
 		return this.clanNames.get(ctx.getWerewolfManager().getWerewolfClan(playerId));
 	}
 
-	public String getWerewolfAccountForClan(ClanType type)
+	public String getWerewolfAccountForClan(Clan type)
 	{
 		return this.werewolfAccount.get(type);
 	}
 
-	public UUID getWerewolfAccountIdForClan(ClanType type)
+	public UUID getWerewolfAccountIdForClan(Clan type)
 	{
 		return this.werewolfAccountId.get(type);
 	}
 
 	
-	public String getWerewolfTextureForClan(ClanType type)
+	public String getWerewolfTextureForClan(Clan type)
 	{
 		return this.werewolfTextures.get(type);
 	}
 	
-	public String getWerewolfTextureSignatureForClan(ClanType type)
+	public String getWerewolfTextureSignatureForClan(Clan type)
 	{
 		return this.werewolfTextureSignatures.get(type);
 	}
 
-	public String getWerewolfAccountForAlpha(ClanType type)
+	public String getWerewolfAccountForAlpha(Clan type)
 	{
 		return this.alphaAccount;
 	}
 
-	public UUID getWerewolfAccountIdForAlpha(ClanType type)
+	public UUID getWerewolfAccountIdForAlpha(Clan type)
 	{
 		return this.alphaAccountId;
 	}
 
-	public String getWerewolfTextureForAlpha(ClanType type)
+	public String getWerewolfTextureForAlpha(Clan type)
 	{
 		return plugin.getSettings().clans().alphaSkin().value();
 	}
 
-	public String getWerewolfTextureSignatureForAlpha(ClanType type)
+	public String getWerewolfTextureSignatureForAlpha(Clan type)
 	{
 		return plugin.getSettings().clans().alphaSkin().signature();
 	}
 	
-	public void handleMobKill(Player player, ClanType clanType, EntityType mobType)
+	public void handleMobKill(Player player, Clan clanType, EntityType mobType)
 	{
 		double points = 0.0D;
 		if (this.playerClanPoints.containsKey(player.getName()))
@@ -238,10 +234,10 @@ public class ClanManager
 		}
 	}
 
-	public List<ClanType> getClansRanked()
+	public List<Clan> getClansRanked()
 	{
-		List<ClanType> clanList = new ArrayList<ClanType>();
-		for (ClanType clan : ClanType.values())
+		List<Clan> clanList = new ArrayList<Clan>();
+		for (Clan clan : Clan.values())
 		{
 			clanList.add(clan);
 		}
@@ -250,12 +246,12 @@ public class ClanManager
 		return clanList;
 	}
 
-	public double getClanPoint(ClanType clan)
+	public double getClanPoint(Clan clan)
 	{
 		return ((Double) this.totalClanPoints.get(clan)).doubleValue();
 	}
 
-	public String getClanName(ClanType clan)
+	public String getClanName(Clan clan)
 	{
 		return (String) this.clanNames.get(clan);
 	}
@@ -266,21 +262,21 @@ public class ClanManager
 		{
 			return;
 		}
-		List<ClanType> clanList = getClansRanked();
-		if ((((Double) this.totalClanPoints.get(ClanType.Potion)).doubleValue() > 0.0D) || (((Double) this.totalClanPoints.get(ClanType.WildBite)).doubleValue() > 0.0D) || (((Double) this.totalClanPoints.get(ClanType.WerewolfBite)).doubleValue() > 0.0D))
+		List<Clan> clanList = getClansRanked();
+		if ((((Double) this.totalClanPoints.get(Clan.Potion)).doubleValue() > 0.0D) || (((Double) this.totalClanPoints.get(Clan.WildBite)).doubleValue() > 0.0D) || (((Double) this.totalClanPoints.get(Clan.WerewolfBite)).doubleValue() > 0.0D))
 		{
-			setBloodrageClan((ClanType) clanList.get(0));
+			setBloodrageClan((Clan) clanList.get(0));
 		}
 	}
 
-	private void setBloodrageClan(ClanType clan)
+	private void setBloodrageClan(Clan clan)
 	{
 	}
 
 	private void resetClanScores()
 	{
 		this.playerClanPoints.clear();
-		for (ClanType clan : ClanType.values())
+		for (Clan clan : Clan.values())
 		{
 			double points = ((Double) this.totalClanPoints.get(clan)).doubleValue();
 
@@ -288,12 +284,12 @@ public class ClanManager
 		}
 	}
 
-	public void setHomeForClan(ClanType clan, Location location)
+	public void setHomeForClan(Clan clan, Location location)
 	{
 		this.clans.get(clan).setHome(location.getWorld().getName(), location.getX(), location.getY(), location.getZ());
 	}
 
-	public Location getHomeForClan(ClanType clan)
+	public Location getHomeForClan(Clan clan)
 	{
 		ClanRecord record = this.clans.get(clan);
 		World world = record.getHomeWorld() != null ? this.plugin.getServer().getWorld(record.getHomeWorld()) : null;
@@ -307,12 +303,12 @@ public class ClanManager
 	
 	
 	/** The clan's alpha as stored in clans.yml, or null. Can be stale for a moment until {@link #checkAlphas()} runs. */
-	public UUID getAlpha(ClanType clan)
+	public UUID getAlpha(Clan clan)
 	{
 		return this.clans.get(clan).getAlpha();
 	}
 
-	private boolean isValidAlpha(ClanType clan, UUID alphaId)
+	private boolean isValidAlpha(Clan clan, UUID alphaId)
 	{
 		WerewolfManager werewolfManager = ctx.getWerewolfManager();
 		return alphaId != null && werewolfManager.isWerewolf(alphaId) && werewolfManager.getWerewolfClan(alphaId) == clan;
@@ -322,7 +318,7 @@ public class ClanManager
 	 * Gives the clan an alpha if it has none, or if its alpha is no longer a werewolf of that clan: the best ranked
 	 * member becomes alpha (through {@link #assignAlphaInClan}, so it can be vetoed).
 	 */
-	public void checkAlpha(ClanType clan)
+	public void checkAlpha(Clan clan)
 	{
 		UUID alphaId = getAlpha(clan);
 		if (isValidAlpha(clan, alphaId))
@@ -349,7 +345,7 @@ public class ClanManager
 			return;
 		}
 
-		for (ClanType clan : ClanType.values())
+		for (Clan clan : Clan.values())
 		{
 			checkAlpha(clan);
 		}
@@ -358,7 +354,7 @@ public class ClanManager
 	/** The player stops being alpha of any clan (cured, or moved to another clan); the next best member takes over */
 	public void removeAlpha(UUID playerId)
 	{
-		for (ClanType clan : ClanType.values())
+		for (Clan clan : Clan.values())
 		{
 			if (!isAlpha(clan, playerId))
 			{
@@ -374,14 +370,14 @@ public class ClanManager
 	}
 
 	/** The best ranked member of the clan other than the alpha, or null if there is none */
-	public UUID getRunnerUp(ClanType clan)
+	public UUID getRunnerUp(Clan clan)
 	{
 		return ctx.getWerewolfManager().getAlphaCandidate(clan, getAlpha(clan));
 	}
 
 	public boolean isAlpha(UUID playerId)
 	{
-		for (ClanType clan : ClanType.values())
+		for (Clan clan : Clan.values())
 		{
 			if (isAlpha(clan, playerId))
 			{
@@ -392,13 +388,13 @@ public class ClanManager
 		return false;
 	}
 
-	public boolean isAlpha(ClanType clan, UUID playerId)
+	public boolean isAlpha(Clan clan, UUID playerId)
 	{
 		UUID alphaId = getAlpha(clan);
 		return alphaId != null && alphaId.equals(playerId);
 	}
 
-	public boolean assignAlphaInClan(ClanType clan, UUID playerId)
+	public boolean assignAlphaInClan(Clan clan, UUID playerId)
 	{
 		if (playerId == null)
 		{
@@ -429,7 +425,7 @@ public class ClanManager
 		return true;
 	}
 
-	public void setLastCall(ClanType clan)
+	public void setLastCall(Clan clan)
 	{
 		Date thisDate = new Date();
 		DateFormat formatter = new SimpleDateFormat(this.datePattern);
@@ -437,9 +433,9 @@ public class ClanManager
 		this.clans.get(clan).setLastCallTime(formatter.format(thisDate));
 	}
 
-	public class ClanComparator implements Comparator<ClanManager.ClanType>
+	public class ClanComparator implements Comparator<Clan>
 	{
-		public int compare(ClanManager.ClanType clan1, ClanManager.ClanType clan2)
+		public int compare(Clan clan1, Clan clan2)
 		{
 			return (int) (((Double) ClanManager.this.totalClanPoints.get(clan2)).doubleValue() - ((Double) ClanManager.this.totalClanPoints.get(clan1)).doubleValue());
 		}

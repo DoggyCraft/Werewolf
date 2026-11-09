@@ -6,7 +6,7 @@ import org.bukkit.entity.Player;
 
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
-import com.dogonfire.werewolf.events.WerewolfTransformEvent;
+import com.dogonfire.werewolf.api.event.WerewolfTransformEvent;
 
 
 public class CheckTransformationTask implements Runnable

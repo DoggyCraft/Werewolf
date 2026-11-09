@@ -10,6 +10,7 @@ import com.dogonfire.werewolf.listeners.DamageListener;
 import com.dogonfire.werewolf.listeners.InteractListener;
 import com.dogonfire.werewolf.listeners.InventoryListener;
 import com.dogonfire.werewolf.listeners.PlayerListener;
+import com.dogonfire.werewolf.listeners.WerewolfRestrictionListener;
 import com.dogonfire.werewolf.managers.*;
 import com.dogonfire.werewolf.tasks.CentralMessageTask;
 import com.dogonfire.werewolf.tasks.DisguiseTask;
@@ -108,6 +109,17 @@ public class Werewolf extends JavaPlugin
 	public float								pouncePlaneSpeed						= 1.0F;
 	public float								pounceHeightSpeed						= 1.0F;
 	public List<String>							allowedWorlds							= new ArrayList<String>();
+	public EnumMap<ClanManager.ClanType, WolfFormManager.Stats>	werewolfStats			= new EnumMap<ClanManager.ClanType, WolfFormManager.Stats>(ClanManager.ClanType.class);
+	public EnumMap<ClanManager.ClanType, WolfFormManager.Stats>	alphaStats				= new EnumMap<ClanManager.ClanType, WolfFormManager.Stats>(ClanManager.ClanType.class);
+	public EnumMap<ClanManager.ClanType, List<String>>	wolfFormEffects					= new EnumMap<ClanManager.ClanType, List<String>>(ClanManager.ClanType.class);
+	public List<String>							blockedPotions							= new ArrayList<String>();
+	public List<String>							blockedCommandsAll						= new ArrayList<String>();
+	public List<String>							blockedCommandsWolfForm					= new ArrayList<String>();
+	public List<String>							blockedCommandsAlpha					= new ArrayList<String>();
+	public boolean								dietEnabled								= true;
+	public boolean								dietPreventConsumption					= true;
+	public boolean								dietHumanForm							= false;
+	public List<String>							dietBlockedFoods						= new ArrayList<String>();
 	private static Werewolf						plugin;
 	private static FileConfiguration			config									= null;
 	public static PacketUtils pu										= null;
@@ -124,6 +136,7 @@ public class Werewolf extends JavaPlugin
 	private static StatisticsManager			statisticsManager						= null;
 	private static ItemManager itemManager								= null;
 	private static MoonManager					moonManager								= null;
+	private static WolfFormManager				wolfFormManager							= null;
 
 	public String								potionName								= "Witherfang";
 	public String								werewolfBiteName						= "Bloodmoon";
@@ -186,6 +199,11 @@ public class Werewolf extends JavaPlugin
 	public static MoonManager getMoonManager()
 	{
 		return moonManager;
+	}
+
+	public static WolfFormManager getWolfFormManager()
+	{
+		return wolfFormManager;
 	}
 
 	public static SignManager getSignManager()
@@ -323,6 +341,7 @@ public class Werewolf extends JavaPlugin
 		InteractListener interactListener = null;
 		InventoryListener inventoryListener = null;
 		ChatListener chatListener = null;
+		WerewolfRestrictionListener restrictionListener = null;
 		
 		plugin = this;
 		instance = this;
@@ -334,6 +353,7 @@ public class Werewolf extends JavaPlugin
 		pluginEnabled = true;
 
 		moonManager = new MoonManager(this);
+		wolfFormManager = new WolfFormManager(this);
 		werewolfManager = new WerewolfManager(this);
 		clanManager = new ClanManager(this);
 		// potionManager = new PotionManager(this);
@@ -344,6 +364,7 @@ public class Werewolf extends JavaPlugin
 		playerListener = new PlayerListener(this);
 		interactListener = new InteractListener(this);
 		chatListener = new ChatListener(this);
+		restrictionListener = new WerewolfRestrictionListener(this);
 		skinManager = new SkinManager(this);
 
 		// If ! prevent armor
@@ -409,6 +430,7 @@ public class Werewolf extends JavaPlugin
 		getServer().getPluginManager().registerEvents(interactListener, this);
 		getServer().getPluginManager().registerEvents(damageListener, this);
 		getServer().getPluginManager().registerEvents(chatListener, this);
+		getServer().getPluginManager().registerEvents(restrictionListener, this);
 		if (this.dropArmorOnTransform)
 		{
 			getServer().getPluginManager().registerEvents(inventoryListener, this);
@@ -546,6 +568,7 @@ public class Werewolf extends JavaPlugin
 		DamageManager.werewolfHandDamage = config.getDouble("Werewolf.HandDamage", config.getDouble("WerewolfWolf.HandDamage", 8));
 		DamageManager.SilverArmorMultiplier = config.getDouble("Werewolf.ArmorMultiplier", config.getDouble("WerewolfWolf.ArmorMultiplier", 0.8D));
 		this.wolfdistance = config.getInt("Werewolf.WolfDistance", config.getInt("WerewolfWolf.WolfDistance", 10));
+		loadWolfFormSettings();
 
 		this.cureChance = config.getDouble("Infection.CureChance", config.getDouble("Infection.CurePotionChance", 1.0D));
 
@@ -701,6 +724,89 @@ public class Werewolf extends JavaPlugin
 		this.craftableInfectionPotionEnabled = config.getBoolean("Items.CraftableInfectionPotionEnabled", true);
 		this.craftableCurePotionEnabled = config.getBoolean("Items.CraftableCurePotionEnabled", true);
 		this.craftableWolfbanePotionEnabled = config.getBoolean("Items.CraftableWolfbanePotionEnabled", true);
+
+		if (wolfFormManager != null)
+		{
+			wolfFormManager.load();
+		}
+	}
+
+	/**
+	 * Per-clan stats default to the global Werewolf.HandDamage/ItemDamage/ArmorMultiplier (alphas: double damage, half
+	 * the damage taken), so configs from before per-clan stats keep their tuning.
+	 */
+	private void loadWolfFormSettings()
+	{
+		for (ClanManager.ClanType clan : ClanManager.ClanType.values())
+		{
+			String path = "Werewolf.Stats." + clan.name() + ".";
+			double defaultSpeed = clan == ClanManager.ClanType.Potion ? 1.0D : 0.5D;
+
+			WolfFormManager.Stats stats = new WolfFormManager.Stats(
+					config.getDouble(path + "Speed", defaultSpeed),
+					config.getDouble(path + "Defense", DamageManager.SilverArmorMultiplier),
+					config.getDouble(path + "FistDamage", DamageManager.werewolfHandDamage),
+					config.getDouble(path + "ItemDamage", DamageManager.werewolfItemDamage));
+			this.werewolfStats.put(clan, stats);
+
+			this.alphaStats.put(clan, new WolfFormManager.Stats(
+					config.getDouble(path + "Alpha.Speed", stats.speed),
+					config.getDouble(path + "Alpha.Defense", DamageManager.SilverArmorMultiplier / 2.0D),
+					config.getDouble(path + "Alpha.FistDamage", DamageManager.werewolfHandDamage * 2.0D),
+					config.getDouble(path + "Alpha.ItemDamage", DamageManager.werewolfItemDamage * 2.0D)));
+
+			if (config.contains("Werewolf.Effects." + clan.name()))
+			{
+				this.wolfFormEffects.put(clan, config.getStringList("Werewolf.Effects." + clan.name()));
+			}
+			else
+			{
+				this.wolfFormEffects.put(clan, defaultWolfFormEffects(clan));
+			}
+		}
+
+		this.blockedPotions = config.contains("Werewolf.BlockedPotions") ? config.getStringList("Werewolf.BlockedPotions") : new ArrayList<String>();
+
+		this.blockedCommandsAll = config.contains("BlockedCommands.All") ? config.getStringList("BlockedCommands.All") : new ArrayList<String>();
+		this.blockedCommandsWolfForm = config.contains("BlockedCommands.WolfForm") ? config.getStringList("BlockedCommands.WolfForm") : new ArrayList<String>(Arrays.asList("/skin", "/skins"));
+		this.blockedCommandsAlpha = config.contains("BlockedCommands.Alpha") ? config.getStringList("BlockedCommands.Alpha") : new ArrayList<String>();
+
+		this.dietEnabled = config.getBoolean("Diet.Enabled", true);
+		this.dietPreventConsumption = config.getBoolean("Diet.PreventConsumption", true);
+		this.dietHumanForm = config.getBoolean("Diet.HumanForm", false);
+		if (config.contains("Diet.BlockedFoods"))
+		{
+			this.dietBlockedFoods = config.getStringList("Diet.BlockedFoods");
+		}
+		else
+		{
+			this.dietBlockedFoods = new ArrayList<String>(Arrays.asList("APPLE", "BREAD", "PUMPKIN", "MELON", "MUSHROOM_STEW", "BEETROOT_SOUP", "BEETROOT", "BAKED_POTATO", "PUMPKIN_PIE", "POTATO", "POISONOUS_POTATO", "GOLDEN_APPLE",
+					"ENCHANTED_GOLDEN_APPLE", "DRIED_KELP", "CAKE", "COOKIE", "CARROT", "MILK_BUCKET", "GOLDEN_CARROT", "SUSPICIOUS_STEW", "CHORUS_FRUIT", "MELON_SLICE", "SWEET_BERRIES", "GLOW_BERRIES", "HONEY_BOTTLE"));
+		}
+	}
+
+	private static List<String> defaultWolfFormEffects(ClanManager.ClanType clan)
+	{
+		List<String> effects = new ArrayList<String>(Arrays.asList("HUNGER:1:32000", "NIGHT_VISION:0:32000"));
+
+		switch (clan)
+		{
+			case Potion:
+				effects.add("JUMP_BOOST:2:32000");
+				break;
+			case WildBite:
+				effects.add("JUMP_BOOST:1:32000");
+				effects.add("REGENERATION:0:32000");
+				break;
+			case WerewolfBite:
+				effects.add("JUMP_BOOST:1:32000");
+				effects.add("STRENGTH:1:32000");
+				break;
+			default:
+				break;
+		}
+
+		return effects;
 	}
 
 	/**
@@ -777,6 +883,32 @@ public class Werewolf extends JavaPlugin
 		config.set("Werewolf.ItemDamage", Double.valueOf(DamageManager.werewolfItemDamage));
 		config.set("Werewolf.ArmorMultiplier", Double.valueOf(DamageManager.SilverArmorMultiplier));
 		config.set("Werewolf.WolfDistance", Integer.valueOf(this.wolfdistance));
+
+		for (ClanManager.ClanType clan : ClanManager.ClanType.values())
+		{
+			String path = "Werewolf.Stats." + clan.name() + ".";
+			WolfFormManager.Stats stats = this.werewolfStats.get(clan);
+			WolfFormManager.Stats alpha = this.alphaStats.get(clan);
+			config.set(path + "Speed", Double.valueOf(stats.speed));
+			config.set(path + "Defense", Double.valueOf(stats.defense));
+			config.set(path + "FistDamage", Double.valueOf(stats.fistDamage));
+			config.set(path + "ItemDamage", Double.valueOf(stats.itemDamage));
+			config.set(path + "Alpha.Speed", Double.valueOf(alpha.speed));
+			config.set(path + "Alpha.Defense", Double.valueOf(alpha.defense));
+			config.set(path + "Alpha.FistDamage", Double.valueOf(alpha.fistDamage));
+			config.set(path + "Alpha.ItemDamage", Double.valueOf(alpha.itemDamage));
+			config.set("Werewolf.Effects." + clan.name(), this.wolfFormEffects.get(clan));
+		}
+		config.set("Werewolf.BlockedPotions", this.blockedPotions);
+
+		config.set("BlockedCommands.All", this.blockedCommandsAll);
+		config.set("BlockedCommands.WolfForm", this.blockedCommandsWolfForm);
+		config.set("BlockedCommands.Alpha", this.blockedCommandsAlpha);
+
+		config.set("Diet.Enabled", Boolean.valueOf(this.dietEnabled));
+		config.set("Diet.PreventConsumption", Boolean.valueOf(this.dietPreventConsumption));
+		config.set("Diet.HumanForm", Boolean.valueOf(this.dietHumanForm));
+		config.set("Diet.BlockedFoods", this.dietBlockedFoods);
 
 		config.set("WerewolfGroup.Enabled", Boolean.valueOf(this.useWerewolfGroupName));
 		config.set("WerewolfGroup.Name", this.werewolfGroupName);

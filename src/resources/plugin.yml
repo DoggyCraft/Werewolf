@@ -183,3 +183,6 @@ permissions:
     werewolf.setphase:
         description: Allows the Player to set the moon phase of a world with /ww setphase
         default: false
+    werewolf.bypass.blockedcommands:
+        description: Lets a werewolf use commands listed under BlockedCommands in config.yml
+        default: op

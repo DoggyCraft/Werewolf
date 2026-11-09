@@ -32,6 +32,9 @@ mvn -B test                # what GitHub Actions runs on every push (compiles on
 
 **Events.** `events/` holds cancellable Bukkit events fired at the choke points: `WerewolfInfectionEvent` (`WerewolfManager.makeWerewolf`), `WerewolfCureEvent` (`unmakeWerewolf`), `WerewolfTransformEvent` (`setWerewolfSkin`/`unsetWerewolfSkin`, cancelling is ignored for `Reason.FORCED`) and `NewAlphaEvent` (`ClanManager.assignAlphaInClan`). Each of those methods takes a reason/cause and returns whether it went ahead; new code that changes werewolf state should go through them, and features that need to veto or react to a change should listen to these events instead of adding checks at every call site.
 
+**Wolf form.** `managers/WolfFormManager` owns what wolf form does to a player: per-clan `Stats` (speed, defense = multiplier on incoming damage, fist/item damage; separate alpha values, read in `DamageListener`), per-clan potion effects (`Werewolf.Effects.<ClanType>`, `NAME:amplifier:duration`), blocked potions and the diet's food list. `DisguiseTask` calls `applyWolfForm`, `WerewolfManager.update()` calls `refreshWolfForm` for everyone in wolf form, and `UndisguiseTask`/join call `removeWolfForm`, which removes only the effects it applied. The config lists are parsed in `WolfFormManager.load()` at the end of `loadSettings()`. `listeners/WerewolfRestrictionListener` enforces `BlockedCommands.*` (bypass: `werewolf.bypass.blockedcommands`), blocked potions, the `Diet.*` settings, and vetoes turning into a wolf in creative/spectator.
+
+
 **Package roles:**
 - `managers/` hold state and logic. Each owns its own YAML file in the plugin data folder: `werewolves.yml` (WerewolfManager), `clans.yml` (ClanManager), `hunters.yml` (HuntManager), `trophies.yml` (TrophyManager).
 - `listeners/` turn Bukkit events into manager calls.

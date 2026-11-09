@@ -5,7 +5,6 @@ import java.util.UUID;
 import com.dogonfire.werewolf.Werewolf;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.ScoreboardManager;
 
 public class UndisguiseTask implements Runnable
@@ -30,24 +29,9 @@ public class UndisguiseTask implements Runnable
 		
 		if (player != null)
 		{
-			
-			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.NAUSEA);
-			// Walkspeed works sooo, but let's still remove it...
-			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.SPEED);
-			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.HUNGER);
-			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.NIGHT_VISION);
-			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.STRENGTH);
-			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.REGENERATION);
-			Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.JUMP_BOOST);
-			
-			player.setWalkSpeed(0.2F);
-			
-			// \/ what? \/
-			if (!this.plugin.usePounce)
-			{
-				Werewolf.pu.removePotionEffectNoGraphic(player, PotionEffectType.JUMP_BOOST);
-			}
-			else
+			Werewolf.getWolfFormManager().removeWolfForm(player, Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()));
+
+			if (this.plugin.usePounce)
 			{
 				player.setAllowFlight(false);
 			}

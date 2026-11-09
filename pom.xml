@@ -180,6 +180,10 @@
                     <include>*.yml</include>
                 </includes>
             </resource>
+            <resource>
+                <directory>${project.basedir}/lang</directory>
+                <targetPath>lang</targetPath>
+            </resource>
         </resources>
         <plugins>
             <plugin>

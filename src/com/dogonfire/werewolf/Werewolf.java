@@ -67,7 +67,6 @@ public class Werewolf extends JavaPlugin
 	public static Server						server									= null;
 	public boolean								debug									= false;
 	public String								language								= "english";
-	private final Set<String>					supportedLanguages						= new HashSet<String>(Arrays.asList(new String[] { "english", "german", "french", "chinese", "polish", "danish", "portuguese", "spanish" }));
 	public boolean								renameWerewolves						= true;
 	public boolean								autoBounty								= true;
 	public int									autoBountyMaximum						= 1000;
@@ -692,11 +691,6 @@ public class Werewolf extends JavaPlugin
 		this.silverSwordPrice = config.getDouble("Signs.SilverSwordPrice", 1000.0D);
 
 		this.language = config.getString("Settings.Language", "english");
-		if (!this.supportedLanguages.contains(this.language))
-		{
-			log("Language '" + this.language + "' is not supported. Reverting to english.");
-			this.language = "english";
-		}
 		this.transformsForNoDropItems = config.getInt("Maturity.NoDropItems", 3);
 
 		this.transformsForControlledTransformation = config.getInt("Maturity.ControlledTransformation", 7);

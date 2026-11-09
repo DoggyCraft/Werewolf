@@ -1,14 +1,10 @@
 package com.dogonfire.werewolf.managers;
 
 import com.dogonfire.werewolf.Werewolf;
-import com.google.common.io.Files;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Random;
 import org.bukkit.ChatColor;
@@ -26,109 +22,60 @@ public class LanguageManager
 	private String				authorName;
 	private String				languageName;
 
-	private void downloadLanguageFile(String fileName) throws IOException
+	private YamlConfiguration loadBundledLanguage(String fileName)
 	{
-		BufferedInputStream in = new BufferedInputStream(new URL("https://raw.githubusercontent.com/dogonfire/werewolf/master/lang/" + fileName).openStream());
-
-		FileOutputStream fos = new FileOutputStream(this.plugin.getDataFolder() + "/lang/" + fileName);
-
-		BufferedOutputStream bout = new BufferedOutputStream(fos, 1024);
-
-		byte[] data = new byte[1024];
-
-		int x = 0;
-		while ((x = in.read(data, 0, 1024)) >= 0)
+		InputStream stream = this.plugin.getResource("lang/" + fileName);
+		if (stream == null)
 		{
-			bout.write(data, 0, x);
+			return null;
 		}
-		bout.close();
-
-		in.close();
+		return YamlConfiguration.loadConfiguration(new InputStreamReader(stream, StandardCharsets.UTF_8));
 	}
 
-	private boolean loadLanguageFile(String fileName)
+	/**
+	 * Loads plugins/Werewolf/lang/<language>.yml, copying the bundled file there first if it's missing.
+	 * Keys missing from that file fall back to the bundled file for the language, then to bundled english.
+	 */
+	public void load()
 	{
-		File languageConfigFile = new File(this.plugin.getDataFolder() + "/lang/" + fileName);
-		if (!languageConfigFile.exists())
+		String languageFileName = this.plugin.language + ".yml";
+
+		YamlConfiguration english = loadBundledLanguage("english.yml");
+		YamlConfiguration bundled = loadBundledLanguage(languageFileName);
+		if (bundled != null && english != null && bundled != english)
 		{
-			return false;
+			bundled.setDefaults(english);
 		}
-		try
+
+		File languageConfigFile = new File(this.plugin.getDataFolder(), "lang/" + languageFileName);
+		if (!languageConfigFile.exists() && bundled != null)
+		{
+			this.plugin.saveResource("lang/" + languageFileName, false);
+		}
+
+		if (languageConfigFile.exists())
 		{
 			this.languageConfig = new YamlConfiguration();
-			this.languageConfig.loadFromString(Files.toString(languageConfigFile, Charset.forName("UTF-8")));
+			try
+			{
+				this.languageConfig.load(languageConfigFile);
+			}
+			catch (Exception e)
+			{
+				this.plugin.log("Could not load data from " + languageConfigFile + ": " + e.getMessage());
+			}
+			this.languageConfig.setDefaults(bundled != null ? bundled : english);
 		}
-		catch (Exception e)
+		else
 		{
-			this.plugin.log("Could not load data from " + languageConfigFile + ": " + e.getMessage());
-			return false;
+			this.plugin.log("Language '" + this.plugin.language + "' was not found. Using english.");
+			this.languageConfig = english;
 		}
+
 		this.languageName = this.languageConfig.getString("Version.Name");
 		this.authorName = this.languageConfig.getString("Version.Author");
 
-		this.plugin.logDebug("Loaded " + this.languageConfig.getString("Version.Name") + " by " + this.languageConfig.getString("Version.Author") + " version " + this.languageConfig.getString("Version.Version"));
-
-		return true;
-	}
-
-	public void load()
-	{
-		File directory = new File(this.plugin.getDataFolder() + "/lang");
-		if (!directory.exists())
-		{
-			System.out.println("Creating language file directory '/lang'...");
-
-			boolean result = directory.mkdir();
-			if (result)
-			{
-				this.plugin.logDebug("Language directory created");
-			}
-			else
-			{
-				this.plugin.logDebug("Could not create language directory!");
-				return;
-			}
-		}
-		String languageFileName = this.plugin.language + ".yml";
-		if (!loadLanguageFile(languageFileName))
-		{
-			this.plugin.log("Could not load " + languageFileName + " from the /lang folder.");
-			this.plugin.log("Downloading " + languageFileName + " from DogOnFire...");
-			try
-			{
-				downloadLanguageFile(languageFileName);
-			}
-			catch (Exception ex)
-			{
-				this.plugin.log("Could not download " + languageFileName + " language file from DogOnFire: " + ex.getMessage());
-				return;
-			}
-			if (!loadLanguageFile(languageFileName))
-			{
-				this.plugin.log("Could not load " + languageFileName + "!");
-			}
-		}
-	}
-	
-	public void save()
-	{
-		String languageFileName = this.plugin.language + ".yml";
-		File languageConfigFile = new File(this.plugin.getDataFolder() + "/lang/" + languageFileName);
-		
-		if (!languageConfigFile.exists())
-		{
-			return;
-		}
-		
-		try
-		{
-			this.languageConfig = new YamlConfiguration();
-			this.languageConfig.save(languageConfigFile);
-		}
-		catch (Exception ex)
-		{
-			this.plugin.log("Could not save language config to " + languageConfigFile + ": " + ex.getMessage());
-		}
+		this.plugin.logDebug("Loaded " + this.languageName + " by " + this.authorName + " version " + this.languageConfig.getString("Version.Version"));
 	}
 
 	public String getLanguageString(LANGUAGESTRING type, ChatColor color)

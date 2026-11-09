@@ -7,6 +7,7 @@ import com.dogonfire.werewolf.managers.ClanManager;
 import com.dogonfire.werewolf.managers.DamageManager;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.disguises.WerewolfDisguiseAPI;
 import com.dogonfire.werewolf.events.WerewolfCureEvent;
 import com.dogonfire.werewolf.events.WerewolfTransformEvent;
 import com.dogonfire.werewolf.tasks.CheckTransformationTask;
@@ -73,30 +74,33 @@ public class PlayerListener implements Listener
 		Werewolf.getWerewolfManager().unsetWerewolfSkin(event.getPlayer().getUniqueId(), true, WerewolfTransformEvent.Reason.FORCED);
 	}
 
-	@EventHandler
+	/*
+	 * Old workaround for disguise plugins swallowing hits on disguised players: an arm swing aimed at a nearby werewolf
+	 * damages it. The built-in and SkinsRestorer backends only change the player's skin, so real hits always land and
+	 * this would double-hit; it is only kept for LibsDisguises, and skipped while the werewolf still has invulnerability
+	 * frames from a hit that did land.
+	 */
+	@EventHandler(ignoreCancelled = true)
 	public void onPlayerAnimation(PlayerAnimationEvent event)
 	{
-		if (!Werewolf.pluginEnabled)
+		if (!Werewolf.pluginEnabled || WerewolfDisguiseAPI.getBackend() != WerewolfDisguiseAPI.Backend.LIBSDISGUISES)
 		{
 			return;
 		}
 
-		if (!event.isCancelled())
+		if (event.getAnimationType() != PlayerAnimationType.ARM_SWING)
 		{
-			if (event.getAnimationType() != PlayerAnimationType.ARM_SWING)
-			{
-				return;
-			}
+			return;
+		}
 
-			Player nearestWerewolf = Werewolf.getWerewolfManager().getNearestWerewolf(event.getPlayer().getUniqueId());
-			if (nearestWerewolf != null && DamageManager.canPlayerHit(event.getPlayer(), nearestWerewolf.getLocation()))
-			{
-				double damage = DamageManager.getDamageFromItemInHand(event.getPlayer());
+		Player nearestWerewolf = Werewolf.getWerewolfManager().getNearestWerewolf(event.getPlayer().getUniqueId());
+		if (nearestWerewolf != null && nearestWerewolf.getNoDamageTicks() <= nearestWerewolf.getMaximumNoDamageTicks() / 2 && DamageManager.canPlayerHit(event.getPlayer(), nearestWerewolf.getLocation()))
+		{
+			double damage = DamageManager.getDamageFromItemInHand(event.getPlayer());
 
-				plugin.logDebug("Doing " + damage + " damage to " + nearestWerewolf.getName());
+			plugin.logDebug("Doing " + damage + " damage to " + nearestWerewolf.getName());
 
-				nearestWerewolf.damage(damage, event.getPlayer());
-			}
+			nearestWerewolf.damage(damage, event.getPlayer());
 		}
 	}
 

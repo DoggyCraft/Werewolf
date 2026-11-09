@@ -15,6 +15,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Wolf;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -68,7 +69,7 @@ public class DamageListener implements Listener
 		}
 	}
 
-	@EventHandler
+	@EventHandler(ignoreCancelled = true)
 	public void onEntityDamage2(EntityDamageEvent event)
 	{
 		if (!Werewolf.pluginEnabled)
@@ -174,63 +175,75 @@ public class DamageListener implements Listener
 					}
 
 					event.setDamage(damage);
-
-					if (damageEvent.getEntity() instanceof Player)
-					{
-						Player victim = (Player) damageEvent.getEntity();
-
-						if (!WerewolfAPI.isVampire(victim))
-						{
-							if (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.infectother") && Werewolf.getPermissionsManager().hasPermission(victim, "werewolf.becomeinfected") && !Werewolf.getWerewolfManager().isWerewolf(victim)) {
-								this.plugin.logDebug(player.getName() + " is doing risk damage to " + victim.getName());
-
-								if (Math.random() < Werewolf.getWerewolfManager().getBiteInfectionRisk(player.getUniqueId()) && Werewolf.getWerewolfManager().makeWerewolf(victim, false, Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId()), WerewolfInfectionEvent.Source.WEREWOLF_BITE)) {
-
-									Werewolf.getLanguageManager().setPlayerName(player.getName());
-									victim.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteVictim, ChatColor.LIGHT_PURPLE));
-
-									Werewolf.getLanguageManager().setPlayerName(victim.getName());
-									player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteAttacker, ChatColor.LIGHT_PURPLE));
-
-									victim.getLocation().getWorld().playEffect(player.getLocation(), Effect.SMOKE, 100);
-									victim.getLocation().getWorld().playEffect(player.getLocation().add(new Vector(0, 1, 0)), Effect.SMOKE, 100);
-									victim.getLocation().getWorld().playEffect(player.getLocation().add(new Vector(0, 2, 0)), Effect.SMOKE, 100);
-
-									this.plugin.log(player.getName() + " infected " + victim.getName() + " with the werewolf infection!");
-								}
-							}
-						}
-					}
 				}
 			}
 
 			applySilverArmor(damageEvent);
-
-			if (event.getEntity() != null && (event.getEntity() instanceof Player))
-			{
-				Player player = (Player) event.getEntity();
-				if (!Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()) && (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.becomeinfected") || player.isOp())
-						&& (!Werewolf.getWerewolfManager().isWerewolf(player) && (damageEvent.getDamager() instanceof Wolf) && Math.random() < this.plugin.wildWolfInfectionRisk))
-				{
-					Tameable tameable = (Tameable) damageEvent.getDamager();
-
-					if (!tameable.isTamed())
-					{
-						Random random = new Random();
-						if (Werewolf.getWerewolfManager().makeWerewolf(player, false, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)], WerewolfInfectionEvent.Source.WILD_WOLF_BITE))
-						{
-							player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteVictim, ChatColor.LIGHT_PURPLE));
-
-							plugin.log(player.getName() + " contracted the werewolf infection from a wild wolf!");
-						}
-					}
-				}
-			}
 		}
 
 		if (event.getDamage() <= 0.0D)
 		{
 			event.setDamage(1.0D);
+		}
+	}
+
+	/*
+	 * Bite infections only happen for hits that actually land: MONITOR with ignoreCancelled, so hits cancelled by
+	 * region/PvP plugins (WorldGuard no-PvP regions, PvPManager protection...) at any priority don't infect.
+	 */
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+	public void onBite(EntityDamageByEntityEvent event)
+	{
+		if (!Werewolf.pluginEnabled || !(event.getEntity() instanceof Player))
+		{
+			return;
+		}
+
+		Player victim = (Player) event.getEntity();
+
+		if (event.getDamager() instanceof Player)
+		{
+			Player player = (Player) event.getDamager();
+
+			if (Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()) && !WerewolfAPI.isVampire(victim))
+			{
+				if (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.infectother") && Werewolf.getPermissionsManager().hasPermission(victim, "werewolf.becomeinfected") && !Werewolf.getWerewolfManager().isWerewolf(victim))
+				{
+					this.plugin.logDebug(player.getName() + " is doing risk damage to " + victim.getName());
+
+					if (Math.random() < Werewolf.getWerewolfManager().getBiteInfectionRisk(player.getUniqueId()) && Werewolf.getWerewolfManager().makeWerewolf(victim, false, Werewolf.getWerewolfManager().getWerewolfClan(player.getUniqueId()), WerewolfInfectionEvent.Source.WEREWOLF_BITE))
+					{
+						Werewolf.getLanguageManager().setPlayerName(player.getName());
+						victim.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteVictim, ChatColor.LIGHT_PURPLE));
+
+						Werewolf.getLanguageManager().setPlayerName(victim.getName());
+						player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteAttacker, ChatColor.LIGHT_PURPLE));
+
+						victim.getLocation().getWorld().playEffect(player.getLocation(), Effect.SMOKE, 100);
+						victim.getLocation().getWorld().playEffect(player.getLocation().add(new Vector(0, 1, 0)), Effect.SMOKE, 100);
+						victim.getLocation().getWorld().playEffect(player.getLocation().add(new Vector(0, 2, 0)), Effect.SMOKE, 100);
+
+						this.plugin.log(player.getName() + " infected " + victim.getName() + " with the werewolf infection!");
+					}
+				}
+			}
+		}
+
+		if (!Werewolf.getWerewolfManager().hasWerewolfSkin(victim.getUniqueId()) && (Werewolf.getPermissionsManager().hasPermission(victim, "werewolf.becomeinfected") || victim.isOp())
+				&& (!Werewolf.getWerewolfManager().isWerewolf(victim) && (event.getDamager() instanceof Wolf) && Math.random() < this.plugin.wildWolfInfectionRisk))
+		{
+			Tameable tameable = (Tameable) event.getDamager();
+
+			if (!tameable.isTamed())
+			{
+				Random random = new Random();
+				if (Werewolf.getWerewolfManager().makeWerewolf(victim, false, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)], WerewolfInfectionEvent.Source.WILD_WOLF_BITE))
+				{
+					victim.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteVictim, ChatColor.LIGHT_PURPLE));
+
+					plugin.log(victim.getName() + " contracted the werewolf infection from a wild wolf!");
+				}
+			}
 		}
 	}
 

@@ -420,3 +420,7 @@ HelpTracker:
 - $Type - Creates a tracker compass
 HelpSilverArmor:
 - $Type - Creates a set of silver armor
+ForcePvPTrespassing:
+- You are trespassing on $PlayerName's land. Your PvP has been forced on!
+ForcePvPCannotDisable:
+- You can't turn PvP off while trespassing on someone else's land

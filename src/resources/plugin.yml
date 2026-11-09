@@ -11,7 +11,7 @@ website: https://dev.bukkit.org/server-mods/werewolf
 commands:
    werewolf:
       description: Command for the Werewolf plugin
-      usage: /<command> [toggle|infect|addbounty|check|reload|save|help|clan|list|transform|intent|setphase|toggle|bounty|home|sethome|call|top|hunt|infectionpotion|curepotion|wolfbane|silversword|lorebook|on|off] [player]
+      usage: /<command> [toggle|infect|addbounty|check|reload|save|help|clan|list|transform|intent|setphase|toggle|bounty|home|sethome|call|top|hunt|infectionpotion|curepotion|wolfbane|silversword|silverarmor|tracker|vampiretracker|track|lorebook|on|off] [player]
       aliases: [ww]
    growl:
       description: Command for Werewolves to growl
@@ -60,6 +60,9 @@ permissions:
             werewolf.infectself: true
             werewolf.togglewerewolf: true
             werewolf.togglewerewolfself: true
+            werewolf.track: true
+            werewolf.tracker.create: true
+            werewolf.silverarmor.create: true
     werewolf.sethome:
         description: Player can set the clan home
         default: true
@@ -186,3 +189,15 @@ permissions:
     werewolf.bypass.blockedcommands:
         description: Lets a werewolf use commands listed under BlockedCommands in config.yml
         default: op
+    werewolf.immunewolfbane:
+        description: The player is not affected by wolfbane potions
+        default: false
+    werewolf.track:
+        description: Allows a werewolf to follow a sniffed scent with /ww track
+        default: true
+    werewolf.tracker.create:
+        description: Allows the player to create werewolf and vampire trackers with /ww tracker and /ww vampiretracker
+        default: false
+    werewolf.silverarmor.create:
+        description: Allows the player to create a set of silver armor with /ww silverarmor
+        default: false

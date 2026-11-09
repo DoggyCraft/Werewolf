@@ -58,10 +58,7 @@ public class DamageManager
 			default: damage = 1; break;
 		}
 
-		if(Werewolf.getItemManager().isSilverSword(is))
-		{
-			damage *= SilverSwordMultiplier; 
-		}
+		// The silver sword multiplier is applied in DamageListener, which this damage passes through as well
 		/*
 		switch (mat)
 		{

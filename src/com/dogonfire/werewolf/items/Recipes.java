@@ -1,6 +1,7 @@
 package com.dogonfire.werewolf.items;
 
 import com.dogonfire.werewolf.Werewolf;
+import com.dogonfire.werewolf.managers.ItemManager;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -82,17 +83,47 @@ public class Recipes
 */
 	public static ShapedRecipe silverArmorRecipe(Plugin plugin)
 	{
-		ItemStack silverArmor = Werewolf.getItemManager().newSilverArmor(1);
-		NamespacedKey key = new NamespacedKey(plugin, "SilverArmorRecipe");
+		return silverArmorRecipe(plugin, ItemManager.ArmorPiece.CHESTPLATE);
+	}
+
+	/** Every piece uses the original silver chestplate recipe with its own iron piece in the middle */
+	public static ShapedRecipe silverArmorRecipe(Plugin plugin, ItemManager.ArmorPiece piece)
+	{
+		ItemStack silverArmor = Werewolf.getItemManager().newSilverArmor(piece);
+		NamespacedKey key = new NamespacedKey(plugin, piece.getRecipeKey());
 
 		ShapedRecipe silverArmorRecipe = new ShapedRecipe(key, silverArmor);
 		silverArmorRecipe.shape("BXB", "LSL", "BXB");
 		silverArmorRecipe.setIngredient('X', Material.QUARTZ);
-		silverArmorRecipe.setIngredient('S', Material.IRON_CHESTPLATE);
+		silverArmorRecipe.setIngredient('S', piece.getMaterial());
 		silverArmorRecipe.setIngredient('B', Material.BLAZE_POWDER);
 		silverArmorRecipe.setIngredient('L', Material.LEATHER);
-				
+
 		return silverArmorRecipe;
+	}
+
+	public static ShapedRecipe werewolfTracker(Plugin plugin)
+	{
+		NamespacedKey key = new NamespacedKey(plugin, "WerewolfTrackerRecipe");
+		ShapedRecipe recipe = new ShapedRecipe(key, Werewolf.getItemManager().newWerewolfTracker());
+
+		recipe.shape("RRR", "RCR", "RRR");
+		recipe.setIngredient('R', Material.RABBIT_FOOT);
+		recipe.setIngredient('C', Material.COMPASS);
+
+		return recipe;
+	}
+
+	public static ShapedRecipe vampireTracker(Plugin plugin)
+	{
+		NamespacedKey key = new NamespacedKey(plugin, "VampireTrackerRecipe");
+		ShapedRecipe recipe = new ShapedRecipe(key, Werewolf.getItemManager().newVampireTracker());
+
+		recipe.shape("GGG", "GCG", "GGG");
+		recipe.setIngredient('G', Material.GHAST_TEAR);
+		recipe.setIngredient('C', Material.COMPASS);
+
+		return recipe;
 	}
 
 	public static ShapedRecipe silverSwordRecipe(Plugin plugin)

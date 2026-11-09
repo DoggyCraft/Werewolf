@@ -13,8 +13,10 @@ import com.dogonfire.werewolf.events.WerewolfCureEvent;
 import com.dogonfire.werewolf.events.WerewolfInfectionEvent;
 import com.dogonfire.werewolf.events.WerewolfTransformEvent;
 import com.dogonfire.werewolf.managers.ClanManager;
+import com.dogonfire.werewolf.managers.ItemManager;
 import com.dogonfire.werewolf.managers.LanguageManager;
 import com.dogonfire.werewolf.managers.MoonManager;
+import com.dogonfire.werewolf.managers.ScentManager;
 import java.util.Objects;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -287,6 +289,21 @@ public class Commands implements TabExecutor
 			{
 				Werewolf.getLanguageManager().setType("/ww lorebook");
 				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpLoreBook, ChatColor.AQUA));
+			}
+			if (player.isOp() || (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.silverarmor.create")))
+			{
+				Werewolf.getLanguageManager().setType("/ww silverarmor");
+				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpSilverArmor, ChatColor.AQUA));
+			}
+			if (player.isOp() || (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.tracker.create")))
+			{
+				Werewolf.getLanguageManager().setType(this.plugin.vampireEnabled ? "/ww tracker|vampiretracker" : "/ww tracker");
+				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpTracker, ChatColor.AQUA));
+			}
+			if (Werewolf.getWerewolfManager().isWerewolf(player) && (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.track")))
+			{
+				Werewolf.getLanguageManager().setType("/ww track");
+				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpTrack, ChatColor.AQUA));
 			}
 			if (this.plugin.useClans)
 			{
@@ -1473,6 +1490,105 @@ public class Commands implements TabExecutor
 		return true;
 	}
 
+	// Admin commands giving hunting gear: /ww tracker, /ww vampiretracker, /ww silverarmor
+	private boolean commandGiveItems(Player player, String permission, LanguageManager.LANGUAGESTRING createdMessage, ItemStack... items)
+	{
+		if (player == null)
+		{
+			this.plugin.log("You cannot use this command from the console.");
+			return false;
+		}
+
+		if (!Werewolf.getPermissionsManager().hasPermission(player, permission) && !player.isOp())
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NoPermissionForCommand, ChatColor.RED));
+			return false;
+		}
+
+		for (ItemStack leftover : player.getInventory().addItem(items).values())
+		{
+			player.getWorld().dropItemNaturally(player.getLocation(), leftover);
+		}
+
+		this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(createdMessage, ChatColor.GREEN));
+
+		return true;
+	}
+
+	public boolean commandSilverArmor(Player player)
+	{
+		ItemManager.ArmorPiece[] pieces = ItemManager.ArmorPiece.values();
+		ItemStack[] items = new ItemStack[pieces.length];
+		for (int i = 0; i < pieces.length; i++)
+		{
+			items[i] = Werewolf.getItemManager().newSilverArmor(pieces[i]);
+		}
+		return commandGiveItems(player, "werewolf.silverarmor.create", LanguageManager.LANGUAGESTRING.CreatedSilverArmor, items);
+	}
+
+	// Toggles following the scent trail of the player the werewolf last sniffed
+	public boolean commandTrack(Player player)
+	{
+		if (player == null)
+		{
+			this.plugin.log("You cannot use this command from the console.");
+			return false;
+		}
+		if (!Werewolf.getPermissionsManager().hasPermission(player, "werewolf.track") && !player.isOp())
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NoPermissionForCommand, ChatColor.RED));
+			return false;
+		}
+		if (!Werewolf.getWerewolfManager().isWerewolf(player))
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.WerewolfCommandIsNotWerewolf, ChatColor.RED));
+			return false;
+		}
+
+		ScentManager scent = Werewolf.getScentManager();
+		if (scent.isTracking(player.getUniqueId()))
+		{
+			scent.stopTracking(player);
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ScentTrackStopped, ChatColor.LIGHT_PURPLE));
+			return true;
+		}
+		if (!scent.canScentTrack(player.getUniqueId()))
+		{
+			int fullMoons = this.plugin.transformsForScentTrack - Werewolf.getWerewolfManager().getNumberOfTransformations(player.getUniqueId());
+			Werewolf.getLanguageManager().setAmount("" + fullMoons);
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.MustExperienceMoreFullMoons, ChatColor.RED));
+			return false;
+		}
+		if (!Werewolf.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ScentTrackNotInWolfForm, ChatColor.RED));
+			return false;
+		}
+
+		UUID targetId = scent.getTarget(player.getUniqueId());
+		if (targetId == null)
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ScentNoTarget, ChatColor.RED));
+			return false;
+		}
+		Player target = this.plugin.getServer().getPlayer(targetId);
+		if (target == null)
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ScentTargetNotFound, ChatColor.RED));
+			return false;
+		}
+		if (!target.getWorld().equals(player.getWorld()))
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ScentTargetOtherWorld, ChatColor.RED));
+			return false;
+		}
+
+		scent.startTracking(player);
+		Werewolf.getLanguageManager().setPlayerName(target.getName());
+		this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.ScentTrackStarted, ChatColor.LIGHT_PURPLE));
+		return true;
+	}
+
 	public boolean commandLoreBook(Player player)
 	{
 		if (player == null)
@@ -1639,6 +1755,22 @@ public class Commands implements TabExecutor
 				{
 					commandLoreBook(player);
 				}
+				else if (args[0].equalsIgnoreCase("track"))
+				{
+					commandTrack(player);
+				}
+				else if (args[0].equalsIgnoreCase("tracker"))
+				{
+					commandGiveItems(player, "werewolf.tracker.create", LanguageManager.LANGUAGESTRING.CreatedWerewolfTracker, Werewolf.getItemManager().newWerewolfTracker());
+				}
+				else if (args[0].equalsIgnoreCase("vampiretracker"))
+				{
+					commandGiveItems(player, "werewolf.tracker.create", LanguageManager.LANGUAGESTRING.CreatedWerewolfTracker, Werewolf.getItemManager().newVampireTracker());
+				}
+				else if (args[0].equalsIgnoreCase("silverarmor"))
+				{
+					commandSilverArmor(player);
+				}
 				else if (args[0].equalsIgnoreCase("on"))
 				{
 					if (player != null && !player.isOp())
@@ -1781,6 +1913,22 @@ public class Commands implements TabExecutor
 				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.lorebook"))
 				{
 					arg1.add("lorebook");
+				}
+				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.track"))
+				{
+					arg1.add("track");
+				}
+				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.tracker.create"))
+				{
+					arg1.add("tracker");
+					if (this.plugin.vampireEnabled)
+					{
+						arg1.add("vampiretracker");
+					}
+				}
+				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.silverarmor.create"))
+				{
+					arg1.add("silverarmor");
 				}
 				if (this.plugin.useClans)
 				{

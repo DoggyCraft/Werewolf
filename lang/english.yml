@@ -346,3 +346,77 @@ BlockedCommandAlpha:
 - Alpha werewolves cannot use this command!
 CannotTransformInGameMode:
 - You cannot transform into a wolf in creative or spectator mode
+SilverArmorPurity:
+- $Amount% chance to resist a werewolf bite
+SilverArmorDefense:
+- $Amount% less damage from werewolves
+SilverArmorHumansOnly:
+- Werewolves cannot wear silver
+SilverArmorCannotWear:
+- The silver burns your skin. You cannot wear silver armor!
+SilverArmorCleansed:
+- Your silver armor has kept you cleansed of the curse!
+SilverBurnsWerewolf:
+- The silver burns your hand!
+WolfbaneHumanForm:
+- The wolfbane holds back the beast within. You cannot transform for $Amount seconds.
+WerewolfTrackerTitle:
+- Werewolf Tracker
+VampireTrackerTitle:
+- Vampire Tracker
+WerewolfTrackerDescription:
+- Right-click to track the nearest werewolf
+VampireTrackerDescription:
+- Right-click to track the nearest vampire
+TrackerClearDescription:
+- Left-click to clear your target
+TrackerHumansOnly:
+- Only humans can use this tracker
+TrackerAlreadyTracking:
+- You are tracking $PlayerName. Left-click to clear your target.
+TrackerFound:
+- Your $Type is pointing towards $PlayerName, $Amount blocks away
+TrackerNoTargets:
+- No targets found in this world
+TrackerNoTarget:
+- Your $Type has no target
+TrackerCleared:
+- Your $Type has been cleared
+TrackerLost:
+- Your tracker has lost sight of $PlayerName
+TrackerActionBar:
+- $PlayerName | $Amount blocks away
+TrackerOnlyHumans:
+- Only humans are able to use the $Type!
+TrackerOnlyHumansCraft:
+- Only humans are able to craft the $Type!
+HuntingDisabled:
+- Hunting werewolves and vampires is disabled on this server
+ScentFound:
+- "*sniff* *sniff* You picked up $PlayerName's scent... Use /ww track to follow it."
+ScentTry:
+- "*sniff*"
+ScentLost:
+- You lost the scent of your target
+ScentTrackStarted:
+- "*sniff* $PlayerName can be sensed in this direction..."
+ScentTrackStopped:
+- You open your eyes and lose the trail
+ScentTrackNotInWolfForm:
+- You must be in wolf form to follow a scent
+ScentNoTarget:
+- You have not picked up anyone's scent. Sniff a player by right-clicking them in wolf form.
+ScentTargetNotFound:
+- Your target cannot be found
+ScentTargetOtherWorld:
+- Your target must be in the same world
+CreatedWerewolfTracker:
+- You created a tracker
+CreatedSilverArmor:
+- You created a set of silver armor
+HelpTrack:
+- $Type - Follow the scent of the last player you sniffed
+HelpTracker:
+- $Type - Creates a tracker compass
+HelpSilverArmor:
+- $Type - Creates a set of silver armor

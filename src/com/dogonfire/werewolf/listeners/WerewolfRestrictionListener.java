@@ -238,7 +238,7 @@ public class WerewolfRestrictionListener implements Listener
 	@EventHandler(ignoreCancelled = true)
 	public void onTransform(WerewolfTransformEvent event)
 	{
-		if (!event.isToWolfForm() || event.getReason() == WerewolfTransformEvent.Reason.FORCED)
+		if (!event.isToWolfForm() || event.getReason() == WerewolfTransformEvent.Reason.FORCED || event.getReason() == WerewolfTransformEvent.Reason.REFRESH)
 		{
 			return;
 		}

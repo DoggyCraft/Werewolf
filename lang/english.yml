@@ -424,3 +424,31 @@ ForcePvPTrespassing:
 - You are trespassing on $PlayerName's land. Your PvP has been forced on!
 ForcePvPCannotDisable:
 - You can't turn PvP off while trespassing on someone else's land
+AlphaSlainByHunter:
+- The werewolf hunter $PlayerName has slain your alpha!
+WerewolfResistsVampirism:
+- Your werewolf blood burns away the vampire's curse
+HelpSetLevel:
+- $Type - Sets a werewolf's level
+HelpAddLevel:
+- $Type - Adds levels to a werewolf
+HelpSetAlpha:
+- $Type - Makes a werewolf the alpha of their clan
+HelpCureOther:
+- $Type - Cures a player of being a werewolf
+AdminLevelSet:
+- $PlayerName is now level $Amount
+AdminAlphaSet:
+- $PlayerName is now the alpha of the $Type clan
+AdminCured:
+- $PlayerName is no longer a werewolf
+AdminNotAWerewolf:
+- $PlayerName is not a werewolf
+AdminUnknownPlayer:
+- No player named $PlayerName is known on this server
+AdminInvalidNumber:
+- $Type is not a valid number
+AdminInvalidClan:
+- Unknown clan. Use one of $Type
+AdminChangeCancelled:
+- Another plugin prevented that change for $PlayerName

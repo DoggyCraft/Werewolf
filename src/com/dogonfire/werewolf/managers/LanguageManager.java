@@ -379,6 +379,20 @@ public class LanguageManager
 		HelpTracker,
 		HelpSilverArmor,
 		ForcePvPTrespassing,
-		ForcePvPCannotDisable;
+		ForcePvPCannotDisable,
+		AlphaSlainByHunter,
+		WerewolfResistsVampirism,
+		HelpSetLevel,
+		HelpAddLevel,
+		HelpSetAlpha,
+		HelpCureOther,
+		AdminLevelSet,
+		AdminAlphaSet,
+		AdminCured,
+		AdminNotAWerewolf,
+		AdminUnknownPlayer,
+		AdminInvalidNumber,
+		AdminInvalidClan,
+		AdminChangeCancelled;
 	}
 }

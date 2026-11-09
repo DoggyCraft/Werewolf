@@ -37,6 +37,18 @@ public class SkinManager
 
 	public boolean setWerewolfSkin(Player player, String werewolfName)
 	{
+		return applyWerewolfSkin(player, werewolfName, true);
+	}
+
+	/** Swaps the skin of a disguised werewolf for the one it should have now (alpha or clan skin), without howling */
+	public boolean refreshWerewolfSkin(Player player, String werewolfName)
+	{
+		unsetWerewolfSkin(player);
+		return applyWerewolfSkin(player, werewolfName, false);
+	}
+
+	private boolean applyWerewolfSkin(Player player, String werewolfName, boolean howl)
+	{
 		if (this.skins.containsKey(player.getUniqueId()))
 		{
 			return true;
@@ -69,14 +81,18 @@ public class SkinManager
 		if (skin == null)
 		{
 			plugin.log("WerewolfDisguise Skin is null!");
+			return false;
 		}
-		
+
 		plugin.logDebug("Skin: " + skin.toString() + ". SkinName: " + skin.getSkinAccountName() + " - SkinUUID: " + skin.getSkinAccountUUID());
-		
+
 		if(WerewolfDisguiseAPI.disguise(player, skin, werewolfName))
 		{
 			plugin.logDebug("Disguised player " + player.getName() + "!");
-			Werewolf.getWerewolfManager().howl(player);
+			if (howl)
+			{
+				Werewolf.getWerewolfManager().howl(player);
+			}
 		}
 		else
 		{

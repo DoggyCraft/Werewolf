@@ -387,25 +387,90 @@ public class ClanManager
 	}
 	
 	
+	/** The clan's alpha as stored in clans.yml, or null. Can be stale for a moment until {@link #checkAlphas()} runs. */
 	public UUID getAlpha(ClanType clan)
 	{
 		String alphaId = this.clansConfig.getString(clan.name() + ".Alpha");
+		if (alphaId == null)
+		{
+			return null;
+		}
 
 		try
 		{
 			return UUID.fromString(alphaId);
 		}
-		catch(Exception ex)
+		catch (IllegalArgumentException ex)
 		{
-			UUID alphaPlayerId = Werewolf.getWerewolfManager().getAlphaCandidate(clan);
-			
-			if (alphaPlayerId != null)
-			{
-				assignAlphaInClan(clan, alphaPlayerId);
-			}
+			return null;
+		}
+	}
+
+	private boolean isValidAlpha(ClanType clan, UUID alphaId)
+	{
+		WerewolfManager werewolfManager = Werewolf.getWerewolfManager();
+		return alphaId != null && werewolfManager.isWerewolf(alphaId) && werewolfManager.getWerewolfClan(alphaId) == clan;
+	}
+
+	/**
+	 * Gives the clan an alpha if it has none, or if its alpha is no longer a werewolf of that clan: the best ranked
+	 * member becomes alpha (through {@link #assignAlphaInClan}, so it can be vetoed).
+	 */
+	public void checkAlpha(ClanType clan)
+	{
+		UUID alphaId = getAlpha(clan);
+		if (isValidAlpha(clan, alphaId))
+		{
+			return;
 		}
 
-		return null;
+		UUID candidate = Werewolf.getWerewolfManager().getAlphaCandidate(clan, alphaId);
+		if (candidate != null)
+		{
+			assignAlphaInClan(clan, candidate);
+		}
+		else if (this.clansConfig.getString(clan.name() + ".Alpha") != null)
+		{
+			assignAlphaInClan(clan, null);
+		}
+	}
+
+	/** Runs from the main loop: fills every empty (or stale) alpha slot */
+	public void checkAlphas()
+	{
+		if (!this.plugin.useClans || this.clansConfig == null)
+		{
+			return;
+		}
+
+		for (ClanType clan : ClanType.values())
+		{
+			checkAlpha(clan);
+		}
+	}
+
+	/** The player stops being alpha of any clan (cured, or moved to another clan); the next best member takes over */
+	public void removeAlpha(UUID playerId)
+	{
+		for (ClanType clan : ClanType.values())
+		{
+			if (!isAlpha(clan, playerId))
+			{
+				continue;
+			}
+
+			UUID candidate = Werewolf.getWerewolfManager().getAlphaCandidate(clan, playerId);
+			if (candidate == null || !assignAlphaInClan(clan, candidate))
+			{
+				assignAlphaInClan(clan, null);
+			}
+		}
+	}
+
+	/** The best ranked member of the clan other than the alpha, or null if there is none */
+	public UUID getRunnerUp(ClanType clan)
+	{
+		return Werewolf.getWerewolfManager().getAlphaCandidate(clan, getAlpha(clan));
 	}
 
 	public boolean isAlpha(UUID playerId)
@@ -452,7 +517,10 @@ public class ClanManager
 	{
 		if (playerId == null)
 		{
+			// Clearing fires no NewAlphaEvent, so the old alpha's skin is refreshed here
+			UUID oldAlphaId = getAlpha(clan);
 			this.clansConfig.set(clan.name() + ".Alpha", null);
+			Werewolf.getWerewolfManager().refreshWerewolfSkinLater(oldAlphaId);
 		}
 		else
 		{

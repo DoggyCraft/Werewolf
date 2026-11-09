@@ -1,8 +1,10 @@
 package com.dogonfire.werewolf.commands;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -21,6 +23,7 @@ import java.util.Objects;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -198,7 +201,12 @@ public class Commands implements TabExecutor
 			this.plugin.log("/werewolf addbounty - Add to the bounty for killing a Werewolf");
 			this.plugin.log("/werewolf toggle - Toggles Werewolf status for yourself");
 			this.plugin.log("/werewolf toggle <playername> - Toggles Werewolf status for another player");
-			this.plugin.log("/werewolf infect <playername> - Infects a player with the Werewolf infection");
+			this.plugin.log("/werewolf infect <playername> [clan] - Infects a player with the Werewolf infection");
+			this.plugin.log("/werewolf cure <playername> - Cures a player of being a Werewolf");
+			this.plugin.log("/werewolf setlevel <playername> <level> - Sets a Werewolf's level");
+			this.plugin.log("/werewolf addlevel <playername> <amount> - Adds levels to a Werewolf");
+			this.plugin.log("/werewolf setalpha <playername> - Makes a Werewolf the alpha of their clan");
+			this.plugin.log("/werewolf setphase <phase> [world] - Sets the moon phase of a world");
 		}
 		else
 		{
@@ -252,8 +260,28 @@ public class Commands implements TabExecutor
 			}
 			if (player.isOp() || (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.infect")))
 			{
-				Werewolf.getLanguageManager().setType("/ww infect <playername>");
+				Werewolf.getLanguageManager().setType("/ww infect <playername> [clan]");
 				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpInfectOther, ChatColor.AQUA));
+			}
+			if (player.isOp() || (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.cureother")))
+			{
+				Werewolf.getLanguageManager().setType("/ww cure <playername>");
+				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpCureOther, ChatColor.AQUA));
+			}
+			if (player.isOp() || (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.setlevel")))
+			{
+				Werewolf.getLanguageManager().setType("/ww setlevel <playername> <level>");
+				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpSetLevel, ChatColor.AQUA));
+			}
+			if (player.isOp() || (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.addlevel")))
+			{
+				Werewolf.getLanguageManager().setType("/ww addlevel <playername> <amount>");
+				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpAddLevel, ChatColor.AQUA));
+			}
+			if (this.plugin.useClans && (player.isOp() || (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.setalpha"))))
+			{
+				Werewolf.getLanguageManager().setType("/ww setalpha <playername>");
+				player.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.HelpSetAlpha, ChatColor.AQUA));
 			}
 			if (player.isOp() || (Werewolf.getPermissionsManager().hasPermission(player, "werewolf.togglewerewolf")))
 			{
@@ -817,7 +845,12 @@ public class Commands implements TabExecutor
 		{
 			Random random = new Random();
 
-			Werewolf.getWerewolfManager().makeWerewolf(player, true, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)], WerewolfInfectionEvent.Source.COMMAND);
+			if (!Werewolf.getWerewolfManager().makeWerewolf(player, true, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)], WerewolfInfectionEvent.Source.COMMAND))
+			{
+				Werewolf.getLanguageManager().setPlayerName(player.getName());
+				this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED));
+				return true;
+			}
 
 			Werewolf.getWerewolfManager().setInfectedThisNight(player.getUniqueId(), player.getName(), false);
 
@@ -825,7 +858,12 @@ public class Commands implements TabExecutor
 		}
 		else
 		{
-			Werewolf.getWerewolfManager().unmakeWerewolf(player.getUniqueId(), WerewolfCureEvent.Cause.COMMAND);
+			if (!Werewolf.getWerewolfManager().unmakeWerewolf(player.getUniqueId(), WerewolfCureEvent.Cause.COMMAND))
+			{
+				Werewolf.getLanguageManager().setPlayerName(player.getName());
+				this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED));
+				return true;
+			}
 			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NotAWerewolfAnymore, ChatColor.AQUA));
 		}
 
@@ -853,7 +891,12 @@ public class Commands implements TabExecutor
 				if (!Werewolf.getWerewolfManager().isWerewolf(newWerewolf))
 				{
 					Random random = new Random();
-					Werewolf.getWerewolfManager().makeWerewolf(newWerewolf, true, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)], WerewolfInfectionEvent.Source.COMMAND);
+					if (!Werewolf.getWerewolfManager().makeWerewolf(newWerewolf, true, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)], WerewolfInfectionEvent.Source.COMMAND))
+					{
+						Werewolf.getLanguageManager().setPlayerName(newWerewolf.getName());
+						this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED));
+						return true;
+					}
 					Werewolf.getWerewolfManager().setInfectedThisNight(newWerewolf.getUniqueId(), newWerewolf.getName(), false);
 					if (player != null)
 					{
@@ -872,7 +915,12 @@ public class Commands implements TabExecutor
 				}
 				else
 				{
-					Werewolf.getWerewolfManager().unmakeWerewolf(newWerewolf.getUniqueId(), WerewolfCureEvent.Cause.COMMAND);
+					if (!Werewolf.getWerewolfManager().unmakeWerewolf(newWerewolf.getUniqueId(), WerewolfCureEvent.Cause.COMMAND))
+					{
+						Werewolf.getLanguageManager().setPlayerName(newWerewolf.getName());
+						this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED));
+						return true;
+					}
 					if (player != null)
 					{
 						player.sendMessage(ChatColor.AQUA + newWerewolf.getName() + " is no longer a werewolf ...");
@@ -906,51 +954,298 @@ public class Commands implements TabExecutor
 		return true;
 	}
 
-	// Command to infect a player with the werewolf infection
+	// Command to infect a player with the werewolf infection: /ww infect <player> [clan]
 	public boolean commandInfect(Player player, String[] args)
 	{
-		if (player == null || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.infect") || player.isOp())
+		if (!hasCommandPermission(player, "werewolf.infect"))
 		{
-			try
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NoPermissionForCommand, ChatColor.RED));
+			return true;
+		}
+
+		Player newInfection = this.plugin.getServer().getPlayer(args[1]);
+		if (newInfection == null)
+		{
+			this.plugin.sendInfo(player, ChatColor.RED + "Invalid player name...");
+			return true;
+		}
+
+		ClanManager.ClanType clan;
+		if (args.length >= 3)
+		{
+			clan = parseClan(args[2]);
+			if (clan == null)
 			{
-				Player newInfection = this.plugin.getServer().getPlayer(args[1]);
-				if (newInfection == null)
-				{
-					throw new Exception();
-				}
-
-				if (!Werewolf.getWerewolfManager().isWerewolf(newInfection))
-				{
-					Random random = new Random();
-					Werewolf.getWerewolfManager().makeWerewolf(newInfection, false, ClanManager.ClanType.values()[random.nextInt(ClanManager.ClanType.values().length)], WerewolfInfectionEvent.Source.COMMAND);
-
-					this.plugin.sendInfo(player, ChatColor.GREEN + newInfection.getName() + " now has the werewolf infection!");
-					if (player == null)
-					{
-						Werewolf.getLanguageManager().setPlayerName("CONSOLE");
-					}
-					else
-					{
-						Werewolf.getLanguageManager().setPlayerName(player.getName());
-					}
-					newInfection.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.Infected, ChatColor.AQUA));
-				}
-				else
-				{
-					this.plugin.sendInfo(player, ChatColor.RED + newInfection.getName() + " already is a werewolf! Please toggle his status first...");
-				}
-
-				this.plugin.log(player.getName() + ": /werewolf infect " + newInfection.getName());
-			}
-			catch (Exception e)
-			{
-				this.plugin.sendInfo(player, ChatColor.RED + "Invalid player name...");
+				Werewolf.getLanguageManager().setType(String.join(", ", getClanNames()));
+				this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AdminInvalidClan, ChatColor.RED));
+				return true;
 			}
 		}
 		else
 		{
-			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NoPermissionForCommand, ChatColor.RED));
+			clan = ClanManager.ClanType.values()[new Random().nextInt(ClanManager.ClanType.values().length)];
 		}
+
+		if (Werewolf.getWerewolfManager().isWerewolf(newInfection))
+		{
+			this.plugin.sendInfo(player, ChatColor.RED + newInfection.getName() + " already is a werewolf! Please cure them first...");
+			return true;
+		}
+
+		if (!Werewolf.getWerewolfManager().makeWerewolf(newInfection, false, clan, WerewolfInfectionEvent.Source.COMMAND))
+		{
+			Werewolf.getLanguageManager().setPlayerName(newInfection.getName());
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED));
+			return true;
+		}
+
+		this.plugin.sendInfo(player, ChatColor.GREEN + newInfection.getName() + " now has the werewolf infection!");
+		Werewolf.getLanguageManager().setPlayerName(player == null ? "CONSOLE" : player.getName());
+		newInfection.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.Infected, ChatColor.AQUA));
+
+		this.plugin.log((player == null ? "CONSOLE" : player.getName()) + ": /werewolf infect " + newInfection.getName() + " " + clan.name());
+		return true;
+	}
+
+	private boolean hasCommandPermission(Player player, String permission)
+	{
+		return player == null || player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, permission);
+	}
+
+	private void addIfPermitted(List<String> suggestions, Player player, String subcommand, String permission)
+	{
+		if (hasCommandPermission(player, permission))
+		{
+			suggestions.add(subcommand);
+		}
+	}
+
+	private ClanManager.ClanType parseClan(String name)
+	{
+		String wanted = ChatColor.stripColor(name).replace(" ", "");
+		for (ClanManager.ClanType clan : ClanManager.ClanType.values())
+		{
+			String clanName = Werewolf.getClanManager().getClanName(clan);
+			if (clan.name().equalsIgnoreCase(wanted) || (clanName != null && ChatColor.stripColor(clanName).replace(" ", "").equalsIgnoreCase(wanted)))
+			{
+				return clan;
+			}
+		}
+		return null;
+	}
+
+	private List<String> getClanNames()
+	{
+		List<String> names = new ArrayList<String>();
+		for (ClanManager.ClanType clan : ClanManager.ClanType.values())
+		{
+			String clanName = Werewolf.getClanManager().getClanName(clan);
+			names.add(clanName != null ? ChatColor.stripColor(clanName).replace(" ", "") : clan.name());
+		}
+		return names;
+	}
+
+	/**
+	 * Finds a player by name, online or not: online players, then werewolves.yml, then players the server has seen.
+	 * Unknown names give null rather than a made-up offline player.
+	 */
+	private UUID findPlayerId(String name)
+	{
+		Player online = this.plugin.getServer().getPlayerExact(name);
+		if (online != null)
+		{
+			return online.getUniqueId();
+		}
+
+		UUID werewolfId = Werewolf.getWerewolfManager().findWerewolfByName(name);
+		if (werewolfId != null)
+		{
+			return werewolfId;
+		}
+
+		for (OfflinePlayer offline : this.plugin.getServer().getOfflinePlayers())
+		{
+			if (name.equalsIgnoreCase(offline.getName()))
+			{
+				return offline.getUniqueId();
+			}
+		}
+
+		online = this.plugin.getServer().getPlayer(name);
+		return online != null ? online.getUniqueId() : null;
+	}
+
+	// Looks up the werewolf named in args[1] for an admin command, telling the sender if there is none
+	private UUID findWerewolfForCommand(Player player, String name)
+	{
+		UUID playerId = findPlayerId(name);
+		if (playerId == null)
+		{
+			Werewolf.getLanguageManager().setPlayerName(name);
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AdminUnknownPlayer, ChatColor.RED));
+			return null;
+		}
+
+		if (!Werewolf.getWerewolfManager().isWerewolf(playerId))
+		{
+			Werewolf.getLanguageManager().setPlayerName(name);
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AdminNotAWerewolf, ChatColor.RED));
+			return null;
+		}
+
+		return playerId;
+	}
+
+	private void sendUsage(Player player, String usage, LanguageManager.LANGUAGESTRING help)
+	{
+		Werewolf.getLanguageManager().setType(usage);
+		this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(help, ChatColor.RED));
+	}
+
+	// Admin commands: /ww setlevel <player> <level> and /ww addlevel <player> <amount>
+	public boolean commandSetLevel(Player player, String[] args, boolean add)
+	{
+		String permission = add ? "werewolf.addlevel" : "werewolf.setlevel";
+		if (!hasCommandPermission(player, permission))
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NoPermissionForCommand, ChatColor.RED));
+			return true;
+		}
+
+		if (args.length < 3)
+		{
+			if (add)
+			{
+				sendUsage(player, "/ww addlevel <player> <amount>", LanguageManager.LANGUAGESTRING.HelpAddLevel);
+			}
+			else
+			{
+				sendUsage(player, "/ww setlevel <player> <level>", LanguageManager.LANGUAGESTRING.HelpSetLevel);
+			}
+			return true;
+		}
+
+		Integer amount = null;
+		try
+		{
+			amount = Integer.valueOf(args[2]);
+		}
+		catch (NumberFormatException ignored)
+		{
+		}
+		// Levels can't go below 0; addlevel may take some away
+		if (amount == null || (!add && amount < 0))
+		{
+			Werewolf.getLanguageManager().setType(args[2]);
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AdminInvalidNumber, ChatColor.RED));
+			return true;
+		}
+
+		UUID playerId = findWerewolfForCommand(player, args[1]);
+		if (playerId == null)
+		{
+			return true;
+		}
+
+		int level = add ? Werewolf.getWerewolfManager().getNumberOfTransformations(playerId) + amount : amount;
+		Werewolf.getWerewolfManager().setNumberOfTransformations(playerId, level);
+
+		String name = Werewolf.getWerewolfManager().getPlayerName(playerId);
+		Werewolf.getLanguageManager().setPlayerName(name);
+		Werewolf.getLanguageManager().setAmount("" + Werewolf.getWerewolfManager().getNumberOfTransformations(playerId));
+		this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AdminLevelSet, ChatColor.GREEN));
+
+		this.plugin.log((player == null ? "CONSOLE" : player.getName()) + ": /werewolf " + args[0] + " " + name + " " + args[2]);
+		return true;
+	}
+
+	// Admin command: /ww setalpha <player>, for the player's own clan
+	public boolean commandSetAlpha(Player player, String[] args)
+	{
+		if (!hasCommandPermission(player, "werewolf.setalpha"))
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NoPermissionForCommand, ChatColor.RED));
+			return true;
+		}
+
+		if (!this.plugin.useClans)
+		{
+			this.plugin.sendInfo(player, ChatColor.RED + "Clans are not enabled.");
+			return true;
+		}
+
+		if (args.length < 2)
+		{
+			sendUsage(player, "/ww setalpha <player>", LanguageManager.LANGUAGESTRING.HelpSetAlpha);
+			return true;
+		}
+
+		UUID playerId = findWerewolfForCommand(player, args[1]);
+		if (playerId == null)
+		{
+			return true;
+		}
+
+		String name = Werewolf.getWerewolfManager().getPlayerName(playerId);
+		ClanManager.ClanType clan = Werewolf.getWerewolfManager().getWerewolfClan(playerId);
+		Werewolf.getLanguageManager().setPlayerName(name);
+
+		if (!Werewolf.getClanManager().assignAlphaInClan(clan, playerId))
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED));
+			return true;
+		}
+
+		Werewolf.getWerewolfManager().sendMessageToClan(clan, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NewClanAlpha, ChatColor.WHITE));
+
+		Werewolf.getLanguageManager().setPlayerName(name);
+		Werewolf.getLanguageManager().setType(Werewolf.getClanManager().getClanName(clan));
+		this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AdminAlphaSet, ChatColor.GREEN));
+
+		this.plugin.log((player == null ? "CONSOLE" : player.getName()) + ": /werewolf setalpha " + name);
+		return true;
+	}
+
+	// Admin command: /ww cure <player>. Unlike /ww toggle it never turns anyone into a werewolf, and works offline
+	public boolean commandCure(Player player, String[] args)
+	{
+		if (!hasCommandPermission(player, "werewolf.cureother"))
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.NoPermissionForCommand, ChatColor.RED));
+			return true;
+		}
+
+		if (args.length < 2)
+		{
+			sendUsage(player, "/ww cure <player>", LanguageManager.LANGUAGESTRING.HelpCureOther);
+			return true;
+		}
+
+		UUID playerId = findWerewolfForCommand(player, args[1]);
+		if (playerId == null)
+		{
+			return true;
+		}
+
+		String name = Werewolf.getWerewolfManager().getPlayerName(playerId);
+		Werewolf.getLanguageManager().setPlayerName(name);
+
+		if (!Werewolf.getWerewolfManager().unmakeWerewolf(playerId, WerewolfCureEvent.Cause.COMMAND))
+		{
+			this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED));
+			return true;
+		}
+
+		this.plugin.sendInfo(player, Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.AdminCured, ChatColor.GREEN));
+
+		Player target = this.plugin.getServer().getPlayer(playerId);
+		if (target != null)
+		{
+			Werewolf.getLanguageManager().setPlayerName(player == null ? "CONSOLE" : player.getName());
+			target.sendMessage(Werewolf.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.UnMadeWerewolf, ChatColor.AQUA));
+		}
+
+		this.plugin.log((player == null ? "CONSOLE" : player.getName()) + ": /werewolf cure " + name);
 		return true;
 	}
 
@@ -1648,15 +1943,31 @@ public class Commands implements TabExecutor
 				commandSetPhase(sender, args);
 				return true;
 			}
+			if (args[0].equalsIgnoreCase("setlevel") || args[0].equalsIgnoreCase("addlevel"))
+			{
+				commandSetLevel(player, args, args[0].equalsIgnoreCase("addlevel"));
+				return true;
+			}
+			if (args[0].equalsIgnoreCase("setalpha"))
+			{
+				commandSetAlpha(player, args);
+				return true;
+			}
+			if (args[0].equalsIgnoreCase("cure"))
+			{
+				commandCure(player, args);
+				return true;
+			}
+			if (args[0].equalsIgnoreCase("infect") && args.length >= 2)
+			{
+				commandInfect(player, args);
+				return true;
+			}
 			if (args.length == 2)
 			{
 				if (args[0].equalsIgnoreCase("toggle"))
 				{
 					commandTogglePlayerWerewolf(player, args);
-				}
-				else if (args[0].equalsIgnoreCase("infect"))
-				{
-					commandInfect(player, args);
 				}
 				else if (args[0].equalsIgnoreCase("addbounty"))
 				{
@@ -1848,131 +2159,75 @@ public class Commands implements TabExecutor
 			player = (Player) sender;
 		}
 
+		// Each suggestion is checked against the same permission node as the command itself
 		if (args.length == 1 && (cmd.getName().equalsIgnoreCase("werewolf") || cmd.getName().equalsIgnoreCase("ww")))
 		{
 			List<String> arg1 = new ArrayList<String>();
 			arg1.add("help");
-			if (player == null || player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.top"))
-			{
-				arg1.add("top");
-			}
-			if (player == null || player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.hunt"))
-			{
-				arg1.add("hunt");
-			}
-			if (player == null || player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.check"))
-			{
-				arg1.add("check");
-			}
-			if (player == null || player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.bounty"))
-			{
-				arg1.add("bounty");
-			}
-			if (player == null || player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.addbounty"))
-			{
-				arg1.add("addbounty");
-			}
-			if (player == null || player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.toggle"))
+			addIfPermitted(arg1, player, "top", "werewolf.top");
+			addIfPermitted(arg1, player, "hunt", "werewolf.hunt");
+			addIfPermitted(arg1, player, "check", "werewolf.check");
+			addIfPermitted(arg1, player, "bounty", "werewolf.bounty");
+			addIfPermitted(arg1, player, "addbounty", "werewolf.addbounty");
+			if (hasCommandPermission(player, "werewolf.togglewerewolf") || hasCommandPermission(player, "werewolf.togglewerewolfself"))
 			{
 				arg1.add("toggle");
 			}
-			if (player == null || player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.infect"))
+			if (hasCommandPermission(player, "werewolf.infect") || hasCommandPermission(player, "werewolf.infectself"))
 			{
 				arg1.add("infect");
 			}
-			if (player == null || player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.setphase"))
+			addIfPermitted(arg1, player, "cure", "werewolf.cureother");
+			addIfPermitted(arg1, player, "setlevel", "werewolf.setlevel");
+			addIfPermitted(arg1, player, "addlevel", "werewolf.addlevel");
+			if (this.plugin.useClans)
 			{
-				arg1.add("setphase");
+				addIfPermitted(arg1, player, "setalpha", "werewolf.setalpha");
+			}
+			addIfPermitted(arg1, player, "setphase", "werewolf.setphase");
+			addIfPermitted(arg1, player, "list", "werewolf.list");
+			addIfPermitted(arg1, player, "reload", "werewolf.reload");
+			addIfPermitted(arg1, player, "save", "werewolf.save");
+			if (player == null || player.isOp())
+			{
+				arg1.add("on");
+				arg1.add("off");
 			}
 			if (player != null)
 			{
-				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.transform"))
+				addIfPermitted(arg1, player, "transform", "werewolf.transform");
+				addIfPermitted(arg1, player, "intent", "werewolf.intent");
+				addIfPermitted(arg1, player, "infectionpotion", "werewolf.potion.infection.create");
+				addIfPermitted(arg1, player, "curepotion", "werewolf.potion.cure.create");
+				addIfPermitted(arg1, player, "wolfbane", "werewolf.potion.wolfbane.create");
+				addIfPermitted(arg1, player, "silversword", "werewolf.silversword.create");
+				addIfPermitted(arg1, player, "lorebook", "werewolf.lorebook.create");
+				addIfPermitted(arg1, player, "track", "werewolf.track");
+				addIfPermitted(arg1, player, "tracker", "werewolf.tracker.create");
+				if (this.plugin.vampireEnabled)
 				{
-					arg1.add("transform");
+					addIfPermitted(arg1, player, "vampiretracker", "werewolf.tracker.create");
 				}
-				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.intent"))
-				{
-					arg1.add("intent");
-				}
-				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.infectionpotion"))
-				{
-					arg1.add("infectionpotion");
-				}
-				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.curepotion"))
-				{
-					arg1.add("curepotion");
-				}
-				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.wolfbane"))
-				{
-					arg1.add("wolfbane");
-				}
-				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.silversword"))
-				{
-					arg1.add("silversword");
-				}
-				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.lorebook"))
-				{
-					arg1.add("lorebook");
-				}
-				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.track"))
-				{
-					arg1.add("track");
-				}
-				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.tracker.create"))
-				{
-					arg1.add("tracker");
-					if (this.plugin.vampireEnabled)
-					{
-						arg1.add("vampiretracker");
-					}
-				}
-				if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.silverarmor.create"))
-				{
-					arg1.add("silverarmor");
-				}
+				addIfPermitted(arg1, player, "silverarmor", "werewolf.silverarmor.create");
 				if (this.plugin.useClans)
 				{
-					if (player == null || player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.clan"))
-					{
-						arg1.add("clan");
-					}
-					if (player == null || player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.top"))
-					{
-						arg1.add("home");
-					}
+					addIfPermitted(arg1, player, "clan", "werewolf.clan");
+					addIfPermitted(arg1, player, "home", "werewolf.home");
 					if (Werewolf.getClanManager().isAlpha(player.getUniqueId()))
 					{
-						if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.alpha.call"))
-						{
-							arg1.add("call");
-						}
-						if (player.isOp() || Werewolf.getPermissionsManager().hasPermission(player, "werewolf.alpha.sethome"))
-						{
-							arg1.add("sethome");
-						}
+						addIfPermitted(arg1, player, "call", "werewolf.alpha.call");
+						addIfPermitted(arg1, player, "sethome", "werewolf.sethome");
 					}
 				}
 			}
-			Iterable<String> FIRST_ARGUMENTS = arg1;
-			StringUtil.copyPartialMatches(args[0], FIRST_ARGUMENTS, result);
+			StringUtil.copyPartialMatches(args[0], arg1, result);
 		}
-		else if (args.length == 2 && args[0].equalsIgnoreCase("addbounty"))
+		else if (args.length == 2 && args[0].equalsIgnoreCase("addbounty") && hasCommandPermission(player, "werewolf.addbounty"))
 		{
-			List<String> arg2 = new ArrayList<String>();
-
-			arg2.add("100");
-			arg2.add("200");
-			arg2.add("300");
-			arg2.add("500");
-			arg2.add("1000");
-			arg2.add("2000");
-			arg2.add("2500");
-			arg2.add("5000");
-
-			Iterable<String> SECOND_ARGUMENTS = arg2;
-			StringUtil.copyPartialMatches(args[1], SECOND_ARGUMENTS, result);
+			List<String> arg2 = Arrays.asList("100", "200", "300", "500", "1000", "2000", "2500", "5000");
+			StringUtil.copyPartialMatches(args[1], arg2, result);
 		}
-		else if (args.length == 2 && args[0].equalsIgnoreCase("setphase"))
+		else if (args.length == 2 && args[0].equalsIgnoreCase("setphase") && hasCommandPermission(player, "werewolf.setphase"))
 		{
 			List<String> phases = new ArrayList<String>();
 			for (MoonManager.MoonPhase phase : MoonManager.MoonPhase.values())
@@ -1981,7 +2236,7 @@ public class Commands implements TabExecutor
 			}
 			StringUtil.copyPartialMatches(args[1], phases, result);
 		}
-		else if (args.length == 3 && args[0].equalsIgnoreCase("setphase"))
+		else if (args.length == 3 && args[0].equalsIgnoreCase("setphase") && hasCommandPermission(player, "werewolf.setphase"))
 		{
 			List<String> worlds = new ArrayList<String>();
 			for (World world : this.plugin.getServer().getWorlds())
@@ -1990,9 +2245,36 @@ public class Commands implements TabExecutor
 			}
 			StringUtil.copyPartialMatches(args[2], worlds, result);
 		}
-		else if (args.length == 2 && (args[0].equalsIgnoreCase("check") || args[0].equalsIgnoreCase("infect") || args[0].equalsIgnoreCase("toggle")))
+		else if (args.length == 2 && ((args[0].equalsIgnoreCase("check") && hasCommandPermission(player, "werewolf.check"))
+				|| (args[0].equalsIgnoreCase("infect") && hasCommandPermission(player, "werewolf.infect"))
+				|| (args[0].equalsIgnoreCase("toggle") && hasCommandPermission(player, "werewolf.togglewerewolf"))))
 		{
 			return null;
+		}
+		else if (args.length == 3 && args[0].equalsIgnoreCase("infect") && hasCommandPermission(player, "werewolf.infect"))
+		{
+			StringUtil.copyPartialMatches(args[2], getClanNames(), result);
+		}
+		else if (args.length == 2 && ((args[0].equalsIgnoreCase("cure") && hasCommandPermission(player, "werewolf.cureother"))
+				|| (args[0].equalsIgnoreCase("setlevel") && hasCommandPermission(player, "werewolf.setlevel"))
+				|| (args[0].equalsIgnoreCase("addlevel") && hasCommandPermission(player, "werewolf.addlevel"))
+				|| (args[0].equalsIgnoreCase("setalpha") && hasCommandPermission(player, "werewolf.setalpha"))))
+		{
+			// Werewolves, including offline ones
+			Set<String> names = new HashSet<String>(Werewolf.getWerewolfManager().getWerewolfPlayerNames());
+			for (Player online : this.plugin.getServer().getOnlinePlayers())
+			{
+				if (Werewolf.getWerewolfManager().isWerewolf(online))
+				{
+					names.add(online.getName());
+				}
+			}
+			StringUtil.copyPartialMatches(args[1], names, result);
+		}
+		else if (args.length == 3 && ((args[0].equalsIgnoreCase("setlevel") && hasCommandPermission(player, "werewolf.setlevel"))
+				|| (args[0].equalsIgnoreCase("addlevel") && hasCommandPermission(player, "werewolf.addlevel"))))
+		{
+			StringUtil.copyPartialMatches(args[2], Arrays.asList("1", "5", "10", "20", "50"), result);
 		}
 
 		Collections.sort(result);

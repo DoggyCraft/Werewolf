@@ -11,7 +11,7 @@ website: https://dev.bukkit.org/server-mods/werewolf
 commands:
    werewolf:
       description: Command for the Werewolf plugin
-      usage: /<command> [toggle|infect|addbounty|check|reload|save|help|clan|list|transform|intent|setphase|toggle|bounty|home|sethome|call|top|hunt|infectionpotion|curepotion|wolfbane|silversword|silverarmor|tracker|vampiretracker|track|lorebook|on|off] [player]
+      usage: /<command> [toggle|infect|cure|setlevel|addlevel|setalpha|addbounty|check|reload|save|help|clan|list|transform|intent|setphase|toggle|bounty|home|sethome|call|top|hunt|infectionpotion|curepotion|wolfbane|silversword|silverarmor|tracker|vampiretracker|track|lorebook|on|off] [player]
       aliases: [ww]
    growl:
       description: Command for Werewolves to growl
@@ -63,6 +63,10 @@ permissions:
             werewolf.track: true
             werewolf.tracker.create: true
             werewolf.silverarmor.create: true
+            werewolf.cureother: true
+            werewolf.setlevel: true
+            werewolf.addlevel: true
+            werewolf.setalpha: true
     werewolf.sethome:
         description: Player can set the clan home
         default: true
@@ -204,3 +208,15 @@ permissions:
     werewolf.silverarmor.create:
         description: Allows the player to create a set of silver armor with /ww silverarmor
         default: false
+    werewolf.cureother:
+        description: Allows the player to cure any werewolf, online or offline, with /ww cure <player>
+        default: op
+    werewolf.setlevel:
+        description: Allows the player to set a werewolf's level with /ww setlevel <player> <level>
+        default: op
+    werewolf.addlevel:
+        description: Allows the player to add levels to a werewolf with /ww addlevel <player> <amount>
+        default: op
+    werewolf.setalpha:
+        description: Allows the player to make a werewolf the alpha of their clan with /ww setalpha <player>
+        default: op

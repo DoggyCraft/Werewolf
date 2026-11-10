@@ -12,6 +12,8 @@ import com.dogonfire.werewolf.disguises.WerewolfDisguiseAPI;
 import com.dogonfire.werewolf.api.event.WerewolfCureEvent;
 import com.dogonfire.werewolf.api.event.WerewolfTransformEvent;
 import com.dogonfire.werewolf.tasks.CheckTransformationTask;
+import java.util.UUID;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Particle;
@@ -184,6 +186,7 @@ public class PlayerListener implements Listener
 						break;
 				}
 			}
+			turnHumanOnDeath(event.getEntity(), false);
 			return;
 		}
 
@@ -261,18 +264,29 @@ public class PlayerListener implements Listener
 			}
 		}
 
-		if (ctx.getWerewolfManager().hasWerewolfSkin(event.getEntity().getUniqueId()))
-		{
-			if (this.plugin.getSettings().general().cureWerewolfWhenSlain())
-			{
-				ctx.getWerewolfManager().unmakeWerewolf(event.getEntity().getUniqueId(), WerewolfCureEvent.Cause.SLAIN);
-			}
-			else
-			{
-				ctx.getWerewolfManager().unsetWerewolfSkin(event.getEntity().getUniqueId(), WerewolfTransformEvent.Reason.FORCED);
+		turnHumanOnDeath(event.getEntity(), true);
+	}
 
-				ctx.getWerewolfManager().setInfectedThisNight(event.getEntity().getUniqueId(), event.getEntity().getName(), true);
-			}
+	/**
+	 * A werewolf dying in wolf form respawns human and can't transform again that night. Being slain by a player cures
+	 * them instead when CureWerewolfWhenSlain is on.
+	 */
+	private void turnHumanOnDeath(Player victim, boolean slainByPlayer)
+	{
+		UUID victimId = victim.getUniqueId();
+		if (!ctx.getWerewolfManager().hasWerewolfSkin(victimId))
+		{
+			return;
+		}
+
+		if (slainByPlayer && this.plugin.getSettings().general().cureWerewolfWhenSlain())
+		{
+			ctx.getWerewolfManager().unmakeWerewolf(victimId, WerewolfCureEvent.Cause.SLAIN);
+		}
+		else
+		{
+			ctx.getWerewolfManager().unsetWerewolfSkin(victimId, WerewolfTransformEvent.Reason.FORCED);
+			ctx.getWerewolfManager().setInfectedThisNight(victimId, victim.getName(), true);
 		}
 	}
 	

@@ -13,7 +13,7 @@ import com.dogonfire.werewolf.api.Clan;
 public final class WerewolfRecord
 {
 	private final UUID				id;
-	private final YamlRepository	owner;
+	private final WerewolfRepository	owner;
 
 	String							playerName;			// PlayerName
 	WolfState						wolfState;			// WolfState
@@ -28,7 +28,7 @@ public final class WerewolfRecord
 	String							originalGroup;		// OriginalGroup, permission group before wolf form
 	Map<String, Object>				extras	= new LinkedHashMap<String, Object>();
 
-	WerewolfRecord(UUID id, YamlRepository owner)
+	WerewolfRecord(UUID id, WerewolfRepository owner)
 	{
 		this.id = id;
 		this.owner = owner;
@@ -36,7 +36,7 @@ public final class WerewolfRecord
 
 	private void changed()
 	{
-		this.owner.markDirty();
+		this.owner.recordChanged(this.id);
 	}
 
 	public UUID getId()

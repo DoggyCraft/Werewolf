@@ -12,9 +12,11 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import com.dogonfire.werewolf.api.WerewolfService;
 import com.dogonfire.werewolf.commands.SingleCommandExecutor;
 import com.dogonfire.werewolf.commands.WerewolfCommand;
 import com.dogonfire.werewolf.commands.sub.GrowlCommand;
@@ -55,6 +57,7 @@ public class Werewolf extends JavaPlugin
 	private Storage							storage;
 	private WerewolfContext					ctx;
 	private String							disguiseBackend;
+	private WerewolfServiceImpl				service;
 
 	// Started by startFeatures, undone by stopFeatures
 	private final List<Listener>			featureListeners	= new ArrayList<Listener>();
@@ -73,7 +76,6 @@ public class Werewolf extends JavaPlugin
 		this.storage.load();
 
 		this.ctx = new WerewolfContext(this, this.storage);
-		WerewolfAPI.setContext(this.ctx);
 
 		if (this.ctx.isVaultEnabled())
 		{
@@ -93,6 +95,8 @@ public class Werewolf extends JavaPlugin
 		}
 
 		this.ctx.getClanManager().load();
+		this.ctx.getWerewolfManager().refreshAllProfiles();
+		this.ctx.getMoonManager().snapshotPhases();
 		this.ctx.getLanguageManager().load();
 		initDisguises();
 
@@ -131,15 +135,27 @@ public class Werewolf extends JavaPlugin
 		}, 20L, 20L);
 
 		startFeatures();
+
+		// Last, so other plugins only see the API once everything is loaded
+		this.service = new WerewolfServiceImpl(this.ctx);
+		getServer().getServicesManager().register(WerewolfService.class, this.service, this, ServicePriority.Normal);
+		WerewolfAPI.setService(this.service);
 	}
 
 	@Override
 	public void onDisable()
 	{
+		// First, so other plugins stop using the API while everything shuts down
+		WerewolfAPI.setService(null);
+		if (this.service != null)
+		{
+			getServer().getServicesManager().unregister(WerewolfService.class, this.service);
+			this.service = null;
+		}
+
 		if (this.ctx == null)
 		{
 			// onEnable failed before the graph was built
-			WerewolfAPI.setContext(null);
 			return;
 		}
 
@@ -174,7 +190,6 @@ public class Werewolf extends JavaPlugin
 		// Writes every changed data file and waits for the writes
 		this.storage.close();
 
-		WerewolfAPI.setContext(null);
 		this.ctx = null;
 		this.storage = null;
 	}
@@ -191,10 +206,16 @@ public class Werewolf extends JavaPlugin
 		this.ctx.getLanguageManager().load();
 		this.storage.reload();
 		this.ctx.getClanManager().load();
+		this.ctx.getWerewolfManager().refreshAllProfiles();
 
 		if (!this.settings.general().disguiseBackend().equalsIgnoreCase(this.disguiseBackend))
 		{
 			switchDisguiseBackend();
+		}
+		else
+		{
+			// Changed Clans.* skins, for backends that register them up front (SkinsRestorer)
+			this.ctx.getDisguises().reloadSkins();
 		}
 
 		stopFeatures();

@@ -176,6 +176,14 @@
             </exclusions>
         </dependency>
     </dependencies>
+    <distributionManagement>
+        <!-- GitHub Packages; CI deploys here on release tags (mvn -Prelease deploy). Consumers need a token to read it. -->
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/DoggyCraft/Werewolf</url>
+        </repository>
+    </distributionManagement>
     <build>
         <defaultGoal>clean package</defaultGoal>
         <finalName>${project.name}-${project.version}</finalName>
@@ -194,4 +202,47 @@
             </resource>
         </resources>
     </build>
+    <profiles>
+        <!-- Sources and javadoc jars for the published artifact (CI release job and JitPack): mvn -Prelease deploy -->
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.3.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.11.2</version>
+                        <configuration>
+                            <!-- Only the public API; lenient so javadoc problems never block a release -->
+                            <subpackages>com.dogonfire.werewolf.api</subpackages>
+                            <doclint>none</doclint>
+                            <failOnError>false</failOnError>
+                            <quiet>true</quiet>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

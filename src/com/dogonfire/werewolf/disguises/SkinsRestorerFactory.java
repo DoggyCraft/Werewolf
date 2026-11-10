@@ -112,7 +112,12 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
         this.ctx = ctx;
         this.plugin = ctx.getPlugin();
         this.skinsRestorer = SkinsRestorerProvider.get();
+        registerSkins();
+    }
 
+    // The clan and alpha skins as SkinsRestorer custom skins named "Alpha" and after each Clan constant
+    private void registerSkins()
+    {
         Settings.Clans clans = ctx.getSettings().clans();
         skinsRestorer.getSkinStorage().setCustomSkinData("Alpha", SkinProperty.of(clans.alphaSkin().value(), clans.alphaSkin().signature()));
         for (Clan clan : Clan.values())
@@ -120,6 +125,12 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
             Settings.Skin skin = clans.skins().get(clan);
             skinsRestorer.getSkinStorage().setCustomSkinData(clan.name(), SkinProperty.of(skin.value(), skin.signature()));
         }
+    }
+
+    @Override
+    public void reloadSkins()
+    {
+        registerSkins();
     }
 
     @Override

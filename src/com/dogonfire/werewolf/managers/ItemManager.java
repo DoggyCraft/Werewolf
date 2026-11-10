@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.dogonfire.werewolf.api.WerewolfItem;
 import com.dogonfire.werewolf.items.Recipes;
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
@@ -514,6 +515,60 @@ public class ItemManager
 		book.setItemMeta(itemMeta);
 
 		return book;
+	}
+
+	/** A new custom item of the given type (API) */
+	public ItemStack newItem(WerewolfItem item)
+	{
+		return switch (item)
+		{
+			case SILVER_SWORD -> newSilverSword(1);
+			case SILVER_HELMET -> newSilverArmor(ArmorPiece.HELMET);
+			case SILVER_CHESTPLATE -> newSilverArmor(ArmorPiece.CHESTPLATE);
+			case SILVER_LEGGINGS -> newSilverArmor(ArmorPiece.LEGGINGS);
+			case SILVER_BOOTS -> newSilverArmor(ArmorPiece.BOOTS);
+			case WOLFBANE_POTION -> newWolfbanePotion();
+			case INFECTION_POTION -> newInfectionPotion();
+			case CURE_POTION -> newCurePotion();
+			case LORE_BOOK -> newLoreBook();
+			case WEREWOLF_TRACKER -> newWerewolfTracker();
+			case VAMPIRE_TRACKER -> newVampireTracker();
+		};
+	}
+
+	/** Which custom item the stack is (by its tag; silver armor pieces by material), or null */
+	public WerewolfItem getItemType(ItemStack item)
+	{
+		if (item == null || !item.hasItemMeta())
+		{
+			return null;
+		}
+		ItemMeta itemMeta = item.getItemMeta();
+		String tag = itemMeta != null ? itemMeta.getPersistentDataContainer().get(namespacedKey, PersistentDataType.STRING) : null;
+		if (tag == null)
+		{
+			return null;
+		}
+
+		return switch (tag)
+		{
+			case "SilverSword" -> WerewolfItem.SILVER_SWORD;
+			case "SilverArmor" -> switch (item.getType())
+			{
+				case IRON_HELMET -> WerewolfItem.SILVER_HELMET;
+				case IRON_CHESTPLATE -> WerewolfItem.SILVER_CHESTPLATE;
+				case IRON_LEGGINGS -> WerewolfItem.SILVER_LEGGINGS;
+				case IRON_BOOTS -> WerewolfItem.SILVER_BOOTS;
+				default -> null;
+			};
+			case "WolfbanePotion" -> WerewolfItem.WOLFBANE_POTION;
+			case "InfectionPotion" -> WerewolfItem.INFECTION_POTION;
+			case "CurePotion" -> WerewolfItem.CURE_POTION;
+			case "LoreBook" -> WerewolfItem.LORE_BOOK;
+			case "WerewolfTracker" -> WerewolfItem.WEREWOLF_TRACKER;
+			case "VampireTracker" -> WerewolfItem.VAMPIRE_TRACKER;
+			default -> null;
+		};
 	}
 
 	public boolean isSilverSword(ItemStack IS)

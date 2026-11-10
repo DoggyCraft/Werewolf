@@ -7,13 +7,21 @@ package com.dogonfire.werewolf.api;
  */
 public enum MoonPhase
 {
+	/** Full moon (day 0 of the cycle) */
 	FullMoon("Full Moon"),
+	/** Waning gibbous (day 1) */
 	WaningGibbous("Waning Gibbous"),
+	/** Last quarter (day 2) */
 	LastQuarter("Last Quarter"),
+	/** Waning crescent (day 3) */
 	WaningCrescent("Waning Crescent"),
+	/** New moon (day 4) */
 	NewMoon("New Moon"),
+	/** Waxing crescent (day 5) */
 	WaxingCrescent("Waxing Crescent"),
+	/** First quarter (day 6) */
 	FirstQuarter("First Quarter"),
+	/** Waxing gibbous (day 7) */
 	WaxingGibbous("Waxing Gibbous");
 
 	private final String defaultName;

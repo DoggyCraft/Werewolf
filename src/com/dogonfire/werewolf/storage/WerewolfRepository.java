@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import org.bukkit.configuration.ConfigurationSection;
@@ -24,10 +25,26 @@ public final class WerewolfRepository extends YamlRepository
 
 	private final Map<UUID, WerewolfRecord>	records		= new HashMap<UUID, WerewolfRecord>();
 	private final Random					random		= new Random();
+	private Consumer<UUID>					changeListener;
 
 	public WerewolfRepository(File dataFolder, Logger logger, ExecutorService writer)
 	{
 		super(new File(dataFolder, "werewolves.yml"), logger, writer);
+	}
+
+	/** Called on the main thread with the player's UUID whenever a record is created, changed through a setter or removed */
+	public void setChangeListener(Consumer<UUID> changeListener)
+	{
+		this.changeListener = changeListener;
+	}
+
+	void recordChanged(UUID playerId)
+	{
+		markDirty();
+		if (this.changeListener != null)
+		{
+			this.changeListener.accept(playerId);
+		}
 	}
 
 	/** The player's record, or null if they are not in werewolves.yml */
@@ -49,7 +66,7 @@ public final class WerewolfRepository extends YamlRepository
 		{
 			record = new WerewolfRecord(playerId, this);
 			this.records.put(playerId, record);
-			markDirty();
+			recordChanged(playerId);
 		}
 		return record;
 	}
@@ -58,7 +75,7 @@ public final class WerewolfRepository extends YamlRepository
 	{
 		if (this.records.remove(playerId) != null)
 		{
-			markDirty();
+			recordChanged(playerId);
 		}
 	}
 

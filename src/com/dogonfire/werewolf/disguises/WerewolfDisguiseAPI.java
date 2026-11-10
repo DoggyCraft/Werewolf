@@ -116,6 +116,15 @@ public class WerewolfDisguiseAPI
 		return this.werewolfDisguiser != null;
 	}
 
+	/** /ww reload with the same backend: passes changed Clans.* skins to backends that register them up front */
+	public void reloadSkins()
+	{
+		if (this.werewolfDisguiser != null)
+		{
+			this.werewolfDisguiser.reloadSkins();
+		}
+	}
+
 	/** The skin backend chosen by {@link #init(String)}, or null if disguises are disabled */
 	public Backend getBackend()
 	{

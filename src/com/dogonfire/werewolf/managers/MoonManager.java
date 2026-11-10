@@ -2,8 +2,11 @@ package com.dogonfire.werewolf.managers;
 
 import com.dogonfire.werewolf.api.MoonPhase;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
@@ -25,6 +28,8 @@ public class MoonManager
 	private final WerewolfContext ctx;
 	private final HashMap<UUID, Long>	lastFullMoonAnnouncementTimes	= new HashMap<UUID, Long>();
 	private final HashMap<UUID, Long>	lastWorldUpdates				= new HashMap<UUID, Long>();
+	// Each world's phase as of the last update, for other threads (PlaceholderAPI)
+	private final Map<UUID, MoonPhase>	phaseSnapshot					= new ConcurrentHashMap<UUID, MoonPhase>();
 
 	public MoonManager(WerewolfContext ctx)
 	{
@@ -113,6 +118,25 @@ public class MoonManager
 		}
 
 		world.setFullTime(targetDay * DAY_LENGTH + plugin.getSettings().moon().nightStart() + 1L);
+		this.phaseSnapshot.put(world.getUID(), getMoonPhase(world));
+	}
+
+	/** Records every world's current phase for {@link #getPhaseSnapshot}; main thread, every update */
+	public void snapshotPhases()
+	{
+		Set<UUID> worldIds = new HashSet<UUID>();
+		for (World world : plugin.getServer().getWorlds())
+		{
+			worldIds.add(world.getUID());
+			this.phaseSnapshot.put(world.getUID(), getMoonPhase(world));
+		}
+		this.phaseSnapshot.keySet().retainAll(worldIds);
+	}
+
+	/** The world's phase as of the last update (up to 5 seconds old), or null for an unknown world; thread-safe */
+	public MoonPhase getPhaseSnapshot(UUID worldId)
+	{
+		return worldId == null ? null : this.phaseSnapshot.get(worldId);
 	}
 
 	public String getNextFullMoonText(World world)

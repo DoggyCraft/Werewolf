@@ -48,3 +48,92 @@ mvn clean package        # or: nix develop -c mvn clean package
 ```
 
 The jar ends up in `target/`.
+
+API
+---------
+Other plugins can read werewolf state, change it through the same code paths the game uses, and listen to (and veto) Werewolf's events. The public API is the `com.dogonfire.werewolf.api` and `com.dogonfire.werewolf.api.event` packages; everything else is internal and may change.
+
+### Dependency
+
+Add Werewolf as a `provided` dependency and `depend: [Werewolf]` (or `softdepend`) in your `plugin.yml`.
+
+With [JitPack](https://jitpack.io/#DoggyCraft/Werewolf) (no token needed; use a release tag as the version):
+
+```xml
+<repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+</repository>
+
+<dependency>
+    <groupId>com.github.DoggyCraft</groupId>
+    <artifactId>Werewolf</artifactId>
+    <version>0.12.0</version>
+    <scope>provided</scope>
+</dependency>
+```
+
+With GitHub Packages (every release tag is published there; GitHub requires a token with `read:packages` even for public packages, configured as server `github` in your `~/.m2/settings.xml`):
+
+```xml
+<repository>
+    <id>github</id>
+    <url>https://maven.pkg.github.com/DoggyCraft/Werewolf</url>
+</repository>
+
+<dependency>
+    <groupId>com.dogonfire</groupId>
+    <artifactId>werewolf</artifactId>
+    <version>0.12.0</version>
+    <scope>provided</scope>
+</dependency>
+```
+
+### Using the service
+
+`WerewolfService` is registered in Bukkit's services manager while Werewolf is enabled:
+
+```java
+RegisteredServiceProvider<WerewolfService> rsp = getServer().getServicesManager().getRegistration(WerewolfService.class);
+if (rsp == null)
+{
+    return; // Werewolf is not installed or not enabled
+}
+WerewolfService werewolves = rsp.getProvider();
+
+Optional<WerewolfProfile> profile = werewolves.getWerewolf(player.getUniqueId());
+profile.ifPresent(p -> getLogger().info(player.getName() + " is a level " + p.level() + " " + werewolves.getClanName(p.clan()) + " werewolf"));
+
+// Actions fire the normal events with an API reason, so other plugins can veto them
+ActionResult result = werewolves.infect(player, Clan.Potion, false);
+if (result == ActionResult.CANCELLED)
+{
+    player.sendMessage("Something protected you from the infection");
+}
+
+player.getInventory().addItem(werewolves.createItem(WerewolfItem.SILVER_SWORD));
+```
+
+Reads: `getWerewolf`, `isWerewolf`, `isInWolfForm`, `isHuman`, `isVampire`, `getWerewolves()`, `getWerewolves(Clan)`, `getAlpha`, `getClanName`, `getMoonPhase`, `isTransformationNight`, `isWerewolvesEnabled`. Actions (each returns an `ActionResult`): `infect`, `setFullWerewolf`, `cure`, `transform`, `untransform`, `setLevel`, `setAlpha`. Items: `createItem(WerewolfItem)`, `getItemType(ItemStack)`.
+
+**Threading:** call the service on the main server thread. Only `getWerewolf`, `isWerewolf`, `isInWolfForm`, `getWerewolves`, `getAlpha` and `getClanName` are thread-safe (they read a snapshot), so they may be used from async chat handlers. Actions called off the main thread throw `IllegalStateException`.
+
+### Events
+
+All in `com.dogonfire.werewolf.api.event`, fired on the main thread. The cancellable ones are fired before the change, so cancelling vetoes it:
+
+| Event | When | Notes |
+|---|---|---|
+| `WerewolfInfectionEvent` | A player is about to become a werewolf | `getSource()`, `getClan()`/`setClan()`, `getChance()`/`setChance()` (bites fire before the infection roll), `getBiter()` |
+| `WerewolfCureEvent` | A werewolf is about to be cured | `getCause()`; the player may be offline |
+| `WerewolfTransformEvent` | A werewolf is about to change form | `isToWolfForm()`, `getReason()`; can't be cancelled when `isCancellable()` is false (quit, death) |
+| `WerewolfLevelChangeEvent` | A werewolf's level is about to change | `getOldLevel()`, `getNewLevel()`/`setNewLevel()`, `getCause()` |
+| `NewAlphaEvent` | A clan is about to get a new alpha | `getOldAlphaId()`, `getNewAlphaId()`, `getCause()` |
+| `TrackerTargetEvent` | A hunter's tracker compass locks onto or updates a target | Cancel to skip or lose the target |
+| `WerewolfSniffEvent` | A werewolf sniffs a player to pick up their scent | Cancel to stop the sniff |
+
+The old static `com.dogonfire.werewolf.WerewolfAPI` still works but is deprecated; use the service instead.
+
+### PlaceholderAPI
+
+`%werewolf_werewolf%` ("Werewolf" or empty), `%werewolf_clan%` / `%werewolf_clan_name%` (clan display name), `%werewolf_clan_id%`, `%werewolf_form%` ("Wolf", "Human" or empty), `%werewolf_level%`, `%werewolf_alpha%` (true/false), `%werewolf_infected%` (true/false), `%werewolf_name%` (name in wolf form) and `%werewolf_moonphase%` (the moon phase in the player's world).

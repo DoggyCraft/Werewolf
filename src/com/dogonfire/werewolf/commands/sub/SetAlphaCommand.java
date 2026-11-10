@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
 import com.dogonfire.werewolf.WerewolfContext;
+import com.dogonfire.werewolf.api.event.NewAlphaEvent;
 import com.dogonfire.werewolf.commands.CommandUtil;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.api.Clan;
@@ -60,7 +61,7 @@ public class SetAlphaCommand extends SubCommand
 		Clan clan = ctx.getWerewolfManager().getWerewolfClan(playerId);
 		lang().setPlayerName(name);
 
-		if (!ctx.getClanManager().assignAlphaInClan(clan, playerId))
+		if (!ctx.getClanManager().assignAlphaInClan(clan, playerId, NewAlphaEvent.Cause.COMMAND))
 		{
 			send(player, LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED);
 			return;

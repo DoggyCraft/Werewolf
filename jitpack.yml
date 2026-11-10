@@ -1,0 +1,7 @@
+# JitPack (https://jitpack.io/#DoggyCraft/Werewolf) builds tags on demand, so other plugins can depend on
+# com.github.DoggyCraft:Werewolf:<tag> without a GitHub token. Werewolf needs JDK 25, installed through SDKMAN.
+before_install:
+  - sdk install java 25.0.1-tem
+  - sdk use java 25.0.1-tem
+install:
+  - mvn -B -Prelease install -DskipTests

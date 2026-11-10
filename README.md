@@ -69,7 +69,7 @@ It is published through [JitPack](https://jitpack.io/#DoggyCraft/Werewolf) (no a
 <dependency>
     <groupId>com.github.DoggyCraft.Werewolf</groupId>
     <artifactId>werewolf-api</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <scope>provided</scope>
 </dependency>
 ```

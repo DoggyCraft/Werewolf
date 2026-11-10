@@ -3,7 +3,7 @@
     <parent>
         <groupId>com.dogonfire</groupId>
         <artifactId>werewolf-parent</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
     </parent>
     <artifactId>werewolf-api</artifactId>
     <name>Werewolf API</name>

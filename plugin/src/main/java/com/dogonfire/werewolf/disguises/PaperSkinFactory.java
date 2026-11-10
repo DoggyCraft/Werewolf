@@ -1,6 +1,7 @@
 package com.dogonfire.werewolf.disguises;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -20,8 +21,9 @@ public class PaperSkinFactory implements IWerewolfDisguiseFactory
 {
 	private static final String				TEXTURES		= "textures";
 
-	// The player's own skin, kept so it can be put back when they turn human
-	private final Map<UUID, ProfileProperty>	originalSkins	= new ConcurrentHashMap<>();
+	// The player's own skin, kept so it can be put back when they turn human. Empty means they had no skin data
+	// (offline mode, or no textures at login), so turning back just removes the werewolf textures.
+	private final Map<UUID, Optional<ProfileProperty>>	originalSkins	= new ConcurrentHashMap<>();
 	private final WerewolfContext				ctx;
 	private final Werewolf						plugin;
 
@@ -45,12 +47,28 @@ public class PaperSkinFactory implements IWerewolfDisguiseFactory
 
 			PlayerProfile profile = player.getPlayerProfile();
 
-			for (ProfileProperty property : profile.getProperties())
+			if (!originalSkins.containsKey(player.getUniqueId()))
 			{
-				// Not a werewolf skin still on from a moment ago (a refresh while the original is being looked up)
-				if (property.getName().equals(TEXTURES) && !isWerewolfTexture(property.getValue()))
+				ProfileProperty own = null;
+				boolean wearingWerewolfSkin = false;
+				for (ProfileProperty property : profile.getProperties())
 				{
-					originalSkins.putIfAbsent(player.getUniqueId(), property);
+					if (property.getName().equals(TEXTURES))
+					{
+						if (isWerewolfTexture(property.getValue()))
+						{
+							wearingWerewolfSkin = true;
+						}
+						else
+						{
+							own = property;
+						}
+					}
+				}
+				// A werewolf skin still on from a moment ago (a refresh while the original is being looked up) isn't theirs
+				if (!wearingWerewolfSkin)
+				{
+					originalSkins.put(player.getUniqueId(), Optional.ofNullable(own));
 				}
 			}
 
@@ -65,20 +83,22 @@ public class PaperSkinFactory implements IWerewolfDisguiseFactory
 			plugin.logDebug("Undisguising player " + player.getName() + " using the built-in Paper skins...");
 
 			PlayerProfile profile = player.getPlayerProfile();
-			ProfileProperty originalSkin = originalSkins.remove(player.getUniqueId());
+			Optional<ProfileProperty> originalSkin = originalSkins.remove(player.getUniqueId());
 
-			if (originalSkin != null)
+			// Known: put their own skin back, or no skin data at all if they had none
+			// Unknown on an offline-mode server: Mojang can't help, so the same as having none
+			if (originalSkin != null || !plugin.getServer().getOnlineMode() || !plugin.isEnabled())
 			{
-				profile.setProperty(originalSkin);
+				profile.removeProperty(TEXTURES);
+				if (originalSkin != null)
+				{
+					originalSkin.ifPresent(profile::setProperty);
+				}
 				player.setPlayerProfile(profile);
 				return true;
 			}
 
-			// We don't know the original skin, so ask Mojang for it (the answer comes later, so not while disabling)
-			if (!plugin.isEnabled())
-			{
-				return false;
-			}
+			// We don't know the original skin, so ask Mojang for it
 			PlayerProfile lookup = plugin.getServer().createProfile(player.getUniqueId(), player.getName());
 			lookup.update().thenAccept(updated -> plugin.getServer().getScheduler().runTask(plugin, () ->
 			{

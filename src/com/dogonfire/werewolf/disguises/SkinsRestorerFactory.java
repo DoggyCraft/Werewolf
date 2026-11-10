@@ -10,6 +10,7 @@ import net.skinsrestorer.api.SkinsRestorerProvider;
 import net.skinsrestorer.api.exception.DataRequestException;
 import net.skinsrestorer.api.property.SkinIdentifier;
 import net.skinsrestorer.api.property.SkinProperty;
+import net.skinsrestorer.api.property.SkinType;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
@@ -48,7 +49,8 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
                 UUID playerId = player.getUniqueId();
 
                 // Remember the current skin so it can be restored when the player turns back
-                skinsRestorer.getPlayerStorage().getSkinIdOfPlayer(playerId).ifPresent(id -> previousSkins.putIfAbsent(playerId, id));
+                // (never a werewolf skin left over from a crash, or they would stay a werewolf after turning back)
+                skinsRestorer.getPlayerStorage().getSkinIdOfPlayer(playerId).filter(id -> !isWerewolfSkin(id)).ifPresent(id -> previousSkins.putIfAbsent(playerId, id));
 
                 String skinName;
                 if (ctx.getClanManager().isAlpha(playerId)) {
@@ -131,6 +133,66 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
     public void reloadSkins()
     {
         registerSkins();
+    }
+
+    // One of the custom skins registered above
+    private static boolean isWerewolfSkin(SkinIdentifier id)
+    {
+        if (id.getSkinType() != SkinType.CUSTOM)
+        {
+            return false;
+        }
+        if (id.getIdentifier().equalsIgnoreCase("Alpha"))
+        {
+            return true;
+        }
+        for (Clan clan : Clan.values())
+        {
+            if (id.getIdentifier().equalsIgnoreCase(clan.name()))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * SkinsRestorer keeps the skin it was given across restarts, so a player who was in wolf form when the server
+     * crashed would keep the werewolf skin. The skin they had before is unknown by then, so they get their own back.
+     */
+    @Override
+    public boolean clearLeftover(Player player)
+    {
+        if (!plugin.getServer().getPluginManager().getPlugin("SkinsRestorer").isEnabled())
+        {
+            return false;
+        }
+
+        try
+        {
+            UUID playerId = player.getUniqueId();
+            if (!skinsRestorer.getPlayerStorage().getSkinIdOfPlayer(playerId).filter(SkinsRestorerFactory::isWerewolfSkin).isPresent())
+            {
+                return false;
+            }
+
+            SkinIdentifier previousSkin = previousSkins.remove(playerId);
+            if (previousSkin != null)
+            {
+                skinsRestorer.getPlayerStorage().setSkinIdOfPlayer(playerId, previousSkin);
+            }
+            else
+            {
+                skinsRestorer.getPlayerStorage().removeSkinIdOfPlayer(playerId);
+            }
+            skinsRestorer.getSkinApplier(Player.class).applySkin(player);
+            return true;
+        }
+        catch (DataRequestException e)
+        {
+            plugin.log("[SkinsRestorer] Failed to remove a left over werewolf skin from " + player.getName());
+            return false;
+        }
     }
 
     @Override

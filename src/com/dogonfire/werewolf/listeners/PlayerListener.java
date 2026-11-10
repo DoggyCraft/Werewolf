@@ -32,6 +32,7 @@ import org.bukkit.event.player.PlayerAnimationType;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.potion.PotionEffect;
@@ -55,25 +56,28 @@ public class PlayerListener implements Listener
 	@EventHandler(priority = EventPriority.LOW)
 	public void onPlayerJoin(PlayerJoinEvent event)
 	{
+		// Left overs from a crash, an older version or a cure while offline (also while werewolves are switched off)
+		ctx.getWerewolfManager().repairOnJoin(event.getPlayer());
+
 		if (!ctx.isWerewolvesEnabled())
 		{
 			return;
-		}
-		ctx.getWerewolfManager().unsetWerewolfSkin(event.getPlayer().getUniqueId(), true, WerewolfTransformEvent.Reason.FORCED);
-		
-		if (ctx.getWerewolfManager().isWerewolf(event.getPlayer().getUniqueId()))
-		{
-			// Clear wolf form effects left over from quitting (or a crash) while in wolf form
-			ctx.getWolfFormManager().removeWolfForm(event.getPlayer(), true);
 		}
 
 		this.plugin.getServer().getScheduler().scheduleSyncDelayedTask(this.plugin, new CheckTransformationTask(ctx, event.getPlayer().getUniqueId()), 20L);
 	}
 
+	// Early, so the human form (walk speed, effects, group) is what gets saved with the player
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void onPlayerQuit(PlayerQuitEvent event)
+	{
+		ctx.getWerewolfManager().untransformOnQuit(event.getPlayer());
+	}
+
 	@EventHandler
 	public void onPlayerWorldChange(PlayerChangedWorldEvent event)
 	{
-		ctx.getWerewolfManager().unsetWerewolfSkin(event.getPlayer().getUniqueId(), true, WerewolfTransformEvent.Reason.FORCED);
+		ctx.getWerewolfManager().unsetWerewolfSkin(event.getPlayer().getUniqueId(), WerewolfTransformEvent.Reason.FORCED);
 	}
 
 	/*
@@ -265,7 +269,7 @@ public class PlayerListener implements Listener
 			}
 			else
 			{
-				ctx.getWerewolfManager().unsetWerewolfSkin(event.getEntity().getUniqueId(), false, WerewolfTransformEvent.Reason.FORCED);
+				ctx.getWerewolfManager().unsetWerewolfSkin(event.getEntity().getUniqueId(), WerewolfTransformEvent.Reason.FORCED);
 
 				ctx.getWerewolfManager().setInfectedThisNight(event.getEntity().getUniqueId(), event.getEntity().getName(), true);
 			}
@@ -321,12 +325,19 @@ public class PlayerListener implements Listener
 		event.setCancelled(true);
 	}
 	
+	/*
+	 * Death in wolf form already turned the werewolf human (and bans transforming for the rest of the night), so this only
+	 * checks whether it is time to transform, through the usual checks and event.
+	 */
 	@EventHandler
 	public void onRespawn(PlayerRespawnEvent event)
 	{
-		if (ctx.getWerewolfManager().isWolfForm(event.getPlayer().getUniqueId()))
+		Player player = event.getPlayer();
+		if (!ctx.isWerewolvesEnabled() || !ctx.getWerewolfManager().isWerewolf(player) || ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()))
 		{
-			ctx.getWerewolfManager().disguiseWerewolf(event.getPlayer());
+			return;
 		}
+
+		this.plugin.getServer().getScheduler().runTaskLater(this.plugin, new CheckTransformationTask(ctx, player.getUniqueId()), 20L);
 	}
 }

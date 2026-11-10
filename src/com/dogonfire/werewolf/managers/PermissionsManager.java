@@ -92,23 +92,54 @@ public class PermissionsManager
 		return false;
 	}
 
-	public String getGroup(String playerName)
+	/** The player's primary group, or "" without a Vault permission provider */
+	public String getGroup(Player player)
 	{
 		Permission vaultPermission = vaultPermission();
 		if (vaultPermission != null)
 		{
-			return vaultPermission.getPrimaryGroup(this.plugin.getServer().getPlayer(playerName));
+			String group = vaultPermission.getPrimaryGroup(player);
+			return group != null ? group : "";
 		}
 		return "";
 	}
 
-	public void setGroup(String playerName, String groupName)
+	public boolean isInGroup(Player player, String groupName)
+	{
+		Permission vaultPermission = vaultPermission();
+		return vaultPermission != null && groupName != null && !groupName.isEmpty() && vaultPermission.playerInGroup(player, groupName);
+	}
+
+	public void addGroup(Player player, String groupName)
 	{
 		Permission vaultPermission = vaultPermission();
 		if (vaultPermission != null)
 		{
-			Player player = this.plugin.getServer().getPlayer(playerName);
 			vaultPermission.playerAddGroup(player, groupName);
+		}
+	}
+
+	/**
+	 * Takes the player out of the werewolf group (if they are in it) and puts them back in {@code originalGroup}, unless
+	 * that is unknown or the werewolf group itself.
+	 */
+	public void leaveWerewolfGroup(Player player, String werewolfGroup, String originalGroup)
+	{
+		Permission vaultPermission = vaultPermission();
+		if (vaultPermission == null)
+		{
+			return;
+		}
+
+		if (werewolfGroup != null && !werewolfGroup.isEmpty() && vaultPermission.playerInGroup(player, werewolfGroup))
+		{
+			vaultPermission.playerRemoveGroup(player, werewolfGroup);
+		}
+
+		if (originalGroup != null && !originalGroup.isEmpty() && !originalGroup.equalsIgnoreCase(werewolfGroup) && !vaultPermission.playerInGroup(player, originalGroup))
+		{
+			this.plugin.logDebug("Putting " + player.getName() + " into group " + originalGroup);
+			vaultPermission.playerAddGroup(player, originalGroup);
 		}
 	}
 }

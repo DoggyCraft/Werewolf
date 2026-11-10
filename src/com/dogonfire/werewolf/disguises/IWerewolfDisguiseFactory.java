@@ -79,4 +79,13 @@ public interface IWerewolfDisguiseFactory
 	default void reloadSkins()
 	{
 	}
+
+	/**
+	 * On join, for a player not in wolf form: removes a werewolf skin the backend kept from before (a restart or crash
+	 * while in wolf form). Backends whose skins don't outlive a session have nothing to do. Returns whether it did anything.
+	 */
+	default boolean clearLeftover(Player player)
+	{
+		return false;
+	}
 }

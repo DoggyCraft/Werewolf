@@ -118,8 +118,9 @@ public class DisguiseTask implements Runnable
 			return;
 		}
 
-		// Cured in the tick since the transformation was started
-		if (!ctx.getWerewolfManager().isWerewolf(this.player))
+		// Left, or was cured, in the tick since the transformation was started; or a second transformation was started
+		// in the same tick
+		if (!this.player.isOnline() || !ctx.getWerewolfManager().isWerewolf(this.player) || ctx.getWerewolfManager().hasWerewolfSkin(this.player.getUniqueId()))
 		{
 			return;
 		}
@@ -246,9 +247,14 @@ public class DisguiseTask implements Runnable
 
 		if (this.plugin.getSettings().general().werewolfGroupEnabled())
 		{
-			String originalGroup = ctx.getPermissionsManager().getGroup(this.player.getName());
-			ctx.getWerewolfManager().setOriginalPermissionGroup(this.player.getUniqueId(), originalGroup);
-			ctx.getPermissionsManager().setGroup(this.player.getName(), this.plugin.getSettings().general().werewolfGroupName());
+			// Still in the werewolf group (left over from a crash): keep the original group stored from before
+			String werewolfGroup = this.plugin.getSettings().general().werewolfGroupName();
+			String originalGroup = ctx.getPermissionsManager().getGroup(this.player);
+			if (!originalGroup.isEmpty() && !originalGroup.equalsIgnoreCase(werewolfGroup))
+			{
+				ctx.getWerewolfManager().setOriginalPermissionGroup(this.player.getUniqueId(), originalGroup);
+			}
+			ctx.getPermissionsManager().addGroup(this.player, werewolfGroup);
 		}
 
 		ctx.getLanguageManager().setAmount("" + ctx.getWerewolfManager().getNumberOfTransformations(this.player.getUniqueId()));

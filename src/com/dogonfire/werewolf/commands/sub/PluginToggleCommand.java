@@ -53,7 +53,7 @@ public class PluginToggleCommand extends SubCommand
 			{
 				for (Player werewolf : world.getPlayers())
 				{
-					ctx.getWerewolfManager().unsetWerewolfSkin(werewolf.getUniqueId(), true, WerewolfTransformEvent.Reason.COMMAND);
+					ctx.getWerewolfManager().unsetWerewolfSkin(werewolf.getUniqueId(), WerewolfTransformEvent.Reason.COMMAND);
 				}
 			}
 		}

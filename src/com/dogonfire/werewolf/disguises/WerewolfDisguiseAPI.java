@@ -192,13 +192,27 @@ public class WerewolfDisguiseAPI
 			return false;
 		}
 
-		WerewolfDisguise skin = this.worn.get(player.getUniqueId());
-		if (skin == null || !skin.undisguise(player))
+		WerewolfDisguise skin = this.worn.remove(player.getUniqueId());
+		return skin != null && skin.undisguise(player);
+	}
+
+	/**
+	 * For a player who should not be disguised (on join): takes off a disguise we still track, or a werewolf skin the
+	 * backend kept from before (a restart or crash while in wolf form). Returns whether anything was taken off.
+	 */
+	public boolean clearLeftover(Player player)
+	{
+		if (this.werewolfDisguiser == null)
 		{
 			return false;
 		}
 
-		this.worn.remove(player.getUniqueId());
-		return true;
+		if (this.worn.containsKey(player.getUniqueId()))
+		{
+			undisguise(player);
+			return true;
+		}
+
+		return this.werewolfDisguiser.clearLeftover(player);
 	}
 }

@@ -15,12 +15,12 @@ import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.api.event.WerewolfCureEvent;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
 
-/** /ww cure <player>: cures a werewolf, online or offline. Unlike /ww toggle it never turns anyone into a werewolf */
+/** /ww cure [player]: cures a werewolf (yourself if no name is given), online or offline. Unlike /ww toggle it never turns anyone into a werewolf */
 public class CureCommand extends SubCommand
 {
 	public CureCommand(WerewolfContext ctx)
 	{
-		super(ctx, "cure", "werewolf.cureother", false, "/ww cure <playername>", LANGUAGESTRING.HelpCureOther);
+		super(ctx, "cure", "werewolf.cureother", false, "/ww cure [playername]", LANGUAGESTRING.HelpCureOther);
 	}
 
 	@Override
@@ -32,13 +32,14 @@ public class CureCommand extends SubCommand
 	@Override
 	public void execute(CommandSender sender, Player player, String[] args)
 	{
-		if (args.length < 2)
+		// Without a name a player cures themselves; the console has to name someone
+		if (args.length < 2 && player == null)
 		{
 			CommandUtil.sendUsage(ctx, player, "/ww cure <player>", LANGUAGESTRING.HelpCureOther);
 			return;
 		}
 
-		UUID playerId = CommandUtil.findWerewolf(ctx, player, args[1]);
+		UUID playerId = CommandUtil.findWerewolf(ctx, player, args.length < 2 ? player.getName() : args[1]);
 		if (playerId == null)
 		{
 			return;

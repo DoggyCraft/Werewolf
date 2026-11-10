@@ -1,248 +1,81 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.dogonfire</groupId>
-    <artifactId>werewolf</artifactId>
+    <artifactId>werewolf-parent</artifactId>
     <version>0.11.0</version>
-    <name>Werewolf</name>
+    <packaging>pom</packaging>
+    <name>Werewolf (parent)</name>
     <description>Werewolves in Minecraft!</description>
-    <url>https://github.com/DogOnFire/Werewolf</url>
-    <packaging>jar</packaging>
+    <url>https://github.com/DoggyCraft/Werewolf</url>
+
+    <modules>
+        <!-- The API other plugins compile against (com.dogonfire.werewolf.api) -->
+        <module>api</module>
+        <!-- The plugin itself, with the API bundled -->
+        <module>plugin</module>
+    </modules>
+
     <licenses>
         <license>
             <name>GNU General Public License Version 3.0</name>
             <url>https://www.gnu.org/licenses/gpl-3.0.txt</url>
         </license>
     </licenses>
+
     <properties>
-        <maven.compiler.release>25</maven.compiler.release>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- The oldest Spigot Werewolf supports; the API is compiled against it, so it can only use what Spigot has -->
+        <spigotAPIVersion>26.1-R0.1-SNAPSHOT</spigotAPIVersion>
         <paperAPIVersion>26.3.build.246-stable</paperAPIVersion>
+        <maven.compiler.release>25</maven.compiler.release>
+        <encoding>UTF-8</encoding>
+        <project.build.sourceEncoding>${encoding}</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>${encoding}</project.reporting.outputEncoding>
     </properties>
+
     <repositories>
+        <!-- Spigot API, for the API module -->
+        <repository>
+            <id>spigotmc</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+        </repository>
         <!-- PaperMC repo for the Paper API -->
         <repository>
             <id>papermc</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
-        <!-- Lib's Disguises -->
-        <repository>
-            <id>lib-co-nz</id>
-            <url>https://mvn.lib.co.nz/public/</url>
-        </repository>
-        <!-- EngineHub (prior Sk89q) repo for WorldGuard -->
-        <repository>
-            <id>enginehub-repo</id>
-            <url>https://maven.enginehub.org/repo/</url>
-        </repository>
-        <!-- PlaceholderAPI -->
-        <repository>
-            <id>placeholderapi</id>
-            <url>https://repo.extendedclip.com/releases/</url>
-        </repository>
-        <!-- CodeMC repo for SkinsRestorer and PvPManager -->
-        <repository>
-            <id>codemc-releases</id>
-            <url>https://repo.codemc.org/repository/maven-releases/</url>
-        </repository>
-        <!-- Clan Jhoo for Vampire(Revamp) -->
-        <repository>
-            <id>clan-jhoo</id>
-            <url>https://nexus.clanjhoo.com/repository/maven-public/</url>
-        </repository>
-        <!-- JitPack for VaultAPI and GriefPrevention -->
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </repository>
     </repositories>
-    <dependencies>
-        <!-- Paper API (a superset of the Spigot API; Paper-only calls are guarded at runtime) -->
-        <dependency>
-            <groupId>io.papermc.paper</groupId>
-            <artifactId>paper-api</artifactId>
-            <version>${paperAPIVersion}</version>
-            <scope>provided</scope>
-        </dependency>
-        <!-- VaultAPI -->
-        <dependency>
-            <groupId>com.github.MilkBowl</groupId>
-            <artifactId>VaultAPI</artifactId>
-            <version>1.7.1</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- Lib's Disguises -->
-        <dependency>
-            <groupId>me.libraryaddict.disguises</groupId>
-            <artifactId>libsdisguises</artifactId>
-            <version>26.10.24</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- PacketEvents (LibsDisguises API exposes its types, but doesn't declare it) -->
-        <dependency>
-            <groupId>com.github.retrooper</groupId>
-            <artifactId>packetevents-api</artifactId>
-            <version>2.14.0</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- SkinsRestorer API -->
-        <dependency>
-            <groupId>net.skinsrestorer</groupId>
-            <artifactId>skinsrestorer-api</artifactId>
-            <version>15.12.6</version>
-            <scope>provided</scope>
-        </dependency>
-        <!-- WorldGuard -->
-        <dependency>
-            <groupId>com.sk89q.worldguard</groupId>
-            <artifactId>worldguard-bukkit</artifactId>
-            <version>7.0.21</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.spigotmc</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- PlaceholderAPI -->
-        <dependency>
-            <groupId>me.clip</groupId>
-            <artifactId>placeholderapi</artifactId>
-            <version>2.12.3</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- Vampire(Revamp) -->
-        <dependency>
-            <groupId>com.clanjhoo</groupId>
-            <artifactId>vampire</artifactId>
-            <version>1.0.2</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- PvPManager (4.x API; the old me.NoChance 3.x API isn't supported) -->
-        <dependency>
-            <groupId>me.chancesd.pvpmanager</groupId>
-            <artifactId>pvpmanager</artifactId>
-            <version>4.0.30</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- GriefPrevention -->
-        <dependency>
-            <groupId>com.github.GriefPrevention</groupId>
-            <artifactId>GriefPrevention</artifactId>
-            <version>16.18.8</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-    </dependencies>
-    <distributionManagement>
-        <!-- GitHub Packages; CI deploys here on release tags (mvn -Prelease deploy). Consumers need a token to read it. -->
-        <repository>
-            <id>github</id>
-            <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/DoggyCraft/Werewolf</url>
-        </repository>
-    </distributionManagement>
+
     <build>
         <defaultGoal>clean package</defaultGoal>
-        <finalName>${project.name}-${project.version}</finalName>
-        <sourceDirectory>${project.basedir}/src/</sourceDirectory>
-        <resources>
-            <resource>
-                <filtering>true</filtering>
-                <directory>${project.basedir}/src/resources</directory>
-                <includes>
-                    <include>*.yml</include>
-                </includes>
-            </resource>
-            <resource>
-                <directory>${project.basedir}/lang</directory>
-                <targetPath>lang</targetPath>
-            </resource>
-        </resources>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.15.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.5.2</version>
+                </plugin>
+                <!-- 3.6.2+: 3.6.0 fails on Java 25 class files -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>3.6.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.4.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.12.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
-    <profiles>
-        <!-- Sources and javadoc jars for the published artifact (CI release job and JitPack): mvn -Prelease deploy -->
-        <profile>
-            <id>release</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <version>3.3.1</version>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <goals>
-                                    <goal>jar-no-fork</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.11.2</version>
-                        <configuration>
-                            <!-- Only the public API; lenient so javadoc problems never block a release -->
-                            <subpackages>com.dogonfire.werewolf.api</subpackages>
-                            <doclint>none</doclint>
-                            <failOnError>false</failOnError>
-                            <quiet>true</quiet>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

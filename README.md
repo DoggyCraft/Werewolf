@@ -29,7 +29,7 @@ Installation
 *	Download `Werewolf-<version>.jar` from the [releases](https://github.com/DoggyCraft/Werewolf/releases) and drop it into the `plugins` folder.
 *	Werewolf skins work out of the box on Paper. On Spigot, also install [LibsDisguises](https://www.spigotmc.org/resources/libs-disguises.32453/) or [SkinsRestorer](https://modrinth.com/plugin/skinsrestorer).
 *	Optional: [Vault](https://www.spigotmc.org/resources/vault.34315/) for bounties and shop signs, [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/), [VampireRevamp](https://www.spigotmc.org/resources/vampirerevamp.75479/).
-*	Start the server, then adjust `plugins/Werewolf/config.yml`. Commands and permissions are listed in [plugin.yml](src/resources/plugin.yml).
+*	Start the server, then adjust `plugins/Werewolf/config.yml`. Commands and permissions are listed in [plugin.yml](plugin/src/main/resources/plugin.yml).
 
 Links
 ---------
@@ -47,7 +47,7 @@ cd Werewolf
 mvn clean package        # or: nix develop -c mvn clean package
 ```
 
-The jar ends up in `target/`.
+The plugin jar ends up in `plugin/target/Werewolf-<version>.jar`, the API jars (with sources and javadoc) in `api/target/`.
 
 API
 ---------
@@ -55,9 +55,9 @@ Other plugins can read werewolf state, change it through the same code paths the
 
 ### Dependency
 
-Add Werewolf as a `provided` dependency and `depend: [Werewolf]` (or `softdepend`) in your `plugin.yml`.
+Depend on the `werewolf-api` artifact (it only contains the API packages, so you can't accidentally use internals) with `provided` scope, since Werewolf itself supplies those classes at runtime, and add `depend: [Werewolf]` (or `softdepend`) to your `plugin.yml`.
 
-With [JitPack](https://jitpack.io/#DoggyCraft/Werewolf) (no token needed; use a release tag as the version):
+It is published through [JitPack](https://jitpack.io/#DoggyCraft/Werewolf) (no account or token needed; use a release tag as the version):
 
 ```xml
 <repository>
@@ -66,28 +66,14 @@ With [JitPack](https://jitpack.io/#DoggyCraft/Werewolf) (no token needed; use a 
 </repository>
 
 <dependency>
-    <groupId>com.github.DoggyCraft</groupId>
-    <artifactId>Werewolf</artifactId>
+    <groupId>com.github.DoggyCraft.Werewolf</groupId>
+    <artifactId>werewolf-api</artifactId>
     <version>0.12.0</version>
     <scope>provided</scope>
 </dependency>
 ```
 
-With GitHub Packages (every release tag is published there; GitHub requires a token with `read:packages` even for public packages, configured as server `github` in your `~/.m2/settings.xml`):
-
-```xml
-<repository>
-    <id>github</id>
-    <url>https://maven.pkg.github.com/DoggyCraft/Werewolf</url>
-</repository>
-
-<dependency>
-    <groupId>com.dogonfire</groupId>
-    <artifactId>werewolf</artifactId>
-    <version>0.12.0</version>
-    <scope>provided</scope>
-</dependency>
-```
+The API is compiled against the Spigot API, so it works on both Spigot and Paper.
 
 ### Using the service
 
@@ -132,7 +118,7 @@ All in `com.dogonfire.werewolf.api.event`, fired on the main thread. The cancell
 | `TrackerTargetEvent` | A hunter's tracker compass locks onto or updates a target | Cancel to skip or lose the target |
 | `WerewolfSniffEvent` | A werewolf sniffs a player to pick up their scent | Cancel to stop the sniff |
 
-The old static `com.dogonfire.werewolf.WerewolfAPI` still works but is deprecated; use the service instead.
+The old static `com.dogonfire.werewolf.WerewolfAPI` still works but is deprecated; use the service instead. It is not part of `werewolf-api`; code that still needs it has to depend on the full plugin artifact (`com.github.DoggyCraft.Werewolf:werewolf`).
 
 ### PlaceholderAPI
 

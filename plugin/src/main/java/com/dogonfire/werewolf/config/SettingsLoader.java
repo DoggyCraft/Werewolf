@@ -8,12 +8,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.DoubleFunction;
 import java.util.logging.Logger;
 
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.configuration.Configuration;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.EntityType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -264,7 +268,8 @@ public class SettingsLoader
 				Collections.unmodifiableMap(stats),
 				Collections.unmodifiableMap(alphaStats),
 				Collections.unmodifiableMap(effects),
-				Collections.unmodifiableSet(blockedPotions));
+				Collections.unmodifiableSet(blockedPotions),
+				mobTable("Werewolf.KillHealing", value -> (int) value));
 	}
 
 	private Settings.Diet loadDiet()
@@ -348,7 +353,8 @@ public class SettingsLoader
 				Collections.unmodifiableMap(names),
 				alphaSkin,
 				Collections.unmodifiableMap(skins),
-				Collections.unmodifiableMap(alphaSkins));
+				Collections.unmodifiableMap(alphaSkins),
+				mobTable("Clans.MobPoints", value -> value));
 	}
 
 	/** @param path a section with the Value and Signature of a skin */
@@ -431,6 +437,94 @@ public class SettingsLoader
 		}
 
 		return Registry.EFFECT.get(namespacedKey);
+	}
+
+	/**
+	 * A section of EntityType names to values, plus an optional 'default' entry for mobs not listed (0 without one).
+	 * Unknown mobs and non-numbers are logged and skipped; negative values become 0.
+	 */
+	private <N extends Number> Settings.MobTable<N> mobTable(String path, DoubleFunction<N> convert)
+	{
+		Map<EntityType, N> values = new EnumMap<EntityType, N>(EntityType.class);
+		N defaultValue = convert.apply(0.0D);
+		ConfigurationSection section = section(path);
+		if (section == null)
+		{
+			this.logger.warning(path + " in config.yml is not a section of mob: value entries, so no mob gives anything");
+			return new Settings.MobTable<N>(Collections.unmodifiableMap(values), defaultValue);
+		}
+
+		for (String key : section.getKeys(false))
+		{
+			if (!(section.get(key) instanceof Number number))
+			{
+				this.logger.warning("Invalid value '" + section.get(key) + "' for " + path + "." + key + " in config.yml, ignoring it");
+				continue;
+			}
+
+			double value = number.doubleValue();
+			if (value < 0.0D)
+			{
+				warn(path + "." + key, value, 0);
+				value = 0.0D;
+			}
+
+			if (key.equalsIgnoreCase("default"))
+			{
+				defaultValue = convert.apply(value);
+				continue;
+			}
+
+			EntityType type = matchEntityType(key);
+			if (type == null)
+			{
+				this.logger.warning("Unknown mob '" + key + "' in " + path + " in config.yml, ignoring it");
+				continue;
+			}
+			values.put(type, convert.apply(value));
+		}
+
+		return new Settings.MobTable<N>(Collections.unmodifiableMap(values), defaultValue);
+	}
+
+	/** Accepts EntityType names (ZOMBIE_HORSE) and Minecraft ids (zombie_horse, minecraft:zombie_horse) */
+	public static EntityType matchEntityType(String name)
+	{
+		String key = name.trim().toUpperCase(Locale.ROOT);
+		if (key.startsWith("MINECRAFT:"))
+		{
+			key = key.substring("MINECRAFT:".length());
+		}
+
+		if (key.equals("UNKNOWN"))
+		{
+			return null;
+		}
+
+		try
+		{
+			return EntityType.valueOf(key);
+		}
+		catch (IllegalArgumentException ex)
+		{
+			return null;
+		}
+	}
+
+	/**
+	 * The section at path in config.yml, or the bundled one when the file doesn't have it at all (e.g. an upgraded
+	 * config). Bukkit's getConfigurationSection would return an empty section in that case. A section the file does
+	 * have is used as it is: entries the admin removed are not filled in from the bundled one.
+	 */
+	private ConfigurationSection section(String path)
+	{
+		if (this.config.isSet(path))
+		{
+			return this.config.getConfigurationSection(path);
+		}
+
+		Configuration defaults = this.config.getDefaults();
+		return defaults != null ? defaults.getConfigurationSection(path) : null;
 	}
 
 	private List<String> strings(String path)

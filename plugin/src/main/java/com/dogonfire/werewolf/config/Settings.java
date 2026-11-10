@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bukkit.Material;
+import org.bukkit.entity.EntityType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -66,7 +67,7 @@ public record Settings(
 	{
 	}
 
-	/** Werewolf.*: global damage values, per-clan stats and effects, blocked potions */
+	/** Werewolf.*: global damage values, per-clan stats and effects, blocked potions, health gained per kill */
 	public record WolfForm(
 			double handDamage,
 			double itemDamage,
@@ -75,8 +76,18 @@ public record Settings(
 			Map<Clan, Stats> stats,
 			Map<Clan, Stats> alphaStats,
 			Map<Clan, List<PotionEffect>> effects,
-			Set<PotionEffectType> blockedPotions)
+			Set<PotionEffectType> blockedPotions,
+			MobTable<Integer> killHealing)
 	{
+	}
+
+	/** A value per mob type (Werewolf.KillHealing, Clans.MobPoints). Mobs not listed get {@code defaultValue} */
+	public record MobTable<N extends Number>(Map<EntityType, N> values, N defaultValue)
+	{
+		public N get(EntityType type)
+		{
+			return this.values.getOrDefault(type, this.defaultValue);
+		}
 	}
 
 	public record BlockedCommands(List<String> all, List<String> wolfForm, List<String> alpha)
@@ -169,7 +180,7 @@ public record Settings(
 	 * Clans.*. {@code alphaSkins} has an entry for every clan: its own Clans.Skins.&lt;Clan&gt;.Alpha skin, or
 	 * {@code alphaSkin} (Clans.AlphaSkin) when that is not set.
 	 */
-	public record Clans(boolean enabled, Map<Clan, String> names, Skin alphaSkin, Map<Clan, Skin> skins, Map<Clan, Skin> alphaSkins)
+	public record Clans(boolean enabled, Map<Clan, String> names, Skin alphaSkin, Map<Clan, Skin> skins, Map<Clan, Skin> alphaSkins, MobTable<Double> mobPoints)
 	{
 		/** The skin a werewolf of this clan wears in wolf form: the clan's alpha skin or its normal skin */
 		public Skin skin(Clan clan, boolean alpha)

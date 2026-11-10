@@ -5,7 +5,7 @@
 # Chances written as 0.0 - 1.0 are probabilities (0.25 = 25%). Chances written as 0 - 100 are percentages.
 
 # Used by the plugin to upgrade old configs. Do not change.
-config-version: 3
+config-version: 4
 
 Settings:
   # Name shown in messages that mention the server
@@ -113,6 +113,82 @@ Werewolf:
     - JUMP_BOOST:2:32000
   # Potion effects removed from werewolves in wolf form (unless their clan's Effects give it)
   BlockedPotions: []
+  # Health (in half hearts) a werewolf in wolf form regains for each kill, per mob. Names are EntityType names
+  # (e.g. ZOMBIE, CAVE_SPIDER). Mobs not listed give 'default' (0 = nothing), so a new mob only needs a line here.
+  # If you keep this section, entries you remove give 'default'; delete the whole section to use the plugin's list.
+  KillHealing:
+    default: 0
+    ENDER_DRAGON: 5
+    WARDEN: 5
+    WITHER: 5
+    COW: 4
+    DONKEY: 4
+    ELDER_GUARDIAN: 4
+    EVOKER: 4
+    HOGLIN: 4
+    HORSE: 4
+    ILLUSIONER: 4
+    MOOSHROOM: 4
+    MULE: 4
+    PIGLIN_BRUTE: 4
+    PILLAGER: 4
+    PLAYER: 4
+    POLAR_BEAR: 4
+    RAVAGER: 4
+    VILLAGER: 4
+    VINDICATOR: 4
+    WANDERING_TRADER: 4
+    ZOGLIN: 4
+    CAMEL: 3
+    CAMEL_HUSK: 3
+    DOLPHIN: 3
+    DROWNED: 3
+    ENDERMAN: 3
+    GUARDIAN: 3
+    HUSK: 3
+    LLAMA: 3
+    PANDA: 3
+    PIGLIN: 3
+    SNIFFER: 3
+    STRIDER: 3
+    TRADER_LLAMA: 3
+    WITCH: 3
+    ZOMBIE: 3
+    ZOMBIE_HORSE: 3
+    ZOMBIE_VILLAGER: 3
+    ZOMBIFIED_PIGLIN: 3
+    ARMADILLO: 2
+    CAT: 2
+    CAVE_SPIDER: 2
+    FOX: 2
+    GLOW_SQUID: 2
+    GOAT: 2
+    NAUTILUS: 2
+    OCELOT: 2
+    PHANTOM: 2
+    PIG: 2
+    RABBIT: 2
+    SHEEP: 2
+    SPIDER: 2
+    SQUID: 2
+    TURTLE: 2
+    WOLF: 2
+    ZOMBIE_NAUTILUS: 2
+    AXOLOTL: 1
+    BAT: 1
+    BEE: 1
+    BLAZE: 1
+    BOGGED: 1
+    CHICKEN: 1
+    COD: 1
+    FROG: 1
+    PARCHED: 1
+    PARROT: 1
+    PUFFERFISH: 1
+    SALMON: 1
+    STRAY: 1
+    TADPOLE: 1
+    TROPICAL_FISH: 1
 
 # Commands werewolves cannot use. "/plugin:command" is matched as "/command" too.
 # Players with werewolf.bypass.blockedcommands are not affected
@@ -391,3 +467,88 @@ Clans:
     # Default texture taken from the Minecraft account WerewolfAlpha
     Value: ewogICJ0aW1lc3RhbXAiIDogMTY4NTAzNzE3NjgzNiwKICAicHJvZmlsZUlkIiA6ICJlMGQwNzRiZDY3MjI0N2ZjOTVkM2YyOGUyODk5ZTE1NSIsCiAgInByb2ZpbGVOYW1lIiA6ICJXZXJld29sZkFscGhhIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2NhZTg4YjY5MjA0YWUyYzNlM2NiZTcwOWUzZTYyNTIxZTUzZmEwNWU0ZGFkODkxYzZhZmJkZmI5MDg2OGE3ZTAiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ==
     Signature: GIDMFU5fTmB4T4RFFs/pQDAg7ZsCsu5KAxMXiQw4G32G0Db5SRmJ6OtiSc3SRznJO9EAW7lmjo38+BdY4b3cgTM7IbXmZGx5ML22ZW5KYspUoot2wo9kIj5ksh+H0Tfy9JCPLpg17nd7O1aY5+RhI5Aq+mhtyhJFXn1a906Qg9/XtHhiw0bUrthpa1RrtHnbH6+hFKgzNKAEeT93MvrPajOT7dmzQ72UK3KXgpe6KzbrWFf+NL0ZbpfkjwabSIALUdcL6+92EI//dB5yMgHEln9wfzKjH+82cDGEoGQjAnJIf+/KVWOtkfNRJauwpUkIUkD4tmkXxCCTyXXwUuIb7e7CwxyFWK4K7e7ir/P5zf1NuQZV+X1MwbF1c++dlGa4yBIvrb97F9tTu+7tw6KFwxqCvj4yRjhkGXsN0soI39v95q7ucxWaX0D4oKwa9QYi9zLW6DIh9bPxGa78TAPC/WyAdM/8J+/uinX2mvEsECsKQVmrCGRrqrZgfctsnXHuqstKMNOecwDFDzi8rWlcM3/wrdHn14Lvn2bsZGR4Xhr532CY2t+JgkQvYBM5Z+tkW5C7MCVH4BbLwf2zDcDkGIOzq5VoKlu/2WML88etjyzSIhCN0WJXWFkeRr7ddTar7Nx8/AzHRUBcTGXC+UGiHMYWWq8bAILFggLKY8eJzq0=
+  # Clan points a werewolf earns for its clan with each kill, per mob. Names are EntityType names
+  # (e.g. ZOMBIE, CAVE_SPIDER). Mobs not listed give 'default' (set it to 0 to give nothing), so a new mob only needs a line here.
+  # If you keep this section, entries you remove give 'default'; delete the whole section to use the plugin's list.
+  MobPoints:
+    default: 0.5
+    ENDER_DRAGON: 50.0
+    WARDEN: 50.0
+    WITHER: 50.0
+    ELDER_GUARDIAN: 5.0
+    ENDERMAN: 5.0
+    EVOKER: 5.0
+    HOGLIN: 5.0
+    ILLUSIONER: 5.0
+    PIGLIN_BRUTE: 5.0
+    PILLAGER: 5.0
+    PLAYER: 5.0
+    RAVAGER: 5.0
+    VILLAGER: 5.0
+    VINDICATOR: 5.0
+    WANDERING_TRADER: 5.0
+    ZOGLIN: 5.0
+    CAMEL: 3.0
+    CAMEL_HUSK: 3.0
+    COW: 3.0
+    DOLPHIN: 3.0
+    DONKEY: 3.0
+    DROWNED: 3.0
+    GUARDIAN: 3.0
+    HORSE: 3.0
+    HUSK: 3.0
+    LLAMA: 3.0
+    MOOSHROOM: 3.0
+    MULE: 3.0
+    PANDA: 3.0
+    PIGLIN: 3.0
+    POLAR_BEAR: 3.0
+    SKELETON: 3.0
+    SKELETON_HORSE: 3.0
+    SNIFFER: 3.0
+    STRIDER: 3.0
+    TRADER_LLAMA: 3.0
+    WITCH: 3.0
+    WITHER_SKELETON: 3.0
+    ZOMBIE: 3.0
+    ZOMBIE_HORSE: 3.0
+    ZOMBIE_VILLAGER: 3.0
+    ZOMBIFIED_PIGLIN: 3.0
+    CAT: 2.0
+    CAVE_SPIDER: 2.0
+    FOX: 2.0
+    GLOW_SQUID: 2.0
+    GOAT: 2.0
+    OCELOT: 2.0
+    PHANTOM: 2.0
+    PIG: 2.0
+    RABBIT: 2.0
+    SHEEP: 2.0
+    SPIDER: 2.0
+    TURTLE: 2.0
+    WOLF: 2.0
+    ARMADILLO: 1.0
+    AXOLOTL: 1.0
+    BAT: 1.0
+    BEE: 1.0
+    BLAZE: 1.0
+    BOGGED: 1.0
+    CHICKEN: 1.0
+    COD: 1.0
+    FROG: 1.0
+    NAUTILUS: 1.0
+    PARCHED: 1.0
+    PARROT: 1.0
+    PUFFERFISH: 1.0
+    SALMON: 1.0
+    SQUID: 1.0
+    STRAY: 1.0
+    TADPOLE: 1.0
+    TROPICAL_FISH: 1.0
+    VEX: 1.0
+    ZOMBIE_NAUTILUS: 1.0
+    ALLAY: 0.5
+    ENDERMITE: 0.5
+    MAGMA_CUBE: 0.5
+    SILVERFISH: 0.5
+    SNOW_GOLEM: 0.5

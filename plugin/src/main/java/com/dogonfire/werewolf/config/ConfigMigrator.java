@@ -22,7 +22,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
  */
 public class ConfigMigrator
 {
-	public static final int		CURRENT_VERSION	= 3;
+	public static final int		CURRENT_VERSION	= 4;
 	public static final String	VERSION_KEY		= "config-version";
 
 	/** Renamed keys: old path, new path */
@@ -102,6 +102,8 @@ public class ConfigMigrator
 		{
 			migrateToVersion3();
 		}
+		// Version 4 adds Werewolf.KillHealing and Clans.MobPoints. Nothing to move: a config without them uses the
+		// bundled sections whole (see SettingsLoader.section)
 		this.config.set(VERSION_KEY, CURRENT_VERSION);
 
 		if (!backedUp)

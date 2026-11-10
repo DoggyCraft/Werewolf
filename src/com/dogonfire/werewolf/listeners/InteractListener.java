@@ -50,7 +50,8 @@ public class InteractListener implements Listener
 	private boolean checkForDrinkingWerewolfCurePotion(PlayerItemConsumeEvent event)
 	{
 		Player player = event.getPlayer();
-		ItemStack handItem = player.getInventory().getItemInMainHand();
+		// The item being drunk, from whichever hand; the game uses up exactly that one (a glass bottle is left)
+		ItemStack handItem = event.getItem();
 		
 		if(!ctx.getItemManager().isCurePotion(handItem))
 		{
@@ -84,22 +85,15 @@ public class InteractListener implements Listener
 		{
 			return false;
 		}
-		
-		if (player.getInventory().getItemInMainHand().getAmount() == 1)
-		{
-			player.getInventory().remove(handItem);
-		}
-		else
-		{
-			player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
-		}
-		return false;
+
+		return true;
 	}
 
 	private boolean checkForDrinkingWerewolfInfectionPotion(PlayerItemConsumeEvent event)
 	{
 		Player player = event.getPlayer();
-		ItemStack handItem = player.getInventory().getItemInMainHand();
+		// The item being drunk, from whichever hand; the game uses up exactly that one (a glass bottle is left)
+		ItemStack handItem = event.getItem();
 
 		if(!ctx.getItemManager().isInfectionPotion(handItem))
 		{
@@ -140,16 +134,7 @@ public class InteractListener implements Listener
 		{
 			player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkInfectionFailure, ChatColor.LIGHT_PURPLE));
 		}
-		
-		if (player.getInventory().getItemInMainHand().getAmount() == 1)
-		{
-			player.getInventory().remove(handItem);
-		}
-		else
-		{
-			player.getInventory().getItemInMainHand().setAmount(player.getInventory().getItemInMainHand().getAmount() - 1);
-		}
-		
+
 		return true;
 	}
 

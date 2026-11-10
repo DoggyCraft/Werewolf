@@ -1,11 +1,18 @@
 package com.dogonfire.werewolf.managers;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
@@ -13,7 +20,8 @@ import com.dogonfire.werewolf.storage.TrophyRepository;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
+import org.bukkit.profile.PlayerProfile;
+import org.bukkit.profile.PlayerTextures;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -36,7 +44,7 @@ public class TrophyManager implements Listener
 		this.trophies = trophies;
 	}
 
-	// UUIDs render the skulls blank, so the head is made from the skin account's name
+	// The head wears the werewolf's skin, made from the configured texture (see skinProfile)
 	@SuppressWarnings("deprecation") 
 	public ItemStack getTrophyFromWerewolfPlayer(UUID killerId, UUID werewolfId)
 	{
@@ -49,18 +57,21 @@ public class TrophyManager implements Listener
 		DateFormat formatter = new SimpleDateFormat(pattern);
 
 		Clan clan = ctx.getWerewolfManager().getWerewolfClan(werewolfId);
-		OfflinePlayer skullPlayer = null;
+		PlayerProfile profile;
 
 		if (ctx.getClanManager().isAlpha(werewolfId))
 		{
-			skullPlayer = plugin.getServer().getOfflinePlayer(ctx.getClanManager().getWerewolfAccountForAlpha(clan));
+			profile = skinProfile(ctx.getClanManager().getWerewolfAccountIdForAlpha(clan), ctx.getClanManager().getWerewolfAccountForAlpha(clan), ctx.getClanManager().getWerewolfTextureForAlpha(clan));
 		}
 		else
 		{
-			skullPlayer = plugin.getServer().getOfflinePlayer(ctx.getClanManager().getWerewolfAccountForClan(clan));
+			profile = skinProfile(ctx.getClanManager().getWerewolfAccountIdForClan(clan), ctx.getClanManager().getWerewolfAccountForClan(clan), ctx.getClanManager().getWerewolfTextureForClan(clan));
 		}
-		
-		skullMeta.setOwningPlayer(skullPlayer);
+
+		if (profile != null)
+		{
+			skullMeta.setOwnerProfile(profile);
+		}
 		skullTrophy.setItemMeta(skullMeta);
 		
 		String werewolfName = "Werewolf";
@@ -85,6 +96,55 @@ public class TrophyManager implements Listener
 		skullTrophy.setItemMeta(skullMeta);
 
 		return skullTrophy;
+	}
+
+	private static final Pattern	SKIN_URL	= Pattern.compile("\"SKIN\"\\s*:\\s*\\{[^}]*\"url\"\\s*:\\s*\"([^\"]+)\"");
+
+	/**
+	 * A profile carrying the werewolf skin's texture, built from the configured skin so no account has to be looked up
+	 * (getOfflinePlayer(name) asks Mojang on the main thread). Null if neither the account nor the texture is usable.
+	 */
+	private PlayerProfile skinProfile(UUID accountId, String accountName, String textureValue)
+	{
+		String name = accountName != null && !accountName.isEmpty() && accountName.length() <= 16 ? accountName : "Werewolf";
+		PlayerProfile profile;
+		try
+		{
+			profile = plugin.getServer().createPlayerProfile(accountId != null ? accountId : UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8)), name);
+		}
+		catch (IllegalArgumentException e)
+		{
+			return null;
+		}
+
+		URL skinUrl = skinUrl(textureValue);
+		if (skinUrl != null)
+		{
+			PlayerTextures textures = profile.getTextures();
+			textures.setSkin(skinUrl);
+			profile.setTextures(textures);
+		}
+		return profile;
+	}
+
+	// The texture value is base64 JSON: {"textures":{"SKIN":{"url":"http://textures.minecraft.net/texture/..."}}}
+	private static URL skinUrl(String textureValue)
+	{
+		if (textureValue == null || textureValue.isEmpty())
+		{
+			return null;
+		}
+
+		try
+		{
+			String json = new String(Base64.getDecoder().decode(textureValue), StandardCharsets.UTF_8);
+			Matcher matcher = SKIN_URL.matcher(json);
+			return matcher.find() ? URI.create(matcher.group(1)).toURL() : null;
+		}
+		catch (IllegalArgumentException | MalformedURLException e)
+		{
+			return null;
+		}
 	}
 
 	private int hashVector(Location location)

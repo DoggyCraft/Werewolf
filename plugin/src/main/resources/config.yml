@@ -10,7 +10,7 @@ config-version: 2
 Settings:
   # Name shown in messages that mention the server
   ServerName: Your Server
-  # Language file in plugins/Werewolf/lang/ (english, danish, ...). Missing files are downloaded on start
+  # Language file in plugins/Werewolf/lang/ (english, danish, ...). Missing files are copied there from the plugin jar
   Language: english
   # Log extra information to the console
   Debug: false

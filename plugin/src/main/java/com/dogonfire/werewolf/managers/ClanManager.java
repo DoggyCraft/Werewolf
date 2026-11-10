@@ -32,12 +32,6 @@ public class ClanManager
 	private final Werewolf plugin;
 	private final WerewolfContext ctx;
 
-	private HashMap<Clan, String>	werewolfAccount		= new HashMap<Clan, String>();
-	private HashMap<Clan, UUID>		werewolfAccountId	= new HashMap<Clan, UUID>();
-
-	private HashMap<Clan, String>	werewolfTextures	= new HashMap<Clan, String>();
-	private HashMap<Clan, String>	werewolfTextureSignatures	= new HashMap<Clan, String>();
-
 	private final ClanRepository		clans;
 	private HashMap<Clan, Double>	totalClanPoints		= new HashMap<Clan, Double>();
 	private HashMap<String, Double>		playerClanPoints	= new HashMap<String, Double>();
@@ -48,9 +42,6 @@ public class ClanManager
 	// Per clan, the last successor a NewAlphaEvent listener vetoed, with the members at that time
 	private final Map<Clan, VetoedSuccession>	vetoedSuccessions	= new EnumMap<Clan, VetoedSuccession>(Clan.class);
 
-	private UUID 						alphaAccountId		= null;
-	private String 						alphaAccount		= "";
-
 	public ClanManager(WerewolfContext ctx, ClanRepository clans)
 	{
 		this.ctx = ctx;
@@ -58,29 +49,14 @@ public class ClanManager
 		this.clans = clans;
 	}
 
-	//Bloodmoon da508eccdbd946c5809547b91aa4ff5f
-	//Silvermane b68a8f007d244c52b6ad1423bfbe26ee
-	//Witherfang 68c5d9f216384a0f8f56d43fb368ad17
-	//https://sessionserver.mojang.com/session/minecraft/profile/039c53aa-5873-4420-a095-9af971321408?unsigned=false
-	//https://sessionserver.mojang.com/session/minecraft/profile/b68a8f00-7d24-4c52-b6ad-1423bfbe26ee?unsigned=false
-	//https://sessionserver.mojang.com/session/minecraft/profile/da508ecc-dbd9-46c5-8095-47b91aa4ff5f?unsigned=false
-	//UUID of player DogOnFire is 54f089fc-19e7-4a3e-9902-b90c5eb1cbed
 	public void load()
 	{
 		Settings.Clans clans = plugin.getSettings().clans();
-		this.alphaAccount = clans.alphaSkin().accountName();
-		this.alphaAccountId = clans.alphaSkin().accountId();
-
 		Map<Clan, String> names = new EnumMap<Clan, String>(Clan.class);
 
 		for (Clan clan : Clan.values())
 		{
-			Settings.Skin skin = clans.skins().get(clan);
 			names.put(clan, clans.names().get(clan));
-			this.werewolfAccount.put(clan, skin.accountName());
-			this.werewolfAccountId.put(clan, skin.accountId());
-			this.werewolfTextures.put(clan, skin.value());
-			this.werewolfTextureSignatures.put(clan, skin.signature());
 		}
 		
 		this.clanNames = Collections.unmodifiableMap(names);
@@ -98,45 +74,10 @@ public class ClanManager
 		return this.clanNames.get(ctx.getWerewolfManager().getWerewolfClan(playerId));
 	}
 
-	public String getWerewolfAccountForClan(Clan type)
+	/** The werewolf skin of this clan: its alpha skin (the clan's own, or Clans.AlphaSkin) or its normal skin */
+	public Settings.Skin getWerewolfSkin(Clan type, boolean alpha)
 	{
-		return this.werewolfAccount.get(type);
-	}
-
-	public UUID getWerewolfAccountIdForClan(Clan type)
-	{
-		return this.werewolfAccountId.get(type);
-	}
-
-	
-	public String getWerewolfTextureForClan(Clan type)
-	{
-		return this.werewolfTextures.get(type);
-	}
-	
-	public String getWerewolfTextureSignatureForClan(Clan type)
-	{
-		return this.werewolfTextureSignatures.get(type);
-	}
-
-	public String getWerewolfAccountForAlpha(Clan type)
-	{
-		return this.alphaAccount;
-	}
-
-	public UUID getWerewolfAccountIdForAlpha(Clan type)
-	{
-		return this.alphaAccountId;
-	}
-
-	public String getWerewolfTextureForAlpha(Clan type)
-	{
-		return plugin.getSettings().clans().alphaSkin().value();
-	}
-
-	public String getWerewolfTextureSignatureForAlpha(Clan type)
-	{
-		return plugin.getSettings().clans().alphaSkin().signature();
+		return plugin.getSettings().clans().skin(type, alpha);
 	}
 	
 	public void handleMobKill(Player player, Clan clanType, EntityType mobType)

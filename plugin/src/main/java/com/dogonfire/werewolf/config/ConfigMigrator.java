@@ -22,7 +22,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
  */
 public class ConfigMigrator
 {
-	public static final int		CURRENT_VERSION	= 2;
+	public static final int		CURRENT_VERSION	= 3;
 	public static final String	VERSION_KEY		= "config-version";
 
 	/** Renamed keys: old path, new path */
@@ -44,6 +44,9 @@ public class ConfigMigrator
 
 	/** The skin keys of Bloodmoon (WerewolfBite) and Silvermane (WildBite) */
 	private static final List<String>	SKIN_KEYS		= List.of("AccountName", "AccountUUID", "SkinValue", "SkinSignature");
+
+	/** The prefixes of the version 2 skin keys (Clans.&lt;prefix&gt;SkinValue, ...): the shared alpha skin and each clan */
+	private static final List<String>	V2_SKIN_PREFIXES	= List.of("Alpha", "Potion", "WerewolfBite", "WildBite");
 
 	private final File					file;
 	private final FileConfiguration		config;
@@ -94,6 +97,10 @@ public class ConfigMigrator
 		if (version < 2)
 		{
 			migrateToVersion2();
+		}
+		if (version < 3)
+		{
+			migrateToVersion3();
 		}
 		this.config.set(VERSION_KEY, CURRENT_VERSION);
 
@@ -150,6 +157,41 @@ public class ConfigMigrator
 			this.config.set("Clans.WerewolfBite" + key, this.config.get("Clans.WildBite" + key));
 			this.config.set("Clans.WildBite" + key, bloodmoon);
 		}
+	}
+
+	/**
+	 * Version 3 keeps only the texture of each skin, in sections: Clans.&lt;Clan&gt;SkinValue/SkinSignature move to
+	 * Clans.Skins.&lt;Clan&gt;.Value/Signature and Clans.AlphaSkinValue/Signature to Clans.AlphaSkin.Value/Signature.
+	 * The skin account names and UUIDs are no longer used and are removed.
+	 */
+	private void migrateToVersion3()
+	{
+		for (String prefix : V2_SKIN_PREFIXES)
+		{
+			String section = prefix.equals("Alpha") ? "Clans.AlphaSkin" : "Clans.Skins." + prefix;
+			moveSkinKey("Clans." + prefix + "SkinValue", section + ".Value");
+			moveSkinKey("Clans." + prefix + "SkinSignature", section + ".Signature");
+			this.config.set("Clans." + prefix + "AccountName", null);
+			this.config.set("Clans." + prefix + "AccountUUID", null);
+		}
+
+		if (this.config.isSet("Clans.Skins"))
+		{
+			this.config.setComments("Clans.Skins", List.of(
+					"Werewolf skins: signed textures (Value and Signature, e.g. from https://mineskin.org). No real Minecraft account is needed.",
+					"Set Clans.Skins.<Clan>.Alpha.Value/Signature to give a clan's alpha its own skin; otherwise it uses AlphaSkin."));
+		}
+	}
+
+	// Only a value the file sets is moved (a missing or empty one gets the bundled default)
+	private void moveSkinKey(String from, String to)
+	{
+		String value = this.config.isSet(from) ? this.config.getString(from) : null;
+		if (value != null && !value.isBlank() && !this.config.isSet(to))
+		{
+			this.config.set(to, value);
+		}
+		this.config.set(from, null);
 	}
 
 	/** Copies config.yml to config.v&lt;version&gt;.bak, unless that backup already exists */

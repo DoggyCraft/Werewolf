@@ -12,6 +12,8 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
+import com.dogonfire.werewolf.api.Clan;
+import com.dogonfire.werewolf.config.Settings;
 
 /**
  * Built-in skin changing using Paper's Player#setPlayerProfile. Paper refreshes the player
@@ -35,9 +37,9 @@ public class PaperSkinFactory implements IWerewolfDisguiseFactory
 
 	public class PaperWerewolfDisguise extends WerewolfDisguise
 	{
-		public PaperWerewolfDisguise(UUID accountId, String accountName)
+		public PaperWerewolfDisguise(Clan clan, boolean alpha)
 		{
-			super(PaperSkinFactory.this.ctx, accountId, accountName);
+			super(PaperSkinFactory.this.ctx, clan, alpha);
 		}
 
 		@Override
@@ -72,7 +74,8 @@ public class PaperSkinFactory implements IWerewolfDisguiseFactory
 				}
 			}
 
-			profile.setProperty(new ProfileProperty(TEXTURES, getSkinTextureValue(player), getSkinTextureSignature(player)));
+			Settings.Skin skin = getSkin();
+			profile.setProperty(new ProfileProperty(TEXTURES, skin.value(), skin.signature()));
 			player.setPlayerProfile(profile);
 			return true;
 		}
@@ -128,8 +131,8 @@ public class PaperSkinFactory implements IWerewolfDisguiseFactory
 	}
 
 	@Override
-	public WerewolfDisguise newDisguise(UUID disguiseAccountId, String disguiseAccountName)
+	public WerewolfDisguise newDisguise(Clan clan, boolean alpha)
 	{
-		return new PaperWerewolfDisguise(disguiseAccountId, disguiseAccountName);
+		return new PaperWerewolfDisguise(clan, alpha);
 	}
 }

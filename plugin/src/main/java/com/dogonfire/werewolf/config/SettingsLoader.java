@@ -8,13 +8,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -334,43 +332,46 @@ public class SettingsLoader
 
 	private Settings.Clans loadClans()
 	{
+		Skin alphaSkin = loadSkin("Clans.AlphaSkin");
 		Map<Clan, String> names = new EnumMap<Clan, String>(Clan.class);
 		Map<Clan, Skin> skins = new EnumMap<Clan, Skin>(Clan.class);
+		Map<Clan, Skin> alphaSkins = new EnumMap<Clan, Skin>(Clan.class);
 		for (Clan clan : Clan.values())
 		{
 			names.put(clan, this.config.getString("Clans." + clan.name() + "Name"));
-			skins.put(clan, loadSkin(clan.name()));
+			skins.put(clan, loadSkin("Clans.Skins." + clan.name()));
+			alphaSkins.put(clan, loadAlphaSkin("Clans.Skins." + clan.name() + ".Alpha", alphaSkin));
 		}
 
 		return new Settings.Clans(
 				this.config.getBoolean("Clans.Enabled"),
 				Collections.unmodifiableMap(names),
-				loadSkin("Alpha"),
-				Collections.unmodifiableMap(skins));
+				alphaSkin,
+				Collections.unmodifiableMap(skins),
+				Collections.unmodifiableMap(alphaSkins));
 	}
 
-	/** @param prefix Alpha or a clan type name, as used in the Clans.&lt;prefix&gt;AccountName keys */
-	private Skin loadSkin(String prefix)
+	/** @param path a section with the Value and Signature of a skin */
+	private Skin loadSkin(String path)
 	{
-		String path = "Clans." + prefix;
-		String uuid = this.config.getString(path + "AccountUUID");
-		UUID accountId;
-		try
-		{
-			accountId = UUID.fromString(uuid);
-		}
-		catch (IllegalArgumentException | NullPointerException ex)
-		{
-			String fallback = defaults().getString(path + "AccountUUID");
-			warn(path + "AccountUUID", uuid, fallback);
-			accountId = UUID.fromString(fallback);
-		}
+		return new Skin(this.config.getString(path + ".Value"), this.config.getString(path + ".Signature"));
+	}
 
-		return new Skin(
-				this.config.getString(path + "AccountName"),
-				accountId,
-				this.config.getString(path + "SkinValue"),
-				this.config.getString(path + "SkinSignature"));
+	// A clan's own alpha skin, or the shared one when it isn't set (backends need both the texture and its signature)
+	private Skin loadAlphaSkin(String path, Skin shared)
+	{
+		Skin skin = loadSkin(path);
+		boolean hasValue = skin.value() != null && !skin.value().isBlank();
+		boolean hasSignature = skin.signature() != null && !skin.signature().isBlank();
+		if (hasValue && hasSignature)
+		{
+			return skin;
+		}
+		if (hasValue || hasSignature)
+		{
+			this.logger.warning(path + " in config.yml needs both Value and Signature, using Clans.AlphaSkin");
+		}
+		return shared;
 	}
 
 	private PotionEffect parseEffect(String entry, String path)
@@ -430,12 +431,6 @@ public class SettingsLoader
 		}
 
 		return Registry.EFFECT.get(namespacedKey);
-	}
-
-	private Configuration defaults()
-	{
-		Configuration defaults = this.config.getDefaults();
-		return defaults != null ? defaults : this.config;
 	}
 
 	private List<String> strings(String path)

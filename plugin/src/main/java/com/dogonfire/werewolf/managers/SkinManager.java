@@ -49,29 +49,16 @@ public class SkinManager
 			return true;
 		}
 
-		UUID werewolfAccountId;
-		String werewolfAccountName;
-
 		Clan clantype = ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId());
-
-		// Get the correct account, if alpha, alphaskin, else the clanskin
-		if (plugin.getSettings().clans().enabled() && ctx.getClanManager().isAlpha(player.getUniqueId()))
-		{
-			werewolfAccountId = ctx.getClanManager().getWerewolfAccountIdForAlpha(clantype);
-			werewolfAccountName = ctx.getClanManager().getWerewolfAccountForAlpha(clantype);
-		}
-		else
-		{
-			werewolfAccountId = ctx.getClanManager().getWerewolfAccountIdForClan(clantype);
-			werewolfAccountName = ctx.getClanManager().getWerewolfAccountForClan(clantype);
-		}
+		// The alpha wears the alpha skin of its clan, everyone else the clan skin
+		boolean alpha = plugin.getSettings().clans().enabled() && ctx.getClanManager().isAlpha(player.getUniqueId());
 
 		if (werewolfName.isEmpty())
 		{
 			werewolfName = "Werewolf";
 		}
 
-		WerewolfDisguise skin = ctx.getDisguises().getDisguise(werewolfAccountId, werewolfAccountName);
+		WerewolfDisguise skin = ctx.getDisguises().getDisguise(clantype, alpha);
 		
 		if (skin == null)
 		{
@@ -79,7 +66,7 @@ public class SkinManager
 			return false;
 		}
 
-		plugin.logDebug("Skin: " + skin.toString() + ". SkinName: " + skin.getSkinAccountName() + " - SkinUUID: " + skin.getSkinAccountUUID());
+		plugin.logDebug("Skin: " + skin);
 
 		if(ctx.getDisguises().disguise(player, skin, werewolfName))
 		{

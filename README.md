@@ -28,6 +28,7 @@ Installation
 *	Run a [Paper](https://papermc.io/) (recommended) or Spigot server on Minecraft 26.1 or newer, with Java 25.
 *	Download `Werewolf-<version>.jar` from the [releases](https://github.com/DoggyCraft/Werewolf/releases) and drop it into the `plugins` folder.
 *	Werewolf skins work out of the box on Paper. On Spigot, also install [LibsDisguises](https://www.spigotmc.org/resources/libs-disguises.32453/) or [SkinsRestorer](https://modrinth.com/plugin/skinsrestorer).
+*	Each clan (and optionally each clan's alpha) has its own skin under `Clans.Skins` in config.yml. Skins are plain signed textures (Value and Signature, e.g. from [MineSkin](https://mineskin.org/)), so no Minecraft account is needed.
 *	Optional: [Vault](https://www.spigotmc.org/resources/vault.34315/) for bounties and shop signs, [PlaceholderAPI](https://www.spigotmc.org/resources/placeholderapi.6245/), [VampireRevamp](https://www.spigotmc.org/resources/vampirerevamp.75479/).
 *	Start the server, then adjust `plugins/Werewolf/config.yml`. Commands and permissions are listed in [plugin.yml](plugin/src/main/resources/plugin.yml).
 

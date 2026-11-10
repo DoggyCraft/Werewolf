@@ -373,15 +373,7 @@ public class Werewolf extends JavaPlugin
 	private void initDisguises()
 	{
 		this.disguiseBackend = this.settings.general().disguiseBackend();
-		if (this.ctx.getDisguises().init(this.disguiseBackend))
-		{
-			// Pre-cache the known disguises
-			for (Settings.Skin skin : this.settings.clans().skins().values())
-			{
-				this.ctx.getDisguises().getDisguise(skin.accountId(), skin.accountName());
-			}
-			this.ctx.getDisguises().getDisguise(this.settings.clans().alphaSkin().accountId(), this.settings.clans().alphaSkin().accountName());
-		}
+		this.ctx.getDisguises().init(this.disguiseBackend);
 	}
 
 	// Disguises.Backend changed: take the old skins off, switch, and put the new ones on (no transformation messages)

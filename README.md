@@ -1,6 +1,14 @@
 Werewolf
 ======
 
+[![Build](https://github.com/DoggyCraft/Werewolf/actions/workflows/build.yml/badge.svg)](https://github.com/DoggyCraft/Werewolf/actions/workflows/build.yml)
+[![Release](https://img.shields.io/github/v/release/DoggyCraft/Werewolf?label=Release)](https://github.com/DoggyCraft/Werewolf/releases)
+[![Spigot](https://img.shields.io/spiget/downloads/7442?label=Spigot&logo=spigotmc)](https://www.spigotmc.org/resources/werewolf.7442/)
+[![Bukkit](https://img.shields.io/curseforge/dt/39095?label=Bukkit)](https://dev.bukkit.org/projects/werewolf)
+[![Hangar](https://img.shields.io/hangar/dt/Werewolf?label=Hangar)](https://hangar.papermc.io/DoggyCraft/Werewolf)
+[![bStats](https://img.shields.io/bstats/servers/35251?label=Servers)](https://bstats.org/plugin/bukkit/Werewolf/35251)
+[![JitPack](https://jitpack.io/v/DoggyCraft/Werewolf.svg)](https://jitpack.io/#DoggyCraft/Werewolf)
+
 ![Werewolf](https://raw.githubusercontent.com/DoggyCraft/Werewolf/master/img/Werewolf.jpg)
 
 The plugin for adding Werewolves into Minecraft!
@@ -35,6 +43,8 @@ Installation
 Links
 ---------
 *	[Werewolf at SpigotMC](https://www.spigotmc.org/resources/werewolf.7442/)
+*	[Werewolf at Hangar](https://hangar.papermc.io/DoggyCraft/Werewolf)
+*	[Werewolf at BukkitDev](https://dev.bukkit.org/projects/werewolf)
 *	[Releases](https://github.com/DoggyCraft/Werewolf/releases)
 *	[License (GPLv3)](LICENSE)
 

@@ -8,6 +8,8 @@ import com.dogonfire.werewolf.api.event.WerewolfCureEvent;
 import com.dogonfire.werewolf.api.event.WerewolfInfectionEvent;
 
 
+import java.util.UUID;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -118,12 +120,18 @@ public class InteractListener implements Listener
 			player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.DrinkInfectionSuccess, ChatColor.LIGHT_PURPLE));
 			plugin.log(player.getName() + " contracted the werewolf infection by drinking a potion!");
 			
-			final Player targetPlayer = player;
+			final UUID targetId = player.getUniqueId();
 
 			this.plugin.getServer().getScheduler().scheduleSyncDelayedTask(this.plugin, new Runnable()
 			{
 				public void run()
 				{
+					// Offline now, or became a werewolf some other way in the 7 seconds since drinking
+					Player targetPlayer = plugin.getServer().getPlayer(targetId);
+					if (targetPlayer == null || ctx.getWerewolfManager().isWerewolf(targetPlayer))
+					{
+						return;
+					}
 					ctx.getWerewolfManager().makeWerewolf(targetPlayer, true, Clan.Potion, WerewolfInfectionEvent.Source.POTION);
 				}
 			}, 140L);

@@ -68,6 +68,27 @@ public interface IWerewolfDisguiseFactory
 			return DEFAULT_SIGNATURE;
 		}
 
+		/** Whether this texture value is one of the werewolf skins (configured or the default) */
+		protected boolean isWerewolfTexture(String value)
+		{
+			if (value == null)
+			{
+				return false;
+			}
+			if (value.equals(DEFAULT_TEXTURE) || value.equals(this.ctx.getSettings().clans().alphaSkin().value()))
+			{
+				return true;
+			}
+			for (com.dogonfire.werewolf.config.Settings.Skin skin : this.ctx.getSettings().clans().skins().values())
+			{
+				if (skin != null && value.equals(skin.value()))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
 		public abstract boolean disguise(Player player, String werewolfName);
 
 		public abstract boolean undisguise(Player player);

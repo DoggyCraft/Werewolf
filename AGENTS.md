@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Werewolf is a Spigot/Bukkit Minecraft server plugin (`com.dogonfire.werewolf`), built with Maven against `paper-api` 26.3 (runtime minimum 26.1, enforced by `api-version` in `plugin.yml` and the Java 25 bytecode). It must still run on Spigot: the only Paper-only API calls live in `disguises/PaperSkinFactory`, which is only loaded after a runtime check. Source targets Java 25 (`maven.compiler.release` in the root `pom.xml`), which 26.x servers require anyway; CI (`.github/workflows/build.yml`) builds on JDK 25 for every push and PR; pushing a tag equal to the pom version (e.g. `0.12.0`) publishes a GitHub release with the plugin and API jars.
+Werewolf is a Spigot/Bukkit Minecraft server plugin (`com.dogonfire.werewolf`), built with Maven against `paper-api` 26.3 (runtime minimum 26.1, enforced by `api-version` in `plugin.yml` and the Java 25 bytecode). It must still run on Spigot: the only Paper-only API calls live in `disguises/PaperSkinFactory`, which is only loaded after a runtime check. Source targets Java 25 (`maven.compiler.release` in the root `pom.xml`), which 26.x servers require anyway; CI (`.github/workflows/build.yml`) builds on JDK 25 for every push and PR; pushing a tag equal to the pom version (e.g. `1.0.0`) publishes a GitHub release with the plugin and API jars.
 
 ## Modules
 
@@ -23,7 +23,7 @@ mvn -B clean package       # what CI runs (there are no unit tests; this checks 
 
 - There is no test suite. You can only check that it compiles; to check behavior, drop the jar into a Spigot server's `plugins/` folder.
 - All plugin dependencies (Vault, LibsDisguises, SkinsRestorer, WorldGuard, PvPManager 4.x, GriefPrevention, PlaceholderAPI, Vampire) are `provided` and resolved from the third-party repos listed in `plugin/pom.xml`. If one of those repos is unreachable, the build fails.
-- Releases bump `<version>` in all three poms (root and the `<parent>` of `api/` and `plugin/`, e.g. "Bump to v0.12.0"), then push a tag with exactly that version (e.g. `0.12.0`, no `v`); CI checks the tag against the version, builds, and attaches `Werewolf-<version>.jar` and `werewolf-api-<version>.jar` to a GitHub release. Publishing is JitPack only: `jitpack.yml` downloads Temurin 25 and runs `mvn -B install -DskipTests` on the tag, giving `com.github.DoggyCraft.Werewolf:werewolf-api:<tag>` (and `...:werewolf:<tag>`, whose pom is dependency-reduced). No credentials are needed anywhere. Work goes to the `dev` branch and is merged into `master` through a PR.
+- Releases bump `<version>` in all three poms (root and the `<parent>` of `api/` and `plugin/`, e.g. "Bump to v1.0.0"; between releases the poms carry the next version with `-SNAPSHOT`), then push a tag with exactly that version (e.g. `1.0.0`, no `v`); CI checks the tag against the version, builds, and attaches `Werewolf-<version>.jar` and `werewolf-api-<version>.jar` to a GitHub release. Publishing is JitPack only: `jitpack.yml` downloads Temurin 25 and runs `mvn -B install -DskipTests` on the tag, giving `com.github.DoggyCraft.Werewolf:werewolf-api:<tag>` (and `...:werewolf:<tag>`, whose pom is dependency-reduced). No credentials are needed anywhere. Work goes to the `dev` branch and is merged into `master` through a PR.
 
 ## Architecture
 

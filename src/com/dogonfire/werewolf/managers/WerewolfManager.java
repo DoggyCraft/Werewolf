@@ -65,6 +65,8 @@ public class WerewolfManager
 	private HashMap<UUID, Long>		lastGrowls						= new HashMap<UUID, Long>();
 	// Set by onDisable: undisguise right away instead of in a task
 	private boolean					shuttingDown					= false;
+	// Set while a player quits or joins: undisguise in this tick
+	private boolean					untransformImmediately			= false;
 
 	public WerewolfManager(WerewolfContext ctx, WerewolfRepository werewolves)
 	{
@@ -302,27 +304,31 @@ public class WerewolfManager
 
 			setInfectedThisNight(player.getUniqueId(), player.getName(), false);
 
-			setWerewolfClan(player.getUniqueId(), clan);
-
 			setWerewolfName(player.getUniqueId());
 
-			setWerewolfSkin(player, WerewolfTransformEvent.Reason.INFECTION);
+			// Last of the data: may make them alpha (NewAlphaEvent), so they must already be a werewolf
+			setWerewolfClan(player.getUniqueId(), clan);
 
-			setWolfForm(player.getUniqueId(), player.getName());
+			// Only stored as wolf form if the transformation really started (not cancelled, /ww off, ...)
+			if (setWerewolfSkin(player, WerewolfTransformEvent.Reason.INFECTION))
+			{
+				setWolfForm(player.getUniqueId(), player.getName());
+			}
 
 			this.plugin.log(player.getName() + " was made an full werewolf");
 		}
 		else
 		{
+			setInfectedWerewolf(player.getUniqueId(), player.getName());
+
 			setLastTransformation(player.getUniqueId());
 
 			setInfectedThisNight(player.getUniqueId(), player.getName(), true);
 
-			setWerewolfClan(player.getUniqueId(), clan);
-
 			setWerewolfName(player.getUniqueId());
 
-			setInfectedWerewolf(player.getUniqueId(), player.getName());
+			// Last of the data: may make them alpha (NewAlphaEvent), so they must already be a werewolf
+			setWerewolfClan(player.getUniqueId(), clan);
 
 			this.plugin.log(player.getUniqueId() + " was made a infected werewolf");
 		}
@@ -478,7 +484,7 @@ public class WerewolfManager
 	}
 
 	/** Starts the change back into human form; false if the player isn't in wolf form or a listener cancelled it */
-	public boolean unsetWerewolfSkin(UUID playerId, boolean makeVisible, WerewolfTransformEvent.Reason reason)
+	public boolean unsetWerewolfSkin(UUID playerId, WerewolfTransformEvent.Reason reason)
 	{
 		String playerName = plugin.getServer().getOfflinePlayer(playerId).getName();
 
@@ -488,7 +494,12 @@ public class WerewolfManager
 			return false;
 		}
 
-		setInfectedThisNight(playerId, playerName, false);
+		// Morning (or a command) ends the night's ban on transforming. A forced change back (join, quit, death, world
+		// change, shutdown) doesn't, or relogging would lift it.
+		if (reason != WerewolfTransformEvent.Reason.FORCED)
+		{
+			setInfectedThisNight(playerId, playerName, false);
+		}
 
 		if (!hasWerewolfSkin(playerId))
 		{
@@ -526,7 +537,7 @@ public class WerewolfManager
 
 		this.plugin.log(playerName + " turned into human form!");
 
-		this.undisguiseWerewolf(playerId, makeVisible);
+		this.undisguiseWerewolf(playerId);
 		return true;
 	}
 
@@ -552,7 +563,7 @@ public class WerewolfManager
 	public boolean untransform(Player player, WerewolfTransformEvent.Reason reason)
 	{
 		playSmoke(player);
-		return unsetWerewolfSkin(player.getUniqueId(), true, reason);
+		return unsetWerewolfSkin(player.getUniqueId(), reason);
 	}
 
 	private void playSmoke(Player player)
@@ -592,9 +603,9 @@ public class WerewolfManager
 	}
 
 	/** Back to human form (the werewolf's data is kept) */
-	public void undisguiseWerewolf(UUID playerId, boolean makeVisible)
+	public void undisguiseWerewolf(UUID playerId)
 	{
-		runUndisguise(new UndisguiseTask(this.ctx, playerId, makeVisible, false, null));
+		runUndisguise(new UndisguiseTask(this.ctx, playerId, false, null));
 	}
 
 	/**
@@ -603,12 +614,97 @@ public class WerewolfManager
 	 */
 	public void undisguiseCuredWerewolf(UUID playerId, String originalGroup)
 	{
-		runUndisguise(new UndisguiseTask(this.ctx, playerId, true, true, originalGroup));
+		runUndisguise(new UndisguiseTask(this.ctx, playerId, true, originalGroup));
+	}
+
+	/**
+	 * A player who quits in wolf form turns human right away (FORCED), so they never stay in wolf form while offline:
+	 * their walk speed, effects and permission group are saved as a human's, and a cure while offline has nothing to
+	 * undo. Also clears what a change back still waiting in a task (e.g. a cure a moment ago) would have cleared.
+	 */
+	public void untransformOnQuit(Player player)
+	{
+		UUID playerId = player.getUniqueId();
+		if (hasWerewolfSkin(playerId))
+		{
+			untransformNow(player);
+		}
+
+		if (!hasWerewolfSkin(playerId))
+		{
+			ctx.getSkinManager().unsetWerewolfSkin(player);
+			if (ctx.getWolfFormManager().hasWolfForm(playerId))
+			{
+				ctx.getWolfFormManager().removeWolfForm(player, false);
+			}
+		}
+	}
+
+	/**
+	 * On join: repairs what an older version, a crash, or a cure while offline left behind. Players are never in wolf
+	 * form when they join (see {@link #untransformOnQuit}), so a stored WolfForm, a werewolf skin, the werewolf permission
+	 * group or wolf form speed and effects are all left overs. CheckTransformationTask then transforms them if it's time.
+	 */
+	public void repairOnJoin(Player player)
+	{
+		UUID playerId = player.getUniqueId();
+
+		// A listener cancelled the change back on quit
+		if (hasWerewolfSkin(playerId))
+		{
+			untransformNow(player);
+			if (hasWerewolfSkin(playerId))
+			{
+				return;
+			}
+		}
+
+		ctx.getSkinManager().clearLeftoverSkin(player);
+
+		if (isWerewolf(playerId))
+		{
+			// Their clan's effects at the configured strength go, potions they drank themselves stay
+			ctx.getWolfFormManager().removeWolfForm(player, true);
+			if (isWolfForm(playerId))
+			{
+				setHumanForm(playerId, player.getName());
+			}
+		}
+		else
+		{
+			ctx.getWolfFormManager().clearLeftoverWolfForm(player);
+		}
+
+		String werewolfGroup = this.plugin.getSettings().general().werewolfGroupName();
+		if (this.plugin.getSettings().general().werewolfGroupEnabled() && ctx.getPermissionsManager().isInGroup(player, werewolfGroup))
+		{
+			this.plugin.log("Taking " + player.getName() + " out of the werewolf group " + werewolfGroup + ", left over from before.");
+			ctx.getPermissionsManager().leaveWerewolfGroup(player, werewolfGroup, getOriginalPermissionGroup(playerId));
+		}
+	}
+
+	// Back to human form in this tick instead of a few ticks later (FORCED)
+	private void untransformNow(Player player)
+	{
+		boolean wasImmediate = this.untransformImmediately;
+		this.untransformImmediately = true;
+		try
+		{
+			unsetWerewolfSkin(player.getUniqueId(), WerewolfTransformEvent.Reason.FORCED);
+		}
+		catch (RuntimeException e)
+		{
+			this.plugin.getLogger().log(Level.WARNING, "Could not turn " + player.getName() + " back to human form", e);
+		}
+		finally
+		{
+			this.untransformImmediately = wasImmediate;
+		}
 	}
 
 	private void runUndisguise(UndisguiseTask task)
 	{
-		if (this.shuttingDown)
+		if (this.shuttingDown || this.untransformImmediately)
 		{
 			task.run();
 		}

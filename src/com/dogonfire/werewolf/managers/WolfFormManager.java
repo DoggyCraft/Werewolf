@@ -156,4 +156,65 @@ public class WolfFormManager
 
 		player.setWalkSpeed(0.2F);
 	}
+
+	/** Whether this player was given wolf form effects that haven't been removed yet */
+	public boolean hasWolfForm(UUID playerId)
+	{
+		return this.appliedEffects.containsKey(playerId);
+	}
+
+	/**
+	 * On join, for a player who is not a werewolf: one who was cured while offline in wolf form (or by an older version
+	 * that didn't turn werewolves human on quit) still has the wolf form walk speed and effects saved with them. Since
+	 * other plugins may set walk speed too, this only acts when the walk speed is one of the configured wolf form speeds,
+	 * and then only removes effects of a configured type and strength that hide their particles, as ours do.
+	 */
+	public void clearLeftoverWolfForm(Player player)
+	{
+		if (hasWolfForm(player.getUniqueId()))
+		{
+			removeWolfForm(player, false);
+			return;
+		}
+
+		float walkSpeed = player.getWalkSpeed();
+		if (walkSpeed == 0.2F || !isWolfFormSpeed(walkSpeed))
+		{
+			return;
+		}
+
+		for (List<PotionEffect> effects : this.plugin.getSettings().wolfForm().effects().values())
+		{
+			if (effects == null)
+			{
+				continue;
+			}
+			for (PotionEffect effect : effects)
+			{
+				PotionEffect current = player.getPotionEffect(effect.getType());
+				if (current != null && current.getAmplifier() == effect.getAmplifier() && !current.hasParticles())
+				{
+					player.removePotionEffect(effect.getType());
+				}
+			}
+		}
+
+		player.setWalkSpeed(0.2F);
+		this.plugin.log("Took the wolf form walk speed and effects left over from before off " + player.getName() + ".");
+	}
+
+	private boolean isWolfFormSpeed(float walkSpeed)
+	{
+		for (Map<Clan, Stats> stats : List.of(this.plugin.getSettings().wolfForm().stats(), this.plugin.getSettings().wolfForm().alphaStats()))
+		{
+			for (Stats clanStats : stats.values())
+			{
+				if (clanStats != null && (float) Math.max(-1.0D, Math.min(1.0D, clanStats.speed())) == walkSpeed)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 }

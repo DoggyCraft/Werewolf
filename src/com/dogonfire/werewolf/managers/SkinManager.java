@@ -3,6 +3,7 @@ package com.dogonfire.werewolf.managers;
 import com.dogonfire.werewolf.api.Clan;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.logging.Level;
 
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
@@ -98,22 +99,53 @@ public class SkinManager
 		return true;
 	}
 
+	/** Takes the werewolf skin off. The entry is forgotten even if the backend fails, so the next transformation re-applies it. */
 	public void unsetWerewolfSkin(Player player)
 	{
-		if (!this.skins.containsKey(player.getUniqueId()))
+		if (this.skins.remove(player.getUniqueId()) == null || !ctx.isDisguisesEnabled())
 		{
 			return;
 		}
 
-		if(ctx.getDisguises().undisguise(player))
+		try
 		{
-			plugin.logDebug("Undisguised player " + player.getName() + "!");
+			if (ctx.getDisguises().undisguise(player))
+			{
+				plugin.logDebug("Undisguised player " + player.getName() + "!");
+			}
+			else
+			{
+				plugin.logDebug("Could not undisguise " + player.getName());
+			}
 		}
-		else
+		catch (RuntimeException e)
 		{
-			plugin.logDebug("Could not undisguise " + player.getName());
+			plugin.getLogger().log(Level.WARNING, "Could not undisguise " + player.getName(), e);
+		}
+	}
+
+	/**
+	 * On join, for a player not in wolf form: takes off any werewolf skin left from before (a skin we still track, or one
+	 * the backend kept across a restart, such as a SkinsRestorer skin).
+	 */
+	public void clearLeftoverSkin(Player player)
+	{
+		unsetWerewolfSkin(player);
+		if (!ctx.isDisguisesEnabled())
+		{
+			return;
 		}
 
-		this.skins.remove(player.getUniqueId());
+		try
+		{
+			if (ctx.getDisguises().clearLeftover(player))
+			{
+				plugin.log("Took a werewolf skin left over from before off " + player.getName() + ".");
+			}
+		}
+		catch (RuntimeException e)
+		{
+			plugin.getLogger().log(Level.WARNING, "Could not check " + player.getName() + " for a left over werewolf skin", e);
+		}
 	}
 }

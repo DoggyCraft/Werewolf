@@ -162,12 +162,19 @@ public class SettingsLoader
 				backend);
 	}
 
+	// So the notice is only logged once, not on every /ww reload
+	private static volatile boolean	allowedWorldsNoticeLogged	= false;
+
 	private List<String> loadAllowedWorlds()
 	{
 		List<String> worlds = strings("AllowedWorlds");
 		if (worlds.isEmpty())
 		{
-			this.logger.info("Allowed worlds is empty. Adding world " + this.mainWorldName + " as werewolf world.");
+			if (!allowedWorldsNoticeLogged)
+			{
+				allowedWorldsNoticeLogged = true;
+				this.logger.info("AllowedWorlds is empty, so werewolves are only allowed in the main world (" + this.mainWorldName + ").");
+			}
 			return List.of(this.mainWorldName);
 		}
 

@@ -317,7 +317,7 @@ public class WerewolfManager
 				setWolfForm(player.getUniqueId(), player.getName());
 			}
 
-			this.plugin.log(player.getName() + " was made an full werewolf");
+			this.plugin.log(player.getName() + " was made a full werewolf");
 		}
 		else
 		{
@@ -332,7 +332,7 @@ public class WerewolfManager
 			// Last of the data: may make them alpha (NewAlphaEvent), so they must already be a werewolf
 			setWerewolfClan(player.getUniqueId(), clan);
 
-			this.plugin.log(player.getUniqueId() + " was made a infected werewolf");
+			this.plugin.log(player.getName() + " was made an infected werewolf");
 		}
 		return true;
 	}

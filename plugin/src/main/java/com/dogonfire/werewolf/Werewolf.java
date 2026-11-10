@@ -2,10 +2,15 @@ package com.dogonfire.werewolf;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 
+import org.bstats.bukkit.Metrics;
+import org.bstats.charts.AdvancedPie;
+import org.bstats.charts.SimplePie;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -24,6 +29,7 @@ import com.dogonfire.werewolf.commands.sub.HowlCommand;
 import com.dogonfire.werewolf.config.ConfigMigrator;
 import com.dogonfire.werewolf.config.Settings;
 import com.dogonfire.werewolf.config.SettingsLoader;
+import com.dogonfire.werewolf.disguises.WerewolfDisguiseAPI;
 import com.dogonfire.werewolf.integrations.ForcePvPIntegration;
 import com.dogonfire.werewolf.integrations.IntegrationListener;
 import com.dogonfire.werewolf.integrations.PvPManagerIntegration;
@@ -53,11 +59,15 @@ import com.dogonfire.werewolf.utils.WerewolfPlaceholderExpansion;
  */
 public class Werewolf extends JavaPlugin
 {
+	// https://bstats.org/plugin/bukkit/Werewolf/35251
+	private static final int				BSTATS_PLUGIN_ID	= 35251;
+
 	private volatile Settings				settings;
 	private Storage							storage;
 	private WerewolfContext					ctx;
 	private String							disguiseBackend;
 	private WerewolfServiceImpl				service;
+	private Metrics							metrics;
 
 	// Started by startFeatures, undone by stopFeatures
 	private final List<Listener>			featureListeners	= new ArrayList<Listener>();
@@ -140,6 +150,8 @@ public class Werewolf extends JavaPlugin
 		this.service = new WerewolfServiceImpl(this.ctx);
 		getServer().getServicesManager().register(WerewolfService.class, this.service, this, ServicePriority.Normal);
 		WerewolfAPI.setService(this.service);
+
+		startMetrics();
 	}
 
 	@Override
@@ -151,6 +163,12 @@ public class Werewolf extends JavaPlugin
 		{
 			getServer().getServicesManager().unregister(WerewolfService.class, this.service);
 			this.service = null;
+		}
+
+		if (this.metrics != null)
+		{
+			this.metrics.shutdown();
+			this.metrics = null;
 		}
 
 		if (this.ctx == null)
@@ -220,6 +238,60 @@ public class Werewolf extends JavaPlugin
 
 		stopFeatures();
 		startFeatures();
+	}
+
+	/**
+	 * Anonymous usage statistics on bstats.org; admins opt out for all plugins in plugins/bStats/config.yml. The charts
+	 * read the current settings and context each time bStats collects them (on the main thread), so they follow
+	 * /ww reload.
+	 */
+	private void startMetrics()
+	{
+		this.metrics = new Metrics(this, BSTATS_PLUGIN_ID);
+
+		this.metrics.addCustomChart(new SimplePie("disguise_backend", () -> {
+			WerewolfDisguiseAPI.Backend backend = this.ctx.isDisguisesEnabled() ? this.ctx.getDisguises().getBackend() : null;
+			return backend == null ? "none" : backend.name().toLowerCase();
+		}));
+		this.metrics.addCustomChart(new SimplePie("language", () -> this.settings.general().language()));
+		this.metrics.addCustomChart(new SimplePie("clans", () -> this.settings.clans().enabled() ? "Enabled" : "Disabled"));
+		this.metrics.addCustomChart(new SimplePie("hunting", () -> this.settings.hunting().enabled() ? "Enabled" : "Disabled"));
+		this.metrics.addCustomChart(new SimplePie("werewolves", () -> {
+			int count = this.ctx.getWerewolfManager().getProfiles().size();
+			if (count == 0)
+			{
+				return "0";
+			}
+			if (count <= 10)
+			{
+				return "1-10";
+			}
+			if (count <= 50)
+			{
+				return "11-50";
+			}
+			if (count <= 200)
+			{
+				return "51-200";
+			}
+			return "200+";
+		}));
+		this.metrics.addCustomChart(new AdvancedPie("integrations", () -> {
+			Map<String, Integer> used = new HashMap<String, Integer>();
+			if (this.ctx.isVaultEnabled())
+			{
+				used.put("Vault", 1);
+			}
+			if (this.placeholderExpansion != null)
+			{
+				used.put("PlaceholderAPI", 1);
+			}
+			for (IntegrationListener integration : this.integrations)
+			{
+				used.put(integration.getClass().getSimpleName().replace("Integration", ""), 1);
+			}
+			return used;
+		}));
 	}
 
 	/** Features that can be switched on and off in config.yml, plus the optional-plugin integrations */

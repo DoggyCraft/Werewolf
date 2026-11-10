@@ -45,6 +45,12 @@
     </repositories>
 
     <dependencies>
+        <!-- bStats, bundled and relocated (bStats refuses to run from its own package) -->
+        <dependency>
+            <groupId>org.bstats</groupId>
+            <artifactId>bstats-bukkit</artifactId>
+            <version>3.2.1</version>
+        </dependency>
         <!-- The API, bundled into the plugin jar -->
         <dependency>
             <groupId>com.dogonfire</groupId>
@@ -198,12 +204,19 @@
                     <!-- The published pom then leaves out what is bundled (the API) -->
                     <createDependencyReducedPom>true</createDependencyReducedPom>
                     <dependencyReducedPomLocation>${project.build.directory}/dependency-reduced-pom.xml</dependencyReducedPomLocation>
-                    <!-- Only the API is bundled; everything else comes from the server or other plugins -->
+                    <!-- Only the API and bStats are bundled; everything else comes from the server or other plugins -->
                     <artifactSet>
                         <includes>
                             <include>com.dogonfire:werewolf-api</include>
+                            <include>org.bstats:*</include>
                         </includes>
                     </artifactSet>
+                    <relocations>
+                        <relocation>
+                            <pattern>org.bstats</pattern>
+                            <shadedPattern>com.dogonfire.werewolf.libs.bstats</shadedPattern>
+                        </relocation>
+                    </relocations>
                     <!-- Exclude signature files and duplicate MANIFESTs, and merge the plugin's manifest entries -->
                     <filters>
                         <filter>

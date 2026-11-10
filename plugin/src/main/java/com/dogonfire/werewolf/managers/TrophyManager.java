@@ -57,16 +57,7 @@ public class TrophyManager implements Listener
 		DateFormat formatter = new SimpleDateFormat(pattern);
 
 		Clan clan = ctx.getWerewolfManager().getWerewolfClan(werewolfId);
-		PlayerProfile profile;
-
-		if (ctx.getClanManager().isAlpha(werewolfId))
-		{
-			profile = skinProfile(ctx.getClanManager().getWerewolfAccountIdForAlpha(clan), ctx.getClanManager().getWerewolfAccountForAlpha(clan), ctx.getClanManager().getWerewolfTextureForAlpha(clan));
-		}
-		else
-		{
-			profile = skinProfile(ctx.getClanManager().getWerewolfAccountIdForClan(clan), ctx.getClanManager().getWerewolfAccountForClan(clan), ctx.getClanManager().getWerewolfTextureForClan(clan));
-		}
+		PlayerProfile profile = skinProfile(ctx.getClanManager().getWerewolfSkin(clan, ctx.getClanManager().isAlpha(werewolfId)).value());
 
 		if (profile != null)
 		{
@@ -102,15 +93,15 @@ public class TrophyManager implements Listener
 
 	/**
 	 * A profile carrying the werewolf skin's texture, built from the configured skin so no account has to be looked up
-	 * (getOfflinePlayer(name) asks Mojang on the main thread). Null if neither the account nor the texture is usable.
+	 * (getOfflinePlayer(name) asks Mojang on the main thread). The id is derived from the texture, so heads with the
+	 * same skin stack and no real account is involved.
 	 */
-	private PlayerProfile skinProfile(UUID accountId, String accountName, String textureValue)
+	private PlayerProfile skinProfile(String textureValue)
 	{
-		String name = accountName != null && !accountName.isEmpty() && accountName.length() <= 16 ? accountName : "Werewolf";
 		PlayerProfile profile;
 		try
 		{
-			profile = plugin.getServer().createPlayerProfile(accountId != null ? accountId : UUID.nameUUIDFromBytes(name.getBytes(StandardCharsets.UTF_8)), name);
+			profile = plugin.getServer().createPlayerProfile(UUID.nameUUIDFromBytes(("WerewolfSkin:" + textureValue).getBytes(StandardCharsets.UTF_8)), "Werewolf");
 		}
 		catch (IllegalArgumentException e)
 		{

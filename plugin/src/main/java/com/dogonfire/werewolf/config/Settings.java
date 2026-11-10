@@ -3,7 +3,6 @@ package com.dogonfire.werewolf.config;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import org.bukkit.Material;
 import org.bukkit.potion.PotionEffect;
@@ -161,12 +160,21 @@ public record Settings(
 	{
 	}
 
-	/** The Minecraft account a werewolf skin comes from, and its texture */
-	public record Skin(String accountName, UUID accountId, String value, String signature)
+	/** A werewolf skin: a signed texture property (value and signature, e.g. from mineskin.org) */
+	public record Skin(String value, String signature)
 	{
 	}
 
-	public record Clans(boolean enabled, Map<Clan, String> names, Skin alphaSkin, Map<Clan, Skin> skins)
+	/**
+	 * Clans.*. {@code alphaSkins} has an entry for every clan: its own Clans.Skins.&lt;Clan&gt;.Alpha skin, or
+	 * {@code alphaSkin} (Clans.AlphaSkin) when that is not set.
+	 */
+	public record Clans(boolean enabled, Map<Clan, String> names, Skin alphaSkin, Map<Clan, Skin> skins, Map<Clan, Skin> alphaSkins)
 	{
+		/** The skin a werewolf of this clan wears in wolf form: the clan's alpha skin or its normal skin */
+		public Skin skin(Clan clan, boolean alpha)
+		{
+			return alpha ? this.alphaSkins.get(clan) : this.skins.get(clan);
+		}
 	}
 }

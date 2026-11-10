@@ -10,6 +10,7 @@ import org.bukkit.plugin.PluginManager;
 
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
+import com.dogonfire.werewolf.api.Clan;
 import com.dogonfire.werewolf.disguises.IWerewolfDisguiseFactory.WerewolfDisguise;
 
 /** Hides which skin backend is in use, so that we don't depend on a particular disguise plugin */
@@ -24,8 +25,7 @@ public class WerewolfDisguiseAPI
 	private final Werewolf						plugin;
 	private IWerewolfDisguiseFactory			werewolfDisguiser;
 	private Backend								activeBackend;
-	// Disguises by skin account, and the disguise each disguised player wears
-	private final Map<UUID, WerewolfDisguise>	disguises	= new HashMap<UUID, WerewolfDisguise>();
+	// The disguise each disguised player wears
 	private final Map<UUID, WerewolfDisguise>	worn		= new HashMap<UUID, WerewolfDisguise>();
 
 	public WerewolfDisguiseAPI(WerewolfContext ctx)
@@ -52,7 +52,6 @@ public class WerewolfDisguiseAPI
 
 		this.werewolfDisguiser = null;
 		this.activeBackend = null;
-		this.disguises.clear();
 		this.worn.clear();
 
 		switch (backend)
@@ -146,24 +145,10 @@ public class WerewolfDisguiseAPI
 		}
 	}
 
-	public WerewolfDisguise getDisguise(UUID disguiseAccountId, String disguiseAccountName)
+	/** A disguise with the skin of this clan, or of its alpha. Null if disguises are disabled. */
+	public WerewolfDisguise getDisguise(Clan clan, boolean alpha)
 	{
-		WerewolfDisguise cached = this.disguises.get(disguiseAccountId);
-		if (cached != null)
-		{
-			return cached;
-		}
-
-		if (this.werewolfDisguiser == null)
-		{
-			return null;
-		}
-
-		this.plugin.logDebug("Creating new werewolf disguise - AccountId: " + disguiseAccountId + " AccountName: " + disguiseAccountName);
-
-		WerewolfDisguise werewolfDisguise = this.werewolfDisguiser.newDisguise(disguiseAccountId, disguiseAccountName);
-		this.disguises.put(disguiseAccountId, werewolfDisguise);
-		return werewolfDisguise;
+		return this.werewolfDisguiser != null ? this.werewolfDisguiser.newDisguise(clan, alpha) : null;
 	}
 
 	public boolean disguise(Player player, WerewolfDisguise skin, String werewolfName)

@@ -19,6 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
 {
+    private static final String ALPHA_PREFIX = "Alpha_";
+
     private final WerewolfContext ctx;
     private final Werewolf plugin;
     private final SkinsRestorer skinsRestorer;
@@ -28,8 +30,8 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
 
     public class SkinsRestorerWerewolfDisguise extends WerewolfDisguise
     {
-        public SkinsRestorerWerewolfDisguise(UUID accountId, String accountName) {
-            super(SkinsRestorerFactory.this.ctx, accountId, accountName);
+        public SkinsRestorerWerewolfDisguise(Clan clan, boolean alpha) {
+            super(SkinsRestorerFactory.this.ctx, clan, alpha);
         }
 
         @Override
@@ -52,13 +54,7 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
                 // (never a werewolf skin left over from a crash, or they would stay a werewolf after turning back)
                 skinsRestorer.getPlayerStorage().getSkinIdOfPlayer(playerId).filter(id -> !isWerewolfSkin(id)).ifPresent(id -> previousSkins.putIfAbsent(playerId, id));
 
-                String skinName;
-                if (ctx.getClanManager().isAlpha(playerId)) {
-                    skinName = "Alpha";
-                }
-                else {
-                    skinName = ctx.getWerewolfManager().getWerewolfClan(playerId).name();
-                }
+                String skinName = customSkinName(getClan(), isAlpha());
                 plugin.logDebug("[SkinsRestorer] Disguising " + player.getName() + " using the " + skinName + " skin.");
                 skinsRestorer.getPlayerStorage().setSkinIdOfPlayer(playerId, SkinIdentifier.ofCustom(skinName));
 
@@ -117,16 +113,23 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
         registerSkins();
     }
 
-    // The clan and alpha skins as SkinsRestorer custom skins named "Alpha" and after each Clan constant
+    // The clan and alpha skins as SkinsRestorer custom skins named after each Clan constant and Alpha_<Clan>
     private void registerSkins()
     {
         Settings.Clans clans = ctx.getSettings().clans();
-        skinsRestorer.getSkinStorage().setCustomSkinData("Alpha", SkinProperty.of(clans.alphaSkin().value(), clans.alphaSkin().signature()));
         for (Clan clan : Clan.values())
         {
-            Settings.Skin skin = clans.skins().get(clan);
-            skinsRestorer.getSkinStorage().setCustomSkinData(clan.name(), SkinProperty.of(skin.value(), skin.signature()));
+            for (boolean alpha : new boolean[] { false, true })
+            {
+                Settings.Skin skin = clans.skin(clan, alpha);
+                skinsRestorer.getSkinStorage().setCustomSkinData(customSkinName(clan, alpha), SkinProperty.of(skin.value(), skin.signature()));
+            }
         }
+    }
+
+    private static String customSkinName(Clan clan, boolean alpha)
+    {
+        return alpha ? ALPHA_PREFIX + clan.name() : clan.name();
     }
 
     @Override
@@ -135,7 +138,7 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
         registerSkins();
     }
 
-    // One of the custom skins registered above
+    // One of the custom skins registered above, or the shared "Alpha" skin of versions before per-clan alpha skins
     private static boolean isWerewolfSkin(SkinIdentifier id)
     {
         if (id.getSkinType() != SkinType.CUSTOM)
@@ -148,7 +151,7 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
         }
         for (Clan clan : Clan.values())
         {
-            if (id.getIdentifier().equalsIgnoreCase(clan.name()))
+            if (id.getIdentifier().equalsIgnoreCase(customSkinName(clan, false)) || id.getIdentifier().equalsIgnoreCase(customSkinName(clan, true)))
             {
                 return true;
             }
@@ -196,8 +199,8 @@ public class SkinsRestorerFactory implements IWerewolfDisguiseFactory
     }
 
     @Override
-    public WerewolfDisguise newDisguise(UUID disguiseAccountId, String disguiseAccountName)
+    public WerewolfDisguise newDisguise(Clan clan, boolean alpha)
     {
-        return new SkinsRestorerWerewolfDisguise(disguiseAccountId, disguiseAccountName);
+        return new SkinsRestorerWerewolfDisguise(clan, alpha);
     }
 }

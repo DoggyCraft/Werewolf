@@ -67,6 +67,8 @@ public class WerewolfManager
 	private boolean					shuttingDown					= false;
 	// Set while a player quits or joins: undisguise in this tick
 	private boolean					untransformImmediately			= false;
+	private boolean					warnedVampireError				= false;
+	private boolean					warnedUpdateError				= false;
 
 	public WerewolfManager(WerewolfContext ctx, WerewolfRepository werewolves)
 	{
@@ -739,6 +741,15 @@ public class WerewolfManager
 		catch (AssertionError e)
 		{
 			// VampireRevamp hasn't loaded this player's data yet
+			return false;
+		}
+		catch (RuntimeException e)
+		{
+			if (!this.warnedVampireError)
+			{
+				this.warnedVampireError = true;
+				this.plugin.getLogger().log(Level.WARNING, "VampireRevamp failed to say whether " + player.getName() + " is a vampire; treating them as not one (logged once)", e);
+			}
 			return false;
 		}
 	}
@@ -1441,42 +1452,18 @@ public class WerewolfManager
 
 		for (Player player : new ArrayList<Player>(this.plugin.getServer().getOnlinePlayers()))
 		{
-			if (!isWerewolf(player))
+			// One player's error (e.g. from another plugin's event listener) must not stop the loop for everyone else
+			try
 			{
-				continue;
+				updatePlayer(player, changedForm);
 			}
-
-			// VampireIntegration stops werewolves becoming vampires (and the reverse), so this only catches hybrids made
-			// before that, or while one of the plugins was missing: the werewolf side goes
-			if (this.isVampire(player))
+			catch (RuntimeException e)
 			{
-				this.plugin.log(player.getName() + " is a Vampire! Removing their Werewolf infection...");
-				unmakeWerewolf(player.getUniqueId(), WerewolfCureEvent.Cause.VAMPIRISM);
-				changedForm.add(player);
-			}
-			else if (canTransform(player))
-			{
-				this.transform(player, WerewolfTransformEvent.Reason.MOON);
-				changedForm.add(player);
-			}
-			else if (canUntransform(player))
-			{
-				this.untransform(player, WerewolfTransformEvent.Reason.MOON);
-				changedForm.add(player);
-			}
-			else if (checkTransformationTimeLimit(player))
-			{
-				changedForm.add(player);
-			}
-			else if (hasWerewolfSkin(player.getUniqueId()) && this.isWerewolvesAllowedInWorld(player) && this.isUnderOpenSky(player))
-			{
-				// Already in wolf form when the moon rose (e.g. after /ww transform): still counts for this night's level
-				grantFullMoonLevel(player);
-			}
-
-			if (!changedForm.contains(player) && hasWerewolfSkin(player.getUniqueId()))
-			{
-				ctx.getWolfFormManager().refreshWolfForm(player);
+				if (!this.warnedUpdateError)
+				{
+					this.warnedUpdateError = true;
+					this.plugin.getLogger().log(Level.SEVERE, "Error updating werewolf " + player.getName() + " (further errors are not logged)", e);
+				}
 			}
 		}
 
@@ -1492,6 +1479,48 @@ public class WerewolfManager
 		if (this.plugin.getSettings().general().autoBounty() && huntManager != null)
 		{
 			huntManager.autoAddBounty();
+		}
+	}
+
+	// Moon, vampirism, time limit and wolf form refresh for one online werewolf
+	private void updatePlayer(Player player, Set<Player> changedForm)
+	{
+		if (!isWerewolf(player))
+		{
+			return;
+		}
+
+		// VampireIntegration stops werewolves becoming vampires (and the reverse), so this only catches hybrids made
+		// before that, or while one of the plugins was missing: the werewolf side goes
+		if (this.isVampire(player))
+		{
+			this.plugin.log(player.getName() + " is a Vampire! Removing their Werewolf infection...");
+			unmakeWerewolf(player.getUniqueId(), WerewolfCureEvent.Cause.VAMPIRISM);
+			changedForm.add(player);
+		}
+		else if (canTransform(player))
+		{
+			this.transform(player, WerewolfTransformEvent.Reason.MOON);
+			changedForm.add(player);
+		}
+		else if (canUntransform(player))
+		{
+			this.untransform(player, WerewolfTransformEvent.Reason.MOON);
+			changedForm.add(player);
+		}
+		else if (checkTransformationTimeLimit(player))
+		{
+			changedForm.add(player);
+		}
+		else if (hasWerewolfSkin(player.getUniqueId()) && this.isWerewolvesAllowedInWorld(player) && this.isUnderOpenSky(player))
+		{
+			// Already in wolf form when the moon rose (e.g. after /ww transform): still counts for this night's level
+			grantFullMoonLevel(player);
+		}
+
+		if (!changedForm.contains(player) && hasWerewolfSkin(player.getUniqueId()))
+		{
+			ctx.getWolfFormManager().refreshWolfForm(player);
 		}
 	}
 }

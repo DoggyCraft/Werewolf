@@ -3,6 +3,7 @@ package com.dogonfire.werewolf.disguises;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 import org.bukkit.entity.Player;
 
@@ -46,7 +47,8 @@ public class PaperSkinFactory implements IWerewolfDisguiseFactory
 
 			for (ProfileProperty property : profile.getProperties())
 			{
-				if (property.getName().equals(TEXTURES))
+				// Not a werewolf skin still on from a moment ago (a refresh while the original is being looked up)
+				if (property.getName().equals(TEXTURES) && !isWerewolfTexture(property.getValue()))
 				{
 					originalSkins.putIfAbsent(player.getUniqueId(), property);
 				}
@@ -80,7 +82,8 @@ public class PaperSkinFactory implements IWerewolfDisguiseFactory
 			PlayerProfile lookup = plugin.getServer().createProfile(player.getUniqueId(), player.getName());
 			lookup.update().thenAccept(updated -> plugin.getServer().getScheduler().runTask(plugin, () ->
 			{
-				if (!player.isOnline())
+				// Back in wolf form meanwhile (a skin refresh undisguises and disguises right away)
+				if (!player.isOnline() || ctx.getSkinManager().getSkin(player) != null)
 				{
 					return;
 				}
@@ -95,7 +98,11 @@ public class PaperSkinFactory implements IWerewolfDisguiseFactory
 					}
 				}
 				player.setPlayerProfile(current);
-			}));
+			})).exceptionally(ex ->
+			{
+				plugin.getLogger().log(Level.WARNING, "Could not look up the skin of " + player.getName() + " to give it back; they keep the werewolf skin until they relog", ex);
+				return null;
+			});
 			return true;
 		}
 	}

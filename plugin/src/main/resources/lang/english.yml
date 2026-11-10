@@ -346,6 +346,10 @@ BlockedCommandAlpha:
 - Alpha werewolves cannot use this command!
 CannotTransformInGameMode:
 - You cannot transform into a wolf in creative or spectator mode
+MoonPullBlockedByGameMode:
+- You feel the pull of the full moon, but you cannot transform in creative or spectator mode
+PlayerCannotTransformTonight:
+- $PlayerName cannot transform again until tomorrow night
 SilverArmorPurity:
 - $Amount% chance to resist a werewolf bite
 SilverArmorDefense:

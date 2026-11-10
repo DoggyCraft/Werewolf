@@ -319,6 +319,8 @@ public class LanguageManager
 		BlockedCommandWolfForm,
 		BlockedCommandAlpha,
 		CannotTransformInGameMode,
+		MoonPullBlockedByGameMode,
+		PlayerCannotTransformTonight,
 		SilverArmorPurity,
 		SilverArmorDefense,
 		SilverArmorHumansOnly,

@@ -56,7 +56,7 @@ public class CheckCommand extends SubCommand
 			}
 			else
 			{
-				this.plugin.log(checkPlayer.getName() + " is a infected werewolf");
+				this.plugin.log(checkPlayer.getName() + " is an infected werewolf");
 			}
 		}
 		else if (player != null)
@@ -67,6 +67,19 @@ public class CheckCommand extends SubCommand
 		else
 		{
 			this.plugin.log(checkPlayer.getName() + " is not a werewolf");
+		}
+
+		if (ctx.getWerewolfManager().isWerewolf(checkPlayer.getUniqueId()) && ctx.getWerewolfManager().isInfectedThisNight(checkPlayer.getUniqueId()))
+		{
+			if (player != null)
+			{
+				lang().setPlayerName(checkPlayer.getName());
+				send(player, LANGUAGESTRING.PlayerCannotTransformTonight, ChatColor.AQUA);
+			}
+			else
+			{
+				this.plugin.log(checkPlayer.getName() + " can't transform again until tomorrow night");
+			}
 		}
 
 		if (player != null)

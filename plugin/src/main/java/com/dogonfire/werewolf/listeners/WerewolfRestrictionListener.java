@@ -1,7 +1,10 @@
 package com.dogonfire.werewolf.listeners;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -33,6 +36,8 @@ public class WerewolfRestrictionListener implements Listener
 
 	private final Werewolf		plugin;
 	private final WerewolfContext ctx;
+	// Day number each player was last told the moon couldn't change them, so they hear it once a night
+	private final Map<UUID, Long>	moonHintDay	= new HashMap<UUID, Long>();
 
 	public WerewolfRestrictionListener(WerewolfContext ctx)
 	{
@@ -257,6 +262,16 @@ public class WerewolfRestrictionListener implements Listener
 		if (event.getReason() == WerewolfTransformEvent.Reason.CONTROLLED || event.getReason() == WerewolfTransformEvent.Reason.COMMAND)
 		{
 			event.getPlayer().sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.CannotTransformInGameMode, ChatColor.RED));
+		}
+		else if (event.getReason() == WerewolfTransformEvent.Reason.MOON)
+		{
+			Player player = event.getPlayer();
+			long day = player.getWorld().getFullTime() / 24000L;
+			Long lastDay = this.moonHintDay.put(player.getUniqueId(), day);
+			if (lastDay == null || lastDay != day)
+			{
+				player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.MoonPullBlockedByGameMode, ChatColor.LIGHT_PURPLE));
+			}
 		}
 	}
 }

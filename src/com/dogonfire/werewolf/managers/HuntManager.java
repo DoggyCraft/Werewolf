@@ -29,7 +29,6 @@ public class HuntManager
 	private final HunterRepository		hunters;
 	private final CompassTrackerTask	compassTracker;
 	private final Random				random		= new Random();
-	private int							totalBounty	= 0;
 	private boolean						warnedNoEconomy;
 
 	public HuntManager(WerewolfContext ctx, HunterRepository hunters)
@@ -105,7 +104,7 @@ public class HuntManager
 			return;
 		}
 		economy.withdrawPlayer(player, bounty);
-		this.totalBounty += bounty;
+		this.hunters.setTotalBounty(this.hunters.getTotalBounty() + bounty);
 
 		LanguageManager lang = this.ctx.getLanguageManager();
 		lang.setPlayerName(playerName);
@@ -115,18 +114,18 @@ public class HuntManager
 		lang.setAmount(getFormattedBounty());
 		this.plugin.getServer().broadcastMessage(lang.getLanguageString(LanguageManager.LANGUAGESTRING.BountyTotal, ChatColor.AQUA));
 
-		this.plugin.log(playerName + " added " + economy.format(bounty) + " to the Werewolf bounty. Bounty is now " + economy.format(this.totalBounty));
+		this.plugin.log(playerName + " added " + economy.format(bounty) + " to the Werewolf bounty. Bounty is now " + economy.format(this.hunters.getTotalBounty()));
 	}
 
 	public void autoAddBounty()
 	{
-		if (this.random.nextInt(100 + this.totalBounty / 5) > 0)
+		if (this.random.nextInt(100 + this.hunters.getTotalBounty() / 5) > 0)
 		{
 			return;
 		}
 
 		int maximum = this.plugin.getSettings().general().autoBountyMaximum();
-		if (this.totalBounty >= maximum)
+		if (this.hunters.getTotalBounty() >= maximum)
 		{
 			return;
 		}
@@ -145,7 +144,7 @@ public class HuntManager
 
 		int bounty = 10 + this.random.nextInt(10) * 10;
 
-		this.totalBounty = Math.min(this.totalBounty + bounty, maximum);
+		this.hunters.setTotalBounty(Math.min(this.hunters.getTotalBounty() + bounty, maximum));
 
 		LanguageManager lang = this.ctx.getLanguageManager();
 		lang.setAmount(economy.format(bounty));
@@ -157,12 +156,12 @@ public class HuntManager
 
 	public int getBounty()
 	{
-		return this.totalBounty;
+		return this.hunters.getTotalBounty();
 	}
 
 	public String getFormattedBounty()
 	{
-		return format(this.ctx.getEconomy(), this.totalBounty);
+		return format(this.ctx.getEconomy(), this.hunters.getTotalBounty());
 	}
 
 	public void handleKill(UUID killerId, String killerName)
@@ -180,7 +179,7 @@ public class HuntManager
 
 		DateFormat formatter = new SimpleDateFormat("HH:mm dd-MM-yyyy");
 		LanguageManager lang = this.ctx.getLanguageManager();
-		Economy economy = this.totalBounty > 0 ? economy() : null;
+		Economy economy = this.hunters.getTotalBounty() > 0 ? economy() : null;
 		Player killer = this.plugin.getServer().getPlayer(killerId);
 
 		// Without an economy (or the killer) the bounty can't be paid, so it stays for the next kill
@@ -188,10 +187,10 @@ public class HuntManager
 		if (economy != null && killer != null)
 		{
 			lang.setPlayerName(killerName);
-			lang.setAmount(economy.format(this.totalBounty));
+			lang.setAmount(economy.format(this.hunters.getTotalBounty()));
 			message = lang.getLanguageString(LanguageManager.LANGUAGESTRING.KilledWerewolfBounty, ChatColor.AQUA);
-			economy.depositPlayer(killer, this.totalBounty);
-			this.totalBounty = 0;
+			economy.depositPlayer(killer, this.hunters.getTotalBounty());
+			this.hunters.setTotalBounty(0);
 		}
 		else
 		{

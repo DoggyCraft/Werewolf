@@ -11,10 +11,14 @@ import java.util.logging.Logger;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
-/** hunters.yml: werewolf kills per hunter, keyed by player name */
+/** hunters.yml: werewolf kills per hunter, keyed by player name, and the bounty pool under {@value #BOUNTY_KEY} */
 public final class HunterRepository extends YamlRepository
 {
-	private final Map<String, HunterRecord> records = new LinkedHashMap<String, HunterRecord>();
+	// Can't be a player name (no '-' in those)
+	private static final String				BOUNTY_KEY	= "total-bounty";
+
+	private final Map<String, HunterRecord>	records		= new LinkedHashMap<String, HunterRecord>();
+	private int								totalBounty;
 
 	public HunterRepository(File dataFolder, Logger logger, ExecutorService writer)
 	{
@@ -44,6 +48,21 @@ public final class HunterRepository extends YamlRepository
 		return Collections.unmodifiableSet(this.records.keySet());
 	}
 
+	/** Money in the werewolf bounty, paid to the next hunter who kills a werewolf */
+	public int getTotalBounty()
+	{
+		return this.totalBounty;
+	}
+
+	public void setTotalBounty(int totalBounty)
+	{
+		if (this.totalBounty != totalBounty)
+		{
+			this.totalBounty = totalBounty;
+			markDirty();
+		}
+	}
+
 	@Override
 	public int size()
 	{
@@ -54,6 +73,7 @@ public final class HunterRepository extends YamlRepository
 	protected void clear()
 	{
 		this.records.clear();
+		this.totalBounty = 0;
 	}
 
 	@Override
@@ -61,6 +81,12 @@ public final class HunterRepository extends YamlRepository
 	{
 		for (String key : yaml.getKeys(false))
 		{
+			if (key.equals(BOUNTY_KEY))
+			{
+				this.totalBounty = Math.max(0, yaml.getInt(key));
+				continue;
+			}
+
 			ConfigurationSection section = yaml.getConfigurationSection(key);
 			if (section == null)
 			{
@@ -81,6 +107,10 @@ public final class HunterRepository extends YamlRepository
 	@Override
 	protected void write(YamlConfiguration yaml)
 	{
+		if (this.totalBounty > 0)
+		{
+			yaml.set(BOUNTY_KEY, this.totalBounty);
+		}
 		for (HunterRecord record : this.records.values())
 		{
 			ConfigurationSection section = yaml.createSection(record.getName());

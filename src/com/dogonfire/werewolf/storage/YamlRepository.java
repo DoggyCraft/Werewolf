@@ -82,37 +82,69 @@ public abstract class YamlRepository
 		this.unknownKeys.put(key, toPlain(value));
 	}
 
-	/** Reads the file, replacing whatever is in memory. A missing file is an empty repository. */
+	/** Startup: reads the file into memory. A missing file is an empty repository. */
 	public void load()
 	{
+		load(true);
+	}
+
+	/**
+	 * Parses the file first and only replaces the data in memory if that worked. At startup (or while the file is still
+	 * unreadable from startup) a broken file leaves the repository empty and read-only, so it is never written over.
+	 * On a reload, a broken file keeps the data in memory and the repository writable, and the file is written again
+	 * from memory on the next save (a copy of the broken file is kept). Returns whether the file was read.
+	 */
+	private boolean load(boolean startup)
+	{
+		YamlConfiguration yaml = null;
+		FileTime modified = null;
+
+		if (this.file.exists())
+		{
+			yaml = new YamlConfiguration();
+			try
+			{
+				modified = Files.getLastModifiedTime(this.file.toPath());
+				yaml.load(this.file);
+			}
+			catch (IOException | InvalidConfigurationException ex)
+			{
+				String copy = keepBrokenCopy();
+				this.logger.log(Level.SEVERE, "Could not read " + this.file.getName() + ": " + ex.getMessage());
+
+				if (startup || this.readOnly)
+				{
+					clear();
+					this.unknownKeys = new LinkedHashMap<String, Object>();
+					this.dirty = false;
+					this.readOnly = true;
+					this.knownModified = modified;
+					this.logger.severe(this.file.getName() + " will NOT be saved until it is fixed and the plugin is reloaded or restarted, so nothing in it is overwritten."
+							+ (copy != null ? " A copy was kept as " + copy + "." : ""));
+				}
+				else
+				{
+					// Not read again until it changes; the data in memory is saved over it
+					this.knownModified = modified;
+					this.dirty = true;
+					this.logger.severe("Kept the " + size() + " entries already loaded; " + this.file.getName() + " will be saved from them, undoing the edit."
+							+ (copy != null ? " The edited file was kept as " + copy + "." : ""));
+				}
+				return false;
+			}
+		}
+
 		clear();
 		this.unknownKeys = new LinkedHashMap<String, Object>();
 		this.dirty = false;
 		this.readOnly = false;
-		this.knownModified = null;
+		this.knownModified = modified;
 
-		if (!this.file.exists())
+		if (yaml != null)
 		{
-			return;
+			read(yaml);
 		}
-
-		YamlConfiguration yaml = new YamlConfiguration();
-		try
-		{
-			this.knownModified = Files.getLastModifiedTime(this.file.toPath());
-			yaml.load(this.file);
-		}
-		catch (IOException | InvalidConfigurationException ex)
-		{
-			this.readOnly = true;
-			String copy = keepBrokenCopy();
-			this.logger.log(Level.SEVERE, "Could not read " + this.file.getName() + ": " + ex.getMessage());
-			this.logger.severe(this.file.getName() + " will NOT be saved until it is fixed and the plugin is reloaded or restarted, so nothing in it is overwritten."
-					+ (copy != null ? " A copy was kept as " + copy + "." : ""));
-			return;
-		}
-
-		read(yaml);
+		return true;
 	}
 
 	private String keepBrokenCopy()
@@ -152,10 +184,12 @@ public abstract class YamlRepository
 
 		if (this.dirty && !this.readOnly)
 		{
-			this.logger.warning(this.file.getName() + " was changed on disk; reading it again and discarding changes not yet saved.");
+			this.logger.warning(this.file.getName() + " was changed on disk; reading it again (changes not yet saved are discarded if it can be read).");
 		}
-		load();
-		this.logger.info("Reloaded " + size() + " entries from " + this.file.getName() + ".");
+		if (load(false))
+		{
+			this.logger.info("Reloaded " + size() + " entries from " + this.file.getName() + ".");
+		}
 	}
 
 	/** Main thread: if anything changed, snapshots the data to YAML text and queues the write. */

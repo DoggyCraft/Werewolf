@@ -15,7 +15,7 @@ import com.dogonfire.werewolf.api.MoonPhase;
 
 /**
  * Everything read from config.yml, validated. Built by {@link SettingsLoader} on enable and on /ww reload; never
- * changed afterwards. Each record matches a section of config.yml (see src/resources/config.yml for the keys).
+ * changed afterwards. Each record matches a section of config.yml (see plugin/src/main/resources/config.yml for the keys).
  */
 public record Settings(
 		General general,

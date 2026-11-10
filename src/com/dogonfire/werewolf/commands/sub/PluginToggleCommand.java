@@ -41,11 +41,12 @@ public class PluginToggleCommand extends SubCommand
 		{
 			if (this.enable)
 			{
-				if (ctx.getMoonManager().isNight(world))
+				// Only who the moon would transform now (transformation night, allowed world, open sky)
+				for (Player werewolf : world.getPlayers())
 				{
-					for (Player werewolf : world.getPlayers())
+					if (ctx.getWerewolfManager().isWerewolf(werewolf) && ctx.getWerewolfManager().canTransform(werewolf))
 					{
-						ctx.getWerewolfManager().setWerewolfSkin(werewolf, WerewolfTransformEvent.Reason.COMMAND);
+						ctx.getWerewolfManager().transform(werewolf, WerewolfTransformEvent.Reason.COMMAND);
 					}
 				}
 			}

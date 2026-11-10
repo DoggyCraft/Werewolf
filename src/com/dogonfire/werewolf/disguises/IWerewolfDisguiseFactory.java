@@ -74,4 +74,9 @@ public interface IWerewolfDisguiseFactory
 	}
 
 	public WerewolfDisguise newDisguise(UUID disguiseAccountId, String disguiseAccountName);
+
+	/** Called on /ww reload: backends that register the clan skins up front register them again. Others read them on use. */
+	default void reloadSkins()
+	{
+	}
 }

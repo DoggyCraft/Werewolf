@@ -24,6 +24,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Effect;
 import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -31,8 +32,11 @@ import org.bukkit.util.Vector;
 
 import com.dogonfire.werewolf.api.event.WerewolfCureEvent;
 import com.dogonfire.werewolf.api.event.WerewolfInfectionEvent;
+import com.dogonfire.werewolf.api.event.WerewolfLevelChangeEvent;
 import com.dogonfire.werewolf.api.event.WerewolfTransformEvent;
 import com.dogonfire.werewolf.api.Clan;
+import com.dogonfire.werewolf.api.Form;
+import com.dogonfire.werewolf.api.WerewolfProfile;
 import com.dogonfire.werewolf.storage.WerewolfRecord;
 import com.dogonfire.werewolf.storage.WerewolfRepository;
 import com.dogonfire.werewolf.storage.WolfState;
@@ -52,6 +56,10 @@ public class WerewolfManager
 	private final Map<UUID, String>	playerlistNames					= new ConcurrentHashMap<UUID, String>();
 	// Start time of wolf forms entered with /ww transform; only these are cut short by the time limit
 	private HashMap<UUID, Long>		controlledFormStarts			= new HashMap<UUID, Long>();
+	// Wolf forms entered through the API: kept until untransformed (not reverted at morning, no time limit)
+	private final Set<UUID>			heldForms						= new HashSet<UUID>();
+	// Snapshot of every werewolf for other threads (PlaceholderAPI, the API); rebuilt on the main thread on every change
+	private final Map<UUID, WerewolfProfile>	profiles				= new ConcurrentHashMap<UUID, WerewolfProfile>();
 	private HashMap<UUID, Long>		lastFormChanges					= new HashMap<UUID, Long>();
 	private HashMap<UUID, Long>		lastHowls						= new HashMap<UUID, Long>();
 	private HashMap<UUID, Long>		lastGrowls						= new HashMap<UUID, Long>();
@@ -63,6 +71,7 @@ public class WerewolfManager
 		this.ctx = ctx;
 		this.plugin = ctx.getPlugin();
 		this.werewolves = werewolves;
+		this.werewolves.setChangeListener(this::refreshProfile);
 	}
 
 	public int getNumberOfWerewolves()
@@ -123,6 +132,8 @@ public class WerewolfManager
 		{
 			this.originalGroup.remove(playerId);
 		}
+
+		refreshProfile(playerId);
 	}
 
 	public String getOriginalPermissionGroup(UUID playerId)
@@ -250,9 +261,29 @@ public class WerewolfManager
 
 	public boolean makeWerewolf(Player player, boolean turnNow, Clan clan, WerewolfInfectionEvent.Source source)
 	{
-		WerewolfInfectionEvent event = new WerewolfInfectionEvent(player, clan, source, turnNow);
+		return makeWerewolf(player, turnNow, clan, source, null, 1.0);
+	}
+
+	/**
+	 * The only way a player becomes a werewolf. Fires {@link WerewolfInfectionEvent} (listeners may change the clan and
+	 * the chance, or cancel), then rolls the chance, then silver armor's protection against bites.
+	 *
+	 * @param biter the wolf or werewolf for bites, otherwise null
+	 * @param chance probability that the infection happens (bites: the configured risk; everything else 1)
+	 */
+	public boolean makeWerewolf(Player player, boolean turnNow, Clan clan, WerewolfInfectionEvent.Source source, Entity biter, double chance)
+	{
+		WerewolfInfectionEvent event = new WerewolfInfectionEvent(player, clan, source, turnNow, biter, chance);
 		plugin.getServer().getPluginManager().callEvent(event);
 		if (event.isCancelled())
+		{
+			return false;
+		}
+		if (event.getChance() < 1.0 && this.random.nextDouble() >= event.getChance())
+		{
+			return false;
+		}
+		if ((source == WerewolfInfectionEvent.Source.WEREWOLF_BITE || source == WerewolfInfectionEvent.Source.WILD_WOLF_BITE) && silverArmorCleanses(player))
 		{
 			return false;
 		}
@@ -298,6 +329,18 @@ public class WerewolfManager
 		return true;
 	}
 
+	// Silver armor gives its wearer a chance to shake off a bite infection
+	private boolean silverArmorCleanses(Player player)
+	{
+		int purity = ctx.getItemManager().getSilverArmorPurity(player);
+		if (purity > 0 && this.random.nextInt(100) < purity)
+		{
+			player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.SilverArmorCleansed, ChatColor.AQUA));
+			return true;
+		}
+		return false;
+	}
+
 	public boolean unmakeWerewolf(UUID playerId, WerewolfCureEvent.Cause cause)
 	{
 		WerewolfCureEvent event = new WerewolfCureEvent(playerId, cause);
@@ -319,6 +362,7 @@ public class WerewolfManager
 		setNotWerewolf(playerId);
 		popPlayerData(playerId);
 		this.controlledFormStarts.remove(playerId);
+		this.heldForms.remove(playerId);
 
 		this.undisguiseCuredWerewolf(playerId, originalGroup);
 
@@ -328,33 +372,34 @@ public class WerewolfManager
 		return true;
 	}
 
-	public void setWerewolfSkin(Player player, WerewolfTransformEvent.Reason reason)
+	/** Starts the change into wolf form; false if the player can't change now or a listener cancelled it */
+	public boolean setWerewolfSkin(Player player, WerewolfTransformEvent.Reason reason)
 	{
 		if (!ctx.isWerewolvesEnabled())
 		{
-			return;
+			return false;
 		}
 
 		if (!isWerewolf(player))
 		{
-			return;
+			return false;
 		}
 
 		if (hasWerewolfSkin(player.getUniqueId()))
 		{
-			return;
+			return false;
 		}
 
 		if (isInfectedThisNight(player.getUniqueId()))
 		{
-			return;
+			return false;
 		}
 
 		WerewolfTransformEvent event = new WerewolfTransformEvent(player, getWerewolfClan(player.getUniqueId()), true, reason);
 		plugin.getServer().getPluginManager().callEvent(event);
 		if (event.isCancelled())
 		{
-			return;
+			return false;
 		}
 
 		UUID playerId = player.getUniqueId();
@@ -367,6 +412,14 @@ public class WerewolfManager
 		{
 			this.controlledFormStarts.remove(playerId);
 		}
+		if (reason == WerewolfTransformEvent.Reason.API)
+		{
+			this.heldForms.add(playerId);
+		}
+		else
+		{
+			this.heldForms.remove(playerId);
+		}
 
 		if (reason == WerewolfTransformEvent.Reason.MOON || reason == WerewolfTransformEvent.Reason.INFECTION)
 		{
@@ -374,6 +427,7 @@ public class WerewolfManager
 		}
 
 		this.disguiseWerewolf(player);
+		return true;
 	}
 
 	/**
@@ -423,14 +477,15 @@ public class WerewolfManager
 		});
 	}
 
-	public void unsetWerewolfSkin(UUID playerId, boolean makeVisible, WerewolfTransformEvent.Reason reason)
+	/** Starts the change back into human form; false if the player isn't in wolf form or a listener cancelled it */
+	public boolean unsetWerewolfSkin(UUID playerId, boolean makeVisible, WerewolfTransformEvent.Reason reason)
 	{
 		String playerName = plugin.getServer().getOfflinePlayer(playerId).getName();
 
 		if (!isWerewolf(playerId))
 		{
 			this.plugin.logDebug("unsetWerewolfSkin(): " + playerName + " does not have werewolf skin");
-			return;
+			return false;
 		}
 
 		setInfectedThisNight(playerId, playerName, false);
@@ -438,7 +493,7 @@ public class WerewolfManager
 		if (!hasWerewolfSkin(playerId))
 		{
 			this.plugin.logDebug("unsetWerewolfSkin(): " + playerName + " does not have a werewolf skin");
-			return;
+			return false;
 		}
 
 		Player onlinePlayer = this.plugin.getServer().getPlayer(playerId);
@@ -448,11 +503,12 @@ public class WerewolfManager
 			plugin.getServer().getPluginManager().callEvent(event);
 			if (event.isCancelled())
 			{
-				return;
+				return false;
 			}
 		}
 
 		this.controlledFormStarts.remove(playerId);
+		this.heldForms.remove(playerId);
 		if (reason != WerewolfTransformEvent.Reason.FORCED)
 		{
 			this.lastFormChanges.put(playerId, System.currentTimeMillis());
@@ -471,30 +527,32 @@ public class WerewolfManager
 		this.plugin.log(playerName + " turned into human form!");
 
 		this.undisguiseWerewolf(playerId, makeVisible);
+		return true;
 	}
 
-	public void transform(Player player, WerewolfTransformEvent.Reason reason)
+	/** Smoke, then {@link #setWerewolfSkin}; false if nothing happened */
+	public boolean transform(Player player, WerewolfTransformEvent.Reason reason)
 	{
 		if (!isWerewolvesAllowedInWorld(player))
 		{
-			return;
+			return false;
 		}
 
 		if (!hasWerewolfSkin(player.getUniqueId()))
 		{
 			playSmoke(player);
-			setWerewolfSkin(player, reason);
+			return setWerewolfSkin(player, reason);
 		}
-		else
-		{
-			this.plugin.log("Could not transform " + player.getName() + ": Not a werewolf!");
-		}
+
+		this.plugin.log("Could not transform " + player.getName() + ": already in wolf form");
+		return false;
 	}
 
-	public void untransform(Player player, WerewolfTransformEvent.Reason reason)
+	/** Smoke, then {@link #unsetWerewolfSkin}; false if nothing happened */
+	public boolean untransform(Player player, WerewolfTransformEvent.Reason reason)
 	{
 		playSmoke(player);
-		unsetWerewolfSkin(player.getUniqueId(), true, reason);
+		return unsetWerewolfSkin(player.getUniqueId(), true, reason);
 	}
 
 	private void playSmoke(Player player)
@@ -616,10 +674,10 @@ public class WerewolfManager
 		return !hasWerewolfSkin(player.getUniqueId()) && !isInfectedThisNight(player.getUniqueId()) && ctx.getMoonManager().isTransformationNight(player.getWorld()) && this.isWerewolvesAllowedInWorld(player) && this.isUnderOpenSky(player);
 	}
 
-	/** Morning reverts every wolf form except ones entered with /ww transform, which the time limit handles */
+	/** Morning reverts every wolf form except ones entered with /ww transform (the time limit handles those) or through the API */
 	public boolean canUntransform(Player player)
 	{
-		return (hasWerewolfSkin(player.getUniqueId()) || isInfectedThisNight(player.getUniqueId())) && !ctx.getMoonManager().isNight(player.getWorld()) && !isControlledForm(player.getUniqueId());
+		return (hasWerewolfSkin(player.getUniqueId()) || isInfectedThisNight(player.getUniqueId())) && !ctx.getMoonManager().isNight(player.getWorld()) && !isControlledForm(player.getUniqueId()) && !this.heldForms.contains(player.getUniqueId());
 	}
 
 	public boolean isControlledForm(UUID playerId)
@@ -696,8 +754,12 @@ public class WerewolfManager
 			return;
 		}
 
+		// The night is used up even if a listener vetoes the level, so the event isn't fired again on every update
 		record.setLastLevelNight(nightKey);
-		incrementNumberOfFullMoonTransformations(player.getUniqueId());
+		if (!setLevel(player.getUniqueId(), record.getTransformations() + 1, WerewolfLevelChangeEvent.Cause.FULL_MOON))
+		{
+			return;
+		}
 
 		ctx.getLanguageManager().setAmount("" + getNumberOfTransformations(player.getUniqueId()));
 		player.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.FullMoonLevelGained, ChatColor.LIGHT_PURPLE));
@@ -960,15 +1022,6 @@ public class WerewolfManager
 		ctx.getClanManager().checkAlpha(clan);
 	}
 
-	public void incrementNumberOfFullMoonTransformations(UUID playerId)
-	{
-		WerewolfRecord record = this.werewolves.get(playerId);
-		if (record != null)
-		{
-			record.setTransformations(record.getTransformations() + 1);
-		}
-	}
-
 	public void setLastTransformation(UUID playerId)
 	{
 		WerewolfRecord record = this.werewolves.get(playerId);
@@ -984,13 +1037,104 @@ public class WerewolfManager
 		return record != null ? record.getTransformations() : 0;
 	}
 
-	/** Sets a werewolf's level (admin commands); works for offline werewolves too */
-	public void setNumberOfTransformations(UUID playerId, int transformations)
+	/**
+	 * Changes a werewolf's level (online or offline) through {@link WerewolfLevelChangeEvent}. Negative levels become 0.
+	 *
+	 * @return false if the player is not a werewolf or a listener cancelled the change; true otherwise (also when the
+	 *         level already was that, which fires no event)
+	 */
+	public boolean setLevel(UUID playerId, int level, WerewolfLevelChangeEvent.Cause cause)
 	{
 		WerewolfRecord record = this.werewolves.get(playerId);
-		if (record != null)
+		if (record == null)
 		{
-			record.setTransformations(Math.max(0, transformations));
+			return false;
+		}
+
+		int oldLevel = record.getTransformations();
+		int newLevel = Math.max(0, level);
+		if (newLevel == oldLevel)
+		{
+			return true;
+		}
+
+		WerewolfLevelChangeEvent event = new WerewolfLevelChangeEvent(playerId, oldLevel, newLevel, cause);
+		plugin.getServer().getPluginManager().callEvent(event);
+		if (event.isCancelled())
+		{
+			return false;
+		}
+
+		// A listener may have cured the werewolf meanwhile
+		record = this.werewolves.get(playerId);
+		if (record == null)
+		{
+			return false;
+		}
+		record.setTransformations(event.getNewLevel());
+		return true;
+	}
+
+	/**
+	 * An infected werewolf becomes a full werewolf in human form, as if it had already transformed once (API). No
+	 * event; false if the player is not a werewolf.
+	 */
+	public boolean makeFullWerewolf(UUID playerId)
+	{
+		if (!isWerewolf(playerId))
+		{
+			return false;
+		}
+		if (isInfectedWerewolf(playerId))
+		{
+			String name = getPlayerName(playerId);
+			setHumanForm(playerId, name);
+			setInfectedThisNight(playerId, name, false);
+		}
+		return true;
+	}
+
+	/** The thread-safe snapshot of a werewolf, or null if the player is not a werewolf */
+	public WerewolfProfile getProfile(UUID playerId)
+	{
+		return playerId == null ? null : this.profiles.get(playerId);
+	}
+
+	/** Snapshots of every werewolf; thread-safe, read-only view */
+	public Collection<WerewolfProfile> getProfiles()
+	{
+		return Collections.unmodifiableCollection(this.profiles.values());
+	}
+
+	/**
+	 * Rebuilds one werewolf's snapshot from the current data. Called on the main thread whenever a werewolf's record,
+	 * form or alpha status changes (WerewolfRepository's change listener, popPlayerData, ClanManager).
+	 */
+	public void refreshProfile(UUID playerId)
+	{
+		if (playerId == null)
+		{
+			return;
+		}
+
+		WerewolfRecord record = this.werewolves.get(playerId);
+		if (record == null || !isWerewolf(playerId))
+		{
+			this.profiles.remove(playerId);
+			return;
+		}
+
+		String name = record.getWerewolfName() != null ? record.getWerewolfName() : "";
+		this.profiles.put(playerId, new WerewolfProfile(playerId, getWerewolfClan(playerId), hasWerewolfSkin(playerId) ? Form.WOLF : Form.HUMAN, isInfectedWerewolf(playerId), record.getTransformations(), name, record.hasIntent(), ctx.getClanManager().isAlpha(playerId)));
+	}
+
+	/** Rebuilds every snapshot, after werewolves.yml or clans.yml was (re)loaded */
+	public void refreshAllProfiles()
+	{
+		this.profiles.keySet().retainAll(new HashSet<UUID>(this.werewolves.ids()));
+		for (UUID playerId : this.werewolves.ids())
+		{
+			refreshProfile(playerId);
 		}
 	}
 
@@ -1165,6 +1309,8 @@ public class WerewolfManager
 
 	public void update()
 	{
+		ctx.getMoonManager().snapshotPhases();
+
 		if (!ctx.isWerewolvesEnabled())
 		{
 			return;

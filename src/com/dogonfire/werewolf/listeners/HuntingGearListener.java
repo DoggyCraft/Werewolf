@@ -1,6 +1,5 @@
 package com.dogonfire.werewolf.listeners;
 
-import java.util.Random;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.LivingEntity;
@@ -25,12 +24,12 @@ import org.bukkit.inventory.meta.ItemMeta;
 import com.dogonfire.werewolf.Werewolf;
 import com.dogonfire.werewolf.WerewolfContext;
 import com.dogonfire.werewolf.api.event.TrackerTargetEvent.TargetType;
-import com.dogonfire.werewolf.api.event.WerewolfInfectionEvent;
 import com.dogonfire.werewolf.api.event.WerewolfTransformEvent;
 import com.dogonfire.werewolf.managers.LanguageManager;
 
 /**
- * Hunting gear: silver armor (infection protection, only humans may wear it), tracker compasses and scent sniffing.
+ * Hunting gear: silver armor (only humans may wear it), tracker compasses and scent sniffing. Silver armor's bite
+ * protection is rolled in WerewolfManager.makeWerewolf, after the infection event.
  * The armor's damage reduction is in DamageListener; the periodic checks are in ItemManager, TrackerManager and
  * ScentManager.
  */
@@ -38,7 +37,6 @@ public class HuntingGearListener implements Listener
 {
 	private final Werewolf	plugin;
 	private final WerewolfContext ctx;
-	private final Random	random	= new Random();
 
 	public HuntingGearListener(WerewolfContext ctx)
 	{
@@ -49,23 +47,6 @@ public class HuntingGearListener implements Listener
 	private void sendMessage(Player player, LanguageManager.LANGUAGESTRING message, ChatColor color)
 	{
 		player.sendMessage(ctx.getLanguageManager().getLanguageString(message, color));
-	}
-
-	// Silver armor gives its wearer a chance to shake off a werewolf bite (not potions or commands)
-	@EventHandler(ignoreCancelled = true)
-	public void onInfection(WerewolfInfectionEvent event)
-	{
-		if (event.getSource() != WerewolfInfectionEvent.Source.WEREWOLF_BITE && event.getSource() != WerewolfInfectionEvent.Source.WILD_WOLF_BITE)
-		{
-			return;
-		}
-
-		int purity = ctx.getItemManager().getSilverArmorPurity(event.getPlayer());
-		if (purity > 0 && this.random.nextInt(100) < purity)
-		{
-			event.setCancelled(true);
-			sendMessage(event.getPlayer(), LanguageManager.LANGUAGESTRING.SilverArmorCleansed, ChatColor.AQUA);
-		}
 	}
 
 	private boolean mayNotWearSilver(Player player)

@@ -9,6 +9,8 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.EnumMap;
 import java.util.UUID;
 
 import com.dogonfire.werewolf.Werewolf;
@@ -37,7 +39,8 @@ public class ClanManager
 	private final ClanRepository		clans;
 	private HashMap<Clan, Double>	totalClanPoints		= new HashMap<Clan, Double>();
 	private HashMap<String, Double>		playerClanPoints	= new HashMap<String, Double>();
-	private HashMap<Clan, String>	clanNames			= new HashMap<Clan, String>();
+	// Replaced as a whole on load, so other threads (PlaceholderAPI, the API) can read it
+	private volatile Map<Clan, String>	clanNames		= Collections.emptyMap();
 	private String						datePattern			= "HH:mm:ss dd-MM-yyyy";
 	
 	private UUID 						alphaAccountId		= null;
@@ -63,16 +66,20 @@ public class ClanManager
 		this.alphaAccount = clans.alphaSkin().accountName();
 		this.alphaAccountId = clans.alphaSkin().accountId();
 
+		Map<Clan, String> names = new EnumMap<Clan, String>(Clan.class);
+
 		for (Clan clan : Clan.values())
 		{
 			Settings.Skin skin = clans.skins().get(clan);
-			this.clanNames.put(clan, clans.names().get(clan));
+			names.put(clan, clans.names().get(clan));
 			this.werewolfAccount.put(clan, skin.accountName());
 			this.werewolfAccountId.put(clan, skin.accountId());
 			this.werewolfTextures.put(clan, skin.value());
 			this.werewolfTextureSignatures.put(clan, skin.signature());
 		}
 		
+		this.clanNames = Collections.unmodifiableMap(names);
+
 		for (Clan clan : Clan.values())
 		{
 			this.totalClanPoints.put(clan, Double.valueOf(0.0D));
@@ -251,6 +258,7 @@ public class ClanManager
 		return ((Double) this.totalClanPoints.get(clan)).doubleValue();
 	}
 
+	/** The clan's display name (config); thread-safe */
 	public String getClanName(Clan clan)
 	{
 		return (String) this.clanNames.get(clan);
@@ -329,11 +337,11 @@ public class ClanManager
 		UUID candidate = ctx.getWerewolfManager().getAlphaCandidate(clan, alphaId);
 		if (candidate != null)
 		{
-			assignAlphaInClan(clan, candidate);
+			assignAlphaInClan(clan, candidate, NewAlphaEvent.Cause.SUCCESSION);
 		}
 		else if (alphaId != null)
 		{
-			assignAlphaInClan(clan, null);
+			assignAlphaInClan(clan, null, NewAlphaEvent.Cause.SUCCESSION);
 		}
 	}
 
@@ -362,9 +370,9 @@ public class ClanManager
 			}
 
 			UUID candidate = ctx.getWerewolfManager().getAlphaCandidate(clan, playerId);
-			if (candidate == null || !assignAlphaInClan(clan, candidate))
+			if (candidate == null || !assignAlphaInClan(clan, candidate, NewAlphaEvent.Cause.SUCCESSION))
 			{
-				assignAlphaInClan(clan, null);
+				assignAlphaInClan(clan, null, NewAlphaEvent.Cause.SUCCESSION);
 			}
 		}
 	}
@@ -394,13 +402,18 @@ public class ClanManager
 		return alphaId != null && alphaId.equals(playerId);
 	}
 
-	public boolean assignAlphaInClan(Clan clan, UUID playerId)
+	/**
+	 * Makes the player the clan's alpha (fires {@link NewAlphaEvent}; false if a listener cancelled it), or clears the
+	 * slot when {@code playerId} is null (no event). The caller checks that the player is a werewolf of that clan.
+	 */
+	public boolean assignAlphaInClan(Clan clan, UUID playerId, NewAlphaEvent.Cause cause)
 	{
 		if (playerId == null)
 		{
 			// Clearing fires no NewAlphaEvent, so the old alpha's skin is refreshed here
 			UUID oldAlphaId = getAlpha(clan);
 			this.clans.get(clan).setAlpha(null);
+			ctx.getWerewolfManager().refreshProfile(oldAlphaId);
 			ctx.getWerewolfManager().refreshWerewolfSkinLater(oldAlphaId);
 		}
 		else
@@ -412,7 +425,7 @@ public class ClanManager
 				return true;
 			}
 
-			NewAlphaEvent event = new NewAlphaEvent(clan, oldAlphaId, playerId);
+			NewAlphaEvent event = new NewAlphaEvent(clan, oldAlphaId, playerId, cause);
 			plugin.getServer().getPluginManager().callEvent(event);
 			if (event.isCancelled())
 			{
@@ -420,6 +433,8 @@ public class ClanManager
 			}
 
 			this.clans.get(clan).setAlpha(playerId);
+			ctx.getWerewolfManager().refreshProfile(oldAlphaId);
+			ctx.getWerewolfManager().refreshProfile(playerId);
 		}
 
 		return true;

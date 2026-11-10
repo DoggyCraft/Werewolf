@@ -62,7 +62,7 @@ public class AlphaListener implements Listener
 
 		if (werewolfManager.isWerewolf(killer))
 		{
-			if (werewolfManager.getWerewolfClan(killer.getUniqueId()) == clan && ctx.getClanManager().assignAlphaInClan(clan, killer.getUniqueId()))
+			if (werewolfManager.getWerewolfClan(killer.getUniqueId()) == clan && ctx.getClanManager().assignAlphaInClan(clan, killer.getUniqueId(), NewAlphaEvent.Cause.KILL))
 			{
 				languageManager.setPlayerName(killer.getName());
 				werewolfManager.sendMessageToClan(clan, languageManager.getLanguageString(LanguageManager.LANGUAGESTRING.NewClanAlpha, ChatColor.WHITE));
@@ -71,7 +71,7 @@ public class AlphaListener implements Listener
 		else if (this.plugin.getSettings().hunting().enabled() && ctx.getWerewolfManager().isHuman(killer))
 		{
 			UUID runnerUp = ctx.getClanManager().getRunnerUp(clan);
-			if (runnerUp != null && ctx.getClanManager().assignAlphaInClan(clan, runnerUp))
+			if (runnerUp != null && ctx.getClanManager().assignAlphaInClan(clan, runnerUp, NewAlphaEvent.Cause.KILL))
 			{
 				languageManager.setPlayerName(killer.getName());
 				werewolfManager.sendMessageToClan(clan, languageManager.getLanguageString(LanguageManager.LANGUAGESTRING.AlphaSlainByHunter, ChatColor.WHITE));

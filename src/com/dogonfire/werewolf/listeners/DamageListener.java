@@ -185,7 +185,9 @@ public class DamageListener implements Listener
 				{
 					this.plugin.logDebug(player.getName() + " is doing risk damage to " + victim.getName());
 
-					if (Math.random() < ctx.getWerewolfManager().getBiteInfectionRisk(player.getUniqueId()) && ctx.getWerewolfManager().makeWerewolf(victim, false, ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId()), WerewolfInfectionEvent.Source.WEREWOLF_BITE))
+					// The infection event is fired before the roll, so listeners can change the chance
+					double risk = ctx.getWerewolfManager().getBiteInfectionRisk(player.getUniqueId());
+					if (risk > 0 && ctx.getWerewolfManager().makeWerewolf(victim, false, ctx.getWerewolfManager().getWerewolfClan(player.getUniqueId()), WerewolfInfectionEvent.Source.WEREWOLF_BITE, player, risk))
 					{
 						ctx.getLanguageManager().setPlayerName(player.getName());
 						victim.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteVictim, ChatColor.LIGHT_PURPLE));
@@ -204,14 +206,14 @@ public class DamageListener implements Listener
 		}
 
 		if (!ctx.getWerewolfManager().hasWerewolfSkin(victim.getUniqueId()) && (ctx.getPermissionsManager().hasPermission(victim, "werewolf.becomeinfected") || victim.isOp())
-				&& (!ctx.getWerewolfManager().isWerewolf(victim) && (event.getDamager() instanceof Wolf) && Math.random() < this.plugin.getSettings().infection().wildWolfBiteRisk()))
+				&& (!ctx.getWerewolfManager().isWerewolf(victim) && (event.getDamager() instanceof Wolf) && this.plugin.getSettings().infection().wildWolfBiteRisk() > 0))
 		{
 			Tameable tameable = (Tameable) event.getDamager();
 
 			if (!tameable.isTamed())
 			{
 				Random random = new Random();
-				if (ctx.getWerewolfManager().makeWerewolf(victim, false, Clan.values()[random.nextInt(Clan.values().length)], WerewolfInfectionEvent.Source.WILD_WOLF_BITE))
+				if (ctx.getWerewolfManager().makeWerewolf(victim, false, Clan.values()[random.nextInt(Clan.values().length)], WerewolfInfectionEvent.Source.WILD_WOLF_BITE, event.getDamager(), this.plugin.getSettings().infection().wildWolfBiteRisk()))
 				{
 					victim.sendMessage(ctx.getLanguageManager().getLanguageString(LanguageManager.LANGUAGESTRING.BiteVictim, ChatColor.LIGHT_PURPLE));
 

@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
 import com.dogonfire.werewolf.WerewolfContext;
+import com.dogonfire.werewolf.api.event.WerewolfLevelChangeEvent;
 import com.dogonfire.werewolf.commands.CommandUtil;
 import com.dogonfire.werewolf.commands.SubCommand;
 import com.dogonfire.werewolf.managers.LanguageManager.LANGUAGESTRING;
@@ -77,10 +78,16 @@ public class SetLevelCommand extends SubCommand
 		}
 
 		int level = this.add ? ctx.getWerewolfManager().getNumberOfTransformations(playerId) + amount : amount;
-		ctx.getWerewolfManager().setNumberOfTransformations(playerId, level);
+		boolean changed = ctx.getWerewolfManager().setLevel(playerId, level, WerewolfLevelChangeEvent.Cause.COMMAND);
 
 		String name = ctx.getWerewolfManager().getPlayerName(playerId);
 		lang().setPlayerName(name);
+		if (!changed)
+		{
+			send(player, LANGUAGESTRING.AdminChangeCancelled, ChatColor.RED);
+			return;
+		}
+
 		lang().setAmount("" + ctx.getWerewolfManager().getNumberOfTransformations(playerId));
 		send(player, LANGUAGESTRING.AdminLevelSet, ChatColor.GREEN);
 

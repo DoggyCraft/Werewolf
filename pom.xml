@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.dogonfire</groupId>
     <artifactId>werewolf-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
     <name>Werewolf (parent)</name>
     <description>Werewolves in Minecraft!</description>

@@ -1,6 +1,7 @@
 package com.dogonfire.werewolf.managers;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -13,12 +14,16 @@ import org.bukkit.scoreboard.ScoreboardManager;
 
 import com.dogonfire.werewolf.WerewolfContext;
 
-/** The hunting sidebar shown to werewolves in wolf form. Only exists while Scoreboards.Enabled is on */
+/**
+ * The hunting sidebar shown to werewolves in wolf form. Only exists while Scoreboards.Enabled is on. The scoreboard a
+ * player had before (the main one, or another plugin's) is given back when the hunting one is taken away.
+ */
 public class WerewolfScoreboardManager
 {
 	private final WerewolfContext			ctx;
 	private final ScoreboardManager			manager;
 	private final HashMap<UUID, Objective>	playerHuntingObjectives	= new HashMap<UUID, Objective>();
+	private final Map<UUID, Scoreboard>		previousScoreboards		= new HashMap<UUID, Scoreboard>();
 
 	public WerewolfScoreboardManager(WerewolfContext ctx)
 	{
@@ -41,15 +46,16 @@ public class WerewolfScoreboardManager
 	/** Takes the hunting scoreboard away from everyone who has one */
 	public void stop()
 	{
-		for (UUID playerId : this.playerHuntingObjectives.keySet())
+		for (UUID playerId : new HashMap<UUID, Objective>(this.playerHuntingObjectives).keySet())
 		{
 			Player player = Bukkit.getPlayer(playerId);
 			if (player != null)
 			{
-				player.setScoreboard(this.manager.getMainScoreboard());
+				removePlayerHuntingScoreboard(player);
 			}
 		}
 		this.playerHuntingObjectives.clear();
+		this.previousScoreboards.clear();
 	}
 
 	public void newPlayerHuntingScoreboard(Player player)
@@ -59,7 +65,11 @@ public class WerewolfScoreboardManager
 		Objective objective = board.registerNewObjective("WerewolfHunting", "dummy", ChatColor.DARK_AQUA + "Hunting Status");
 		objective.setDisplaySlot(DisplaySlot.SIDEBAR);
 
-		this.playerHuntingObjectives.put(player.getUniqueId(), objective);
+		Objective old = this.playerHuntingObjectives.put(player.getUniqueId(), objective);
+		if (old == null || player.getScoreboard() != old.getScoreboard())
+		{
+			this.previousScoreboards.put(player.getUniqueId(), player.getScoreboard());
+		}
 
 		player.setScoreboard(board);
 
@@ -72,10 +82,17 @@ public class WerewolfScoreboardManager
 		}
 	}
 
+	/** Gives back the scoreboard the player had before, unless something else has replaced the hunting one meanwhile */
 	public void removePlayerHuntingScoreboard(Player player)
 	{
-		this.playerHuntingObjectives.remove(player.getUniqueId());
-		player.setScoreboard(this.manager.getNewScoreboard());
+		Objective objective = this.playerHuntingObjectives.remove(player.getUniqueId());
+		Scoreboard previous = this.previousScoreboards.remove(player.getUniqueId());
+		if (objective == null || player.getScoreboard() != objective.getScoreboard())
+		{
+			return;
+		}
+
+		player.setScoreboard(previous != null ? previous : this.manager.getMainScoreboard());
 	}
 
 	public void setMobKillsForPlayer(Player player, int kills)

@@ -125,6 +125,9 @@ public class DamageListener implements Listener
 			}
 		}
 
+		// A werewolf's hit always does at least 1 damage (config values or silver armor may bring it to 0); other
+		// damage is left alone
+		boolean werewolfHit = false;
 		if (event instanceof EntityDamageByEntityEvent)
 		{
 			EntityDamageByEntityEvent damageEvent = (EntityDamageByEntityEvent) event;
@@ -149,13 +152,14 @@ public class DamageListener implements Listener
 					}
 
 					event.setDamage(damage);
+					werewolfHit = true;
 				}
 			}
 
 			applySilverArmor(damageEvent);
 		}
 
-		if (event.getDamage() <= 0.0D)
+		if (werewolfHit && event.getDamage() <= 0.0D)
 		{
 			event.setDamage(1.0D);
 		}

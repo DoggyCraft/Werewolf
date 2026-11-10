@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 import java.util.EnumMap;
@@ -43,6 +45,9 @@ public class ClanManager
 	private volatile Map<Clan, String>	clanNames		= Collections.emptyMap();
 	private String						datePattern			= "HH:mm:ss dd-MM-yyyy";
 	
+	// Per clan, the last successor a NewAlphaEvent listener vetoed, with the members at that time
+	private final Map<Clan, VetoedSuccession>	vetoedSuccessions	= new EnumMap<Clan, VetoedSuccession>(Clan.class);
+
 	private UUID 						alphaAccountId		= null;
 	private String 						alphaAccount		= "";
 
@@ -335,14 +340,37 @@ public class ClanManager
 		}
 
 		UUID candidate = ctx.getWerewolfManager().getAlphaCandidate(clan, alphaId);
-		if (candidate != null)
-		{
-			assignAlphaInClan(clan, candidate, NewAlphaEvent.Cause.SUCCESSION);
-		}
-		else if (alphaId != null)
+		if ((candidate == null || !trySuccession(clan, candidate)) && alphaId != null)
 		{
 			assignAlphaInClan(clan, null, NewAlphaEvent.Cause.SUCCESSION);
 		}
+	}
+
+	/**
+	 * Makes the candidate alpha by succession. A candidate a listener vetoed is not asked about again (this runs every
+	 * update) until the clan's members change.
+	 */
+	private boolean trySuccession(Clan clan, UUID candidate)
+	{
+		Set<UUID> members = new HashSet<UUID>(ctx.getWerewolfManager().getWerewolvesInClan(clan));
+		VetoedSuccession vetoed = this.vetoedSuccessions.get(clan);
+		if (vetoed != null && vetoed.candidate().equals(candidate) && vetoed.members().equals(members))
+		{
+			return false;
+		}
+
+		if (assignAlphaInClan(clan, candidate, NewAlphaEvent.Cause.SUCCESSION))
+		{
+			this.vetoedSuccessions.remove(clan);
+			return true;
+		}
+
+		this.vetoedSuccessions.put(clan, new VetoedSuccession(candidate, members));
+		return false;
+	}
+
+	private record VetoedSuccession(UUID candidate, Set<UUID> members)
+	{
 	}
 
 	/** Runs from the main loop: fills every empty (or stale) alpha slot */
@@ -370,7 +398,7 @@ public class ClanManager
 			}
 
 			UUID candidate = ctx.getWerewolfManager().getAlphaCandidate(clan, playerId);
-			if (candidate == null || !assignAlphaInClan(clan, candidate, NewAlphaEvent.Cause.SUCCESSION))
+			if (candidate == null || !trySuccession(clan, candidate))
 			{
 				assignAlphaInClan(clan, null, NewAlphaEvent.Cause.SUCCESSION);
 			}

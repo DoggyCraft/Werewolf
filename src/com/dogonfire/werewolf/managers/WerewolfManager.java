@@ -1031,7 +1031,8 @@ public class WerewolfManager
 
 		for (UUID playerId : getWerewolfClanMembersRanked(clan))
 		{
-			if (playerId.equals(exclude))
+			// Records being created by makeWerewolf have no WolfState yet
+			if (playerId.equals(exclude) || !isWerewolf(playerId))
 			{
 				continue;
 			}

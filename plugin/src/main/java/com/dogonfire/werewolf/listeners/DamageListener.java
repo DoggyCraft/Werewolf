@@ -34,6 +34,9 @@ import com.dogonfire.werewolf.disguises.IWerewolfDisguiseFactory.WerewolfDisguis
 
 public class DamageListener implements Listener
 {
+	/** Spears are newer than 1.21.3, the oldest supported Minecraft, so look it up by name: null on servers without them */
+	private static final Material GOLDEN_SPEAR = Material.matchMaterial("GOLDEN_SPEAR");
+
 	private final Werewolf plugin;
 	private final WerewolfContext ctx;
 
@@ -240,15 +243,8 @@ public class DamageListener implements Listener
 			return false;
 		}
 
-		switch (((LivingEntity) damager).getEquipment().getItemInMainHand().getType())
-		{
-			case GOLDEN_SWORD:
-			case GOLDEN_AXE:
-			case GOLDEN_SPEAR:
-				return true;
-			default:
-				return false;
-		}
+		Material weapon = ((LivingEntity) damager).getEquipment().getItemInMainHand().getType();
+		return weapon == Material.GOLDEN_SWORD || weapon == Material.GOLDEN_AXE || (GOLDEN_SPEAR != null && weapon == GOLDEN_SPEAR);
 	}
 
 	/** A wolf form werewolf hit by a silver sword: takes the silver multiplier and (by default) loses its natural defence */

@@ -1,6 +1,6 @@
 # JitPack builds a tag the first time someone asks for it, e.g. com.github.DoggyCraft.Werewolf:werewolf-api:1.0.1
-# Werewolf needs JDK 25 and a current Maven (the compiler plugin needs 3.6.3+), which JitPack's images don't
-# reliably provide, so the build fetches Temurin 25 and Maven 3.9 itself.
+# Werewolf targets Java 21 but builds with JDK 25 (like CI) and a current Maven (the compiler plugin needs 3.6.3+),
+# which JitPack's images don't reliably provide, so the build fetches Temurin 25 and Maven 3.9 itself.
 install:
   - curl -sSL -o /tmp/jdk25.tar.gz https://api.adoptium.net/v3/binary/latest/25/ga/linux/x64/jdk/hotspot/normal/eclipse && mkdir -p /tmp/jdk25 && tar -xzf /tmp/jdk25.tar.gz -C /tmp/jdk25 --strip-components=1
   - curl -sSL -o /tmp/maven.tar.gz https://archive.apache.org/dist/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz && mkdir -p /tmp/maven && tar -xzf /tmp/maven.tar.gz -C /tmp/maven --strip-components=1

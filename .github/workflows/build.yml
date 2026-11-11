@@ -32,6 +32,12 @@ jobs:
             api/target/werewolf-api-*.jar
           if-no-files-found: error
 
+      # The jar is compiled against the newest Paper API; check it only references what the oldest supported Spigot has
+      - name: Check the jar links against the oldest supported Spigot
+        run: |
+          mvn -B -q -pl api dependency:build-classpath -Dmdep.outputFile=target/spigot.classpath
+          java ci/LinkCheck.java plugin/target/Werewolf-*.jar "$(cat api/target/spigot.classpath)"
+
   # Pushing a tag like 1.0.0 publishes a GitHub release with the plugin and API jars attached.
   # The tag has to match <version> in pom.xml. JitPack builds the API from the same tag.
   release:

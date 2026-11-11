@@ -22,6 +22,8 @@ import com.dogonfire.werewolf.WerewolfContext;
 import com.clanjhoo.vampire.VampireAPI;
 import org.bukkit.ChatColor;
 import org.bukkit.Effect;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -1367,7 +1369,21 @@ public class WerewolfManager
 
 	public void howl(Player player)
 	{
-		player.getWorld().playSound(player.getLocation(), Sound.ENTITY_WOLF_BIG_AMBIENT, 10.0F, 1.0F);
+		player.getWorld().playSound(player.getLocation(), howlSound(), 10.0F, 1.0F);
+	}
+
+	/**
+	 * The big wolf's bark (Minecraft 1.21.5+), else the wolf howl that 1.21.5 removed, else the plain wolf sound.
+	 * Looked up by key because the constants differ between the supported versions.
+	 */
+	private static Sound howlSound()
+	{
+		Sound sound = Registry.SOUNDS.get(NamespacedKey.minecraft("entity.wolf_big.ambient"));
+		if (sound == null)
+		{
+			sound = Registry.SOUNDS.get(NamespacedKey.minecraft("entity.wolf.howl"));
+		}
+		return sound != null ? sound : Sound.ENTITY_WOLF_AMBIENT;
 	}
 
 	public void growl(Player player)

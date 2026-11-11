@@ -454,6 +454,7 @@ public class SettingsLoader
 			return new Settings.MobTable<N>(Collections.unmodifiableMap(values), defaultValue);
 		}
 
+		List<String> unknown = new ArrayList<String>();
 		for (String key : section.getKeys(false))
 		{
 			if (!(section.get(key) instanceof Number number))
@@ -478,10 +479,16 @@ public class SettingsLoader
 			EntityType type = matchEntityType(key);
 			if (type == null)
 			{
-				this.logger.warning("Unknown mob '" + key + "' in " + path + " in config.yml, ignoring it");
+				unknown.add(key);
 				continue;
 			}
 			values.put(type, convert.apply(value));
+		}
+
+		// The bundled lists have mobs from the newest Minecraft, so older servers don't know some: one line, not one each
+		if (!unknown.isEmpty())
+		{
+			this.logger.warning("Ignoring mobs in " + path + " in config.yml that this server doesn't know: " + String.join(", ", unknown));
 		}
 
 		return new Settings.MobTable<N>(Collections.unmodifiableMap(values), defaultValue);

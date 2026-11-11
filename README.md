@@ -33,7 +33,7 @@ To become a Werewolf, you have to get bitten by a wolf or a Werewolf at night an
 
 Installation
 ---------
-*	Run a [Paper](https://papermc.io/) (recommended) or Spigot server on Minecraft 26.1 or newer, with Java 25.
+*	Run a [Paper](https://papermc.io/) (recommended) or Spigot server on Minecraft 1.21.3 or newer (including 26.x), running Java 21 or newer.
 *	Download `Werewolf-<version>.jar` from the [releases](https://github.com/DoggyCraft/Werewolf/releases) and drop it into the `plugins` folder.
 *	Werewolf skins work out of the box on Paper. On Spigot, also install [LibsDisguises](https://www.spigotmc.org/resources/libs-disguises.32453/) or [SkinsRestorer](https://modrinth.com/plugin/skinsrestorer).
 *	Each clan (and optionally each clan's alpha) has its own skin under `Clans.Skins` in config.yml. Skins are plain signed textures (Value and Signature, e.g. from [MineSkin](https://mineskin.org/)), so no Minecraft account is needed.
@@ -50,7 +50,7 @@ Links
 
 Building
 ---------
-Werewolf is built with Maven and JDK 25:
+Werewolf is built with Maven and JDK 25 (the jar targets Java 21):
 
 ```bash
 git clone https://github.com/DoggyCraft/Werewolf.git

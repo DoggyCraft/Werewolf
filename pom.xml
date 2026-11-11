@@ -24,9 +24,9 @@
 
     <properties>
         <!-- The oldest Spigot Werewolf supports; the API is compiled against it, so it can only use what Spigot has -->
-        <spigotAPIVersion>26.1-R0.1-SNAPSHOT</spigotAPIVersion>
+        <spigotAPIVersion>1.21.3-R0.1-SNAPSHOT</spigotAPIVersion>
         <paperAPIVersion>26.3.build.246-stable</paperAPIVersion>
-        <maven.compiler.release>25</maven.compiler.release>
+        <maven.compiler.release>21</maven.compiler.release>
         <encoding>UTF-8</encoding>
         <project.build.sourceEncoding>${encoding}</project.build.sourceEncoding>
         <project.reporting.outputEncoding>${encoding}</project.reporting.outputEncoding>

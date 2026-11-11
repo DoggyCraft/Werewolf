@@ -16,6 +16,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -137,7 +138,8 @@ public class WerewolfRestrictionListener implements Listener
 	@EventHandler(ignoreCancelled = true)
 	public void onPotionEffect(EntityPotionEffectEvent event)
 	{
-		if (!ctx.isWerewolvesEnabled() || !(event.getEntity() instanceof Player) || event.getNewEffect() == null)
+		// Through EntityEvent: newer APIs override getEntity() to return LivingEntity, which 1.21.3 doesn't have
+		if (!ctx.isWerewolvesEnabled() || !(((EntityEvent) event).getEntity() instanceof Player player) || event.getNewEffect() == null)
 		{
 			return;
 		}
@@ -147,7 +149,6 @@ public class WerewolfRestrictionListener implements Listener
 			return;
 		}
 
-		Player player = (Player) event.getEntity();
 		if (ctx.getWerewolfManager().hasWerewolfSkin(player.getUniqueId()) && ctx.getWolfFormManager().isBlockedPotion(player, event.getNewEffect().getType()))
 		{
 			event.setCancelled(true);
